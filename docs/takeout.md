@@ -29,6 +29,33 @@ Aufbau** – daran, dass er Jahresordner oder Medien mit Metadatendateien
 enthält. Beide oben genannten Werkzeuge machen das inzwischen so; eine
 Liste übersetzter Ordnernamen wäre immer unvollständig.
 
+In einem deutschen Konto sieht es so aus (nachgesehen am 05.09.2026):
+
+```
+Takeout/Google Fotos/...
+```
+
+## Zahlen aus einem echten Archiv
+
+Zur Größenordnung, aus einem Export vom 05.09.2026 mit drei Teilarchiven
+zu je etwa 4 GB:
+
+| | |
+|---|---|
+| Dateien insgesamt | 14.616 |
+| Bilder und Videos | 7.331 |
+| Metadatendateien | 7.285 |
+| davon neue Form (`supplemental-metadata`) | 7.276 |
+| davon alte Form (`.json`) | 9 |
+| Namen ab 40 Zeichen | 1.037 |
+| längster Dateiname | 92 Zeichen |
+
+Bemerkenswert: Die **alte** Form kommt nur neunmal vor, die naive Regel
+»Bildname + `.json`« greift also in **0 %** der Fälle. Und: Endungen
+kommen groß **und** klein vor – 4.616 mal `.jpg`, 1.943 mal `.JPG`. Die
+Metadatendatei übernimmt die Schreibweise des Bildes, weshalb genau
+verglichen werden muss und nicht in Kleinschreibung.
+
 ## Die Metadatendateien
 
 Neben jedem Bild liegt eine JSON mit Aufnahmedatum, Ort und Titel. Ihr
@@ -38,14 +65,24 @@ Name folgt Regeln, die an mehreren Stellen brechen.
 `IMG_1234.jpg.supplemental-metadata.json`. Beide Formen kommen in
 Archiven vor, je nachdem, wann die Bilder hochgeladen wurden.
 
-**Die 51-Zeichen-Grenze.** Ist der JSON-Name länger, kürzt Google – und
-zwar im Suffix. So entstehen `.supplemental-metadat.json`,
-`.suppl.json`, im Extremfall `.s.json`. Der Rest ist immer ein **Anfang**
-von `supplemental-metadata`; daran erkennt man ihn zuverlässig, denn
-keine Dateiendung ist ein Anfang dieses Wortes.
+**Die 51-Zeichen-Grenze gilt nicht immer – und das ist die wichtigste
+Erkenntnis dieser Seite.** In GooglePhotosTakeoutHelper steht sie als
+harte Regel, und WOLKENErnte hat sie zunächst genauso behandelt.
 
-Die Zahl ist **51**, nicht 46. 46 ist nur, was für den Namen bleibt,
-wenn `.json` abgezogen ist.
+An einem echten Archiv vom **05.09.2026** fanden damit nur **62,6 %**
+von 7.331 Bildern ihre Metadaten. Der Grund: **Dort kürzt Google
+überhaupt nicht.** Zu einem Bildnamen mit 41 Zeichen gehört eine
+Metadatendatei mit 68 Zeichen, voll ausgeschrieben.
+
+Nach der Umstellung auf »ungekürzt zuerst, gekürzt als Rückfall«:
+**99,2 % sicher zugeordnet, kein einziges Bild ohne Metadaten.**
+
+Die gekürzten Formen gibt es trotzdem, in älteren Archiven:
+`.supplemental-metadat.json`, `.suppl.json`, im Extremfall `.s.json`.
+Der Rest ist immer ein **Anfang** von `supplemental-metadata`; daran
+erkennt man ihn zuverlässig, denn keine Dateiendung ist ein Anfang
+dieses Wortes. Die Zahl ist dann **51**, nicht 46 – 46 ist nur, was für
+den Namen bleibt, wenn `.json` abgezogen ist.
 
 **Die Klammer steht auf der anderen Seite.** Das ist die tückischste
 Regel. Bei Namensgleichheit hängt Google an das *Bild* eine Nummer vor

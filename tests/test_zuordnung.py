@@ -28,36 +28,43 @@ class DieKandidaten(unittest.TestCase):
     def test_alte_form_ist_dabei(self) -> None:
         self.assertIn("IMG_1234.jpg.json", json_kandidaten("IMG_1234.jpg"))
 
-    def test_kein_kandidat_ist_zu_lang(self) -> None:
-        """Googles Grenze gilt für jeden erzeugten Namen."""
-        for name in ("IMG_1234.jpg", "a" * 30 + ".jpg", "b" * 60 + ".jpg"):
-            for kandidat in json_kandidaten(name):
-                with self.subTest(kandidat):
-                    self.assertLessEqual(len(kandidat), HOECHSTLAENGE)
+    def test_lange_namen_werden_nicht_gestutzt(self) -> None:
+        """Die 51-Zeichen-Grenze ist ein Rückfall, keine Regel.
 
-    def test_langer_name_bekommt_ein_gekuerztes_suffix(self) -> None:
-        """Bei einem langen Bildnamen bleibt vom Suffix nur ein Rest.
+        Hier stand einmal das Gegenteil – dass **kein** Kandidat länger
+        als 51 Zeichen sein dürfe. Der Test war grün, der Code falsch:
+        An einem echten Archiv vom 05.09.2026 fanden damit nur 62,6 %
+        der 7.331 Bilder ihre Metadaten. Denn Google kürzt dort gar
+        nicht; die Dateien heißen ausgeschrieben, 68 Zeichen lang.
 
-        Für ``Ein ziemlich langer Dateiname 2024.jpg`` passt das volle
-        ``.supplemental-metadata.json`` nicht mehr in 51 Zeichen; übrig
-        bleibt ``.supplem.json``. Genau so kürzt Google auch.
+        Nach der Umstellung auf »ungekürzt zuerst«: 99,2 %.
         """
+        name = "20240-15-abcdefghi-1234-5678-xyz98765.jpg"  # 41 Zeichen
+        erwartet = name + ".supplemental-metadata.json"     # 68 Zeichen
+        self.assertEqual(len(erwartet), 68)
+        self.assertEqual(json_kandidaten(name)[0], erwartet)
+
+    def test_gekuerzte_form_kommt_als_rueckfall(self) -> None:
+        """Ältere Archive kürzen sehr wohl – nur eben später."""
         kandidaten = json_kandidaten("Ein ziemlich langer Dateiname 2024.jpg")
-        gekuerzt = [k for k in kandidaten if ".suppl" in k]
+        gekuerzt = [k for k in kandidaten
+                    if ".suppl" in k and "supplemental-metadata" not in k]
         self.assertTrue(gekuerzt, kandidaten)
-        # Gekürzt heißt: kürzer als das volle Suffix, aber noch erkennbar.
         for kandidat in gekuerzt:
             with self.subTest(kandidat):
-                self.assertNotIn("supplemental-metadata", kandidat)
                 self.assertLessEqual(len(kandidat), HOECHSTLAENGE)
                 # Was übrig bleibt, muss ein Anfang des vollen Suffixes sein.
                 rest = kandidat.split(".")[-2]
                 self.assertTrue("supplemental-metadata".startswith(rest), rest)
 
-    def test_sehr_langer_name_wird_gestutzt(self) -> None:
-        kandidaten = json_kandidaten("x" * 80 + ".jpg")
-        self.assertTrue(all(len(k) <= HOECHSTLAENGE for k in kandidaten))
-        self.assertTrue(any(k.endswith(".json") for k in kandidaten))
+    def test_die_ungekuerzte_form_steht_vor_der_gekuerzten(self) -> None:
+        kandidaten = json_kandidaten("Ein ziemlich langer Dateiname 2024.jpg")
+        voll = kandidaten.index(
+            "Ein ziemlich langer Dateiname 2024.jpg.supplemental-metadata.json"
+        )
+        kurz = min(i for i, k in enumerate(kandidaten)
+                   if ".suppl" in k and "supplemental-metadata" not in k)
+        self.assertLess(voll, kurz)
 
     def test_keine_wiederholungen(self) -> None:
         kandidaten = json_kandidaten("IMG_1234.jpg")

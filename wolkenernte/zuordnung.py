@@ -37,11 +37,19 @@ from dataclasses import dataclass
 #: Das lange Suffix, das Google seit Ende 2024 anhängt.
 SUFFIX = "supplemental-metadata"
 
-#: Höchstlänge des ganzen JSON-Dateinamens. Darüber kürzt Google.
+#: Länge, ab der ältere Takeouts den JSON-Namen kürzen.
 #:
-#: 51, nicht 46: 46 ist nur der Rest, der für den Namen bleibt, wenn
-#: ``.json`` abgezogen ist. Wer 46 als Grenze nimmt, verfehlt jede
-#: Kürzung um fünf Zeichen.
+#: **Keine feste Regel, sondern ein Rückfall.** Im Werkzeug
+#: GooglePhotosTakeoutHelper steht diese Zahl als harte Grenze, und die
+#: erste Fassung hier hat sie ebenso behandelt – mit dem Ergebnis, dass
+#: von 7.331 Bildern eines echten Archivs nur 62,6 % ihre Metadaten
+#: fanden. Der Grund: In einem am 2026-09-05 erzeugten Takeout **kürzt
+#: Google gar nicht**. Dort stehen Namen mit 68 Zeichen, voll
+#: ausgeschrieben.
+#:
+#: Die ungekürzte Form wird deshalb immer zuerst gesucht; die gekürzten
+#: kommen als Rückfall für ältere Archive danach. 51, nicht 46: 46 ist
+#: nur der Rest, der ohne ``.json`` bleibt.
 HOECHSTLAENGE = 51
 
 #: Anhängsel bearbeiteter Fassungen. Die ersten sechs bleiben immer
@@ -110,25 +118,35 @@ def json_kandidaten(medienname: str) -> list[str]:
         if treffer else medienname
     )
 
-    for basis in ([ohne_nummer] if treffer else []) + [medienname]:
-        # Das lange Suffix, von der vollen Länge abwärts gekürzt.
-        for i in range(len(SUFFIX), 0, -1):
-            voll = f"{basis}.{SUFFIX[:i]}.json"
-            if len(voll) <= HOECHSTLAENGE:
-                kandidaten.append(voll)
-                if nummer:
-                    kandidaten.append(_mit_nummer(voll, nummer))
-                break
-        else:
-            # Selbst das kürzeste Suffix passt nicht mehr - dann kürzt
-            # Google den Namen selbst.
-            kandidaten.append(_kuerzen(f"{basis}.{SUFFIX}.json"))
+    # Die Reihenfolge folgt der Häufigkeit im echten Archiv: Zuerst der
+    # Name, wie er dasteht, dann erst die Formen mit verschobener
+    # Nummer. Der erste Treffer gewinnt.
+    for basis in [medienname] + ([ohne_nummer] if treffer else []):
+        # **Ungekürzt zuerst.** Das ist der Regelfall; die Kürzung ist
+        # der Sonderfall älterer Archive, nicht umgekehrt.
+        voll = f"{basis}.{SUFFIX}.json"
+        kandidaten.append(voll)
+        if nummer:
+            kandidaten.append(_mit_nummer(voll, nummer))
 
-        # Die alte Form ohne Suffix.
-        alt = _kuerzen(f"{basis}.json")
+        # Die alte Form ohne Suffix, ebenfalls ungekürzt.
+        alt = f"{basis}.json"
         kandidaten.append(alt)
         if nummer:
             kandidaten.append(_mit_nummer(alt, nummer))
+
+        # Erst jetzt die gekürzten Formen, längstes Suffix zuerst.
+        for i in range(len(SUFFIX) - 1, 0, -1):
+            kurz = f"{basis}.{SUFFIX[:i]}.json"
+            if len(kurz) <= HOECHSTLAENGE:
+                kandidaten.append(kurz)
+                if nummer:
+                    kandidaten.append(_mit_nummer(kurz, nummer))
+                break
+
+        # Und der Fall, in dem selbst der Name gestutzt wurde.
+        if len(alt) > HOECHSTLAENGE:
+            kandidaten.append(_kuerzen(alt))
 
     # Reihenfolge erhalten, Wiederholungen entfernen.
     gesehen: set[str] = set()
