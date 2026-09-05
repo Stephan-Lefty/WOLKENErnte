@@ -119,6 +119,7 @@ def uebernehmen(
     ziel: Path,
     *,
     fortschritt: Callable[[int, str], None] | None = None,
+    gesehen: set[tuple[int, int]] | None = None,
 ) -> Bilanz:
     """Bilder aus dem Takeout ins Archiv schreiben.
 
@@ -130,9 +131,16 @@ def uebernehmen(
     Doppelgänger werden an Größe und Prüfsumme erkannt und nur einmal
     geschrieben. Das ist bei einem Takeout kein Randfall: Jedes Bild,
     das in einem Album liegt, kommt dort ein zweites Mal vor.
+
+    ``gesehen`` nimmt eine Menge entgegen, die über mehrere Aufrufe
+    hinweg bestehen bleibt. Nur so lassen sich zwei Quellen nacheinander
+    übernehmen, ohne dass die zweite die Doppelgänger der ersten noch
+    einmal schreibt – und genau das ist der Regelfall, wenn ein alter
+    ausgepackter Export und ein frischer nebeneinanderliegen.
     """
     bilanz = Bilanz()
-    gesehen: set[tuple[int, int]] = set()
+    if gesehen is None:
+        gesehen = set()
 
     for nummer, zuordnung in enumerate(zuordnungen, 1):
         eintrag = takeout.eintrag(zuordnung.medium)
