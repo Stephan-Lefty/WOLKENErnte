@@ -74,18 +74,44 @@ unter GPL. Wer die mitliefert, verteilt GPL-Code und muss das eigene
 Programm darunter stellen. WOLKENErnte zeigt Bilder nur an; der reine
 Dekodierer genügt.
 
-## Das Programmsymbol
+## Das Programmsymbol – es gibt **drei** Quellen, nicht eine
 
-`assets/icon.svg` ist die Quelle, alle PNG und die `.ico` werden daraus
-erzeugt. Der Verlauf ist `BLAU_HELL → BLAU_TIEF` aus `farben.py`,
-derselbe wie bei MailBurg.
+```
+python3 werkzeuge/symbole.py
+```
 
-Zwei Dinge, die beim Bauen schiefgingen und wieder schiefgehen würden:
+Erzeugt alle PNG und die `.ico`. Der Verlauf ist `BLAU_HELL →
+BLAU_TIEF` aus `farben.py`, derselbe wie bei MailBurg.
+
+| Quelle | Größen | was fehlt |
+|---|---|---|
+| `assets/icon.svg` | 48 bis 1024 | – |
+| `assets/icon-klein.svg` | 24, 32 | Filmstreifen; Kachel gerade und kleiner |
+| `assets/icon-winzig.svg` | 16 | Kachel ganz; nur Wolke und Pfeil |
+
+**Bitte nicht zu einer Quelle zusammenfassen.** Beim Verkleinern
+verschwinden nicht alle Bestandteile gleichmäßig, sondern die feinsten
+zuerst – heraus kommt dann kein reduziertes Bild, sondern ein
+zerfallenes. Die Zuordnung steht in `werkzeuge/symbole.py`, damit
+niemand `icon-16.png` versehentlich aus `icon.svg` neu erzeugt.
+
+Vier Dinge, die beim Bauen schiefgingen und wieder schiefgehen würden:
+
 **Die Wolke muss die breiteste Form im Bild sein** – ist sie schmaler
 als das, was darunter steht, verschmelzen beide beim Verkleinern zu
-etwas, das wie eine Eistüte aussieht. Und **Motive vertragen nur wenige,
-große Elemente**: zwei Berggipfel oder acht Filmlöcher sind bei 32 Pixeln
-nicht mehr auseinanderzuhalten.
+etwas, das wie eine Eistüte aussieht.
+
+**Motive vertragen nur wenige, große Elemente**: zwei Berggipfel oder
+acht Filmlöcher sind bei 32 Pixeln nicht mehr auseinanderzuhalten.
+
+**Die Kachel darf die Wolke nicht ausfüllen.** Ein Entwurf machte sie
+groß, damit der Gipfel erkennbar bleibt – und erzeugte ein Rechteck mit
+weißem Saum, das niemand mehr als Wolke las. Sichtbare Wolkenrundungen
+sind wichtiger als der Gipfel.
+
+**Wolke und Pfeil brauchen bei 16 Pixeln etwa gleich viel Platz.** Bekam
+die Wolke die volle Höhe, wirkte der Pfeil wie ihr Fortsatz statt wie
+eine eigene Form.
 
 ## Die Testläufe kosten Kontingent
 

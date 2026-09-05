@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="WOLKENErnte">
+  <title>WOLKENErnte – Fassung für 16 Pixel</title>
+  <!--
+    Die kleinste Fassung: nur noch Wolke und Pfeil.
+
+    **Bei 16 Pixeln ist die ganze Kachel drei Bildpunkte breit.** Was
+    darin steht - Gipfel, Sonne, Rahmen - fällt zu einem grauen Fleck
+    zusammen, und dieser Fleck frisst die Wolke von innen auf. Ohne ihn
+    bleibt eine geschlossene weiße Form, und die liest man auch in der
+    Taskleiste noch als Wolke.
+
+    Ja, das Ergebnis sieht damit aus wie ein allgemeines Sinnbild fürs
+    Herunterladen. Bei dieser Größe erkennt man ein Programm ohnehin an
+    Umriss und Farbe wieder, nicht am Motiv - und Umriss und Farbe
+    stimmen mit den größeren Fassungen überein.
+
+    Wolke und Pfeil sind gegenüber icon.svg vergrößert: Die Ränder, die
+    einem großen Symbol Luft geben, sind hier verschenkte Bildpunkte.
+  -->
+  <defs>
+    <linearGradient id="grund" gradientUnits="userSpaceOnUse"
+                    x1="0" y1="0" x2="0" y2="512">
+      <stop offset="0" stop-color="#0e8af6"/>
+      <stop offset="1" stop-color="#0047a7"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="115" fill="url(#grund)"/>
+
+  <!-- Wolke flacher und höher gesetzt als in icon.svg, damit unten Platz
+       für einen Pfeil bleibt, der etwas darstellt.
+
+       Ein erster Entwurf gab der Wolke die volle Höhe und ließ dem Pfeil
+       den Rest: Der war dann so kurz, dass er wie ein Fortsatz der Wolke
+       wirkte und nicht wie eine eigene Form. Bei dieser Größe brauchen
+       beide etwa gleich viel Platz. -->
+  <g fill="#fff">
+    <circle cx="164" cy="175" r="70"/>
+    <circle cx="256" cy="130" r="98"/>
+    <circle cx="348" cy="180" r="66"/>
+    <rect x="94" y="175" width="320" height="71" rx="35"/>
+  </g>
+
+  <!-- Der Pfeil deutlich breiter und länger als sonst. Bei 16 Pixeln
+       entspricht der Schaft aus icon.svg gerade einem Bildpunkt; er
+       würde je nach Ausrichtung des Rasters mal erscheinen und mal
+       nicht. -->
+  <g fill="#fff">
+    <rect x="214" y="240" width="84" height="88"/>
+    <path d="M168 322 L344 322 L256 460 Z"/>
+  </g>
+</svg>

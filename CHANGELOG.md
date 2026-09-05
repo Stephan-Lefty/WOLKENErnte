@@ -40,12 +40,21 @@ Kontrastwerten. `tests/test_farben.py` prüft sie gegen WCAG 2.1 – für
 ein Programm, das im Kern Bilder anzeigt, ist Lesbarkeit kein
 Nebenschauplatz.
 
-**Das Programmsymbol** liegt als SVG vor und wird daraus in allen Größen
-bis hinunter zu 16 Pixeln erzeugt. Zwei Dinge sind dabei gelernt worden:
-Die Wolke muss die breiteste Form im Bild sein, sonst verschmilzt sie
-beim Verkleinern mit dem, was darunter steht. Und Bergmotiv wie
-Filmperforation vertragen nur wenige, große Elemente – zwei Gipfel oder
-acht Löcher sind bei 32 Pixeln nicht mehr auseinanderzuhalten.
+**Das Programmsymbol gibt es in drei Fassungen**, erzeugt von
+`werkzeuge/symbole.py`: die volle ab 48 Pixeln, eine ohne Filmstreifen
+für 24 und 32, und eine nur aus Wolke und Pfeil für 16. Dasselbe Bild
+für alle Größen zu verkleinern ergibt kein reduziertes, sondern ein
+zerfallenes – die feinsten Bestandteile verschwinden zuerst und lassen
+Reste stehen, die für sich nichts mehr aussagen.
+
+Vier Dinge sind dabei gelernt worden: Die Wolke muss die breiteste Form
+im Bild sein, sonst verschmilzt sie beim Verkleinern mit dem, was
+darunter steht. Bergmotiv und Filmperforation vertragen nur wenige,
+große Elemente – zwei Gipfel oder acht Löcher sind bei 32 Pixeln nicht
+mehr auseinanderzuhalten. Die Bildkachel darf die Wolke nicht ausfüllen,
+sonst liest man ein Rechteck mit weißem Saum statt einer Wolke. Und bei
+16 Pixeln brauchen Wolke und Pfeil etwa gleich viel Platz, sonst wirkt
+der Pfeil wie ein Fortsatz der Wolke.
 
 **Die Testläufe kosten Kontingent.** Dieses Repository ist privat,
 Actions-Minuten werden also abgerechnet, und GitHub rundet jeden Job auf

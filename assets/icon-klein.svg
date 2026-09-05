@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="WOLKENErnte">
+  <title>WOLKENErnte – Fassung für 24 und 32 Pixel</title>
+  <!--
+    Die mittlere Fassung. Gegenüber icon.svg fällt der Filmstreifen weg
+    und die verbliebene Bildkachel wird größer, mittig und gerade.
+
+    **Warum der Filmstreifen als Erstes geht.** Er lebt von seiner
+    Perforation - ohne die Löcher ist er ein leeres Rechteck und vom
+    Bild daneben nicht zu unterscheiden. Bei 32 Pixeln misst ein Loch
+    weniger als einen Bildpunkt. Zwei Rechtecke nebeneinander, von denen
+    eines nichts mehr aussagt, sind schlechter als eines, das man liest.
+
+    **Und warum die Kachel nicht mehr gekippt ist.** Die Drehung ist bei
+    großen Größen der Reiz - sie lässt den Stapel lose wirken. Klein
+    erzeugt sie nur Treppenstufen an den Kanten und kostet Schärfe, die
+    hier keiner übrig hat.
+  -->
+  <defs>
+    <linearGradient id="grund" gradientUnits="userSpaceOnUse"
+                    x1="0" y1="0" x2="0" y2="512">
+      <stop offset="0" stop-color="#0e8af6"/>
+      <stop offset="1" stop-color="#0047a7"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="115" fill="url(#grund)"/>
+
+  <!-- Die Wolke unverändert aus icon.svg: Sie ist die Form, an der man
+       das Programm auch klein wiedererkennt, und darf sich deshalb
+       zwischen den Fassungen nicht verändern. -->
+  <g fill="#fff">
+    <circle cx="175" cy="215" r="72"/>
+    <circle cx="262" cy="170" r="102"/>
+    <circle cx="350" cy="218" r="70"/>
+    <rect x="103" y="215" width="317" height="88" rx="44"/>
+  </g>
+
+  <!-- Eine Kachel, mittig, gerade - und ohne Sonne. Bei 32 Pixeln wäre
+       sie ein einzelner heller Punkt neben dem Gipfel und würde ihn
+       eher stören als ergänzen.
+
+       **Sie darf die Wolke nicht ausfüllen.** Ein erster Entwurf machte
+       sie groß, damit der Gipfel darin erkennbar bleibt - und erzeugte
+       damit ein Rechteck mit weißem Saum, das niemand mehr als Wolke
+       las. Über der Kachel muss so viel Wolke stehen bleiben, dass ihre
+       Rundungen sichtbar sind; das ist wichtiger als der Gipfel. -->
+  <rect x="176" y="186" width="160" height="102" rx="14" fill="url(#grund)"/>
+  <path d="M190 276 L244 212 L322 276 Z" fill="#fff"/>
+
+  <!-- Der Pfeil etwas kräftiger als in icon.svg: Bei 32 Pixeln ist der
+       Schaft sonst dünner als ein Bildpunkt und verschwindet, womit die
+       Spitze in der Luft hinge. -->
+  <g fill="#fff">
+    <rect x="230" y="300" width="52" height="82"/>
+    <path d="M196 376 L316 376 L256 448 Z"/>
+  </g>
+</svg>
