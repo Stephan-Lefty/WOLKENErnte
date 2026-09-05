@@ -1,0 +1,80 @@
+name: Tests
+
+# **Dieses Repository ist privat.** Actions-Minuten kosten hier also
+# echtes Kontingent, und das ist der Grund für den Zuschnitt unten.
+#
+# GitHub rundet *jeden einzelnen Job* auf volle Minuten auf und rechnet
+# macOS zehnfach, Windows zweifach. Ein macOS-Job, der neun Sekunden
+# läuft, zählt als zehn Minuten. Bei MailBurg lief die erste Fassung
+# noch über drei Betriebssysteme: 53 abgerechnete Minuten für einen
+# Durchlauf von unter einer Minute, und an einem einzigen Arbeitstag
+# 1.800 von 2.000 Minuten - das gesamte Monatskontingent.
+#
+# Deshalb hier von Anfang an: Bei jedem Push *ein* Job auf Linux. Die
+# teuren Systeme laufen einmal die Woche und wenn jemand sie ruft.
+# Solange das Repository privat ist, bleibt das so.
+
+on:
+  push:
+    # An Text ändert sich durch einen Testlauf nichts.
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "LICENSE"
+  pull_request:
+  schedule:
+    # Montags um 4 Uhr der breite Durchgang.
+    - cron: "0 4 * * 1"
+  workflow_dispatch:
+    inputs:
+      breit:
+        description: "Auch Windows und macOS prüfen"
+        type: boolean
+        default: false
+
+# Wer dreimal hintereinander pusht, braucht nur die Antwort auf den letzten.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Alles in einem Job. Nicht aus Ordnungsliebe, sondern wegen der
+  # Aufrundung: fünf Jobs à fünfzehn Sekunden kosten fünf Minuten, einer
+  # à siebzig Sekunden kostet zwei.
+  linux:
+    name: Linux (bei jedem Push)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Syntax prüfen
+        run: python -m compileall -q wolkenernte tests
+
+      - name: Tests
+        run: python -m unittest discover -s tests -t . -v
+
+      - name: Paket baut
+        run: |
+          python -m pip install --quiet build
+          python -m build --wheel --outdir /tmp/rad
+
+  breit:
+    name: Windows und macOS (wöchentlich)
+    # Der teure Durchgang. Läuft nur nach Zeitplan oder auf Zuruf -
+    # niemals bei einem gewöhnlichen Push.
+    if: github.event_name == 'schedule' || inputs.breit
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Tests
+        run: python -m unittest discover -s tests -t .

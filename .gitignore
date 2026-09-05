@@ -1,0 +1,27 @@
+__pycache__/
+*.pyc
+*.py[cod]
+*.egg-info/
+.venv/
+
+# Wegwerfbares: Vorschaubilder, Fingerabdrücke, Probeläufe
+zwischenspeicher/
+*.db
+*.db-wal
+*.db-shm
+probe/
+
+# Was hier auf keinen Fall hineingehört
+#
+# rclone.conf enthält Zugangsdaten zu allen eingerichteten Wolken - im
+# Klartext oder mit einem Kennwort verschleiert, das ebenfalls in der
+# Datei stehen kann. Und Takeout-Archive sind der Bildbestand selbst.
+rclone.conf
+*.takeout.zip
+takeout/
+
+# Pakete
+build/
+dist/
+*.deb
+*.AppImage

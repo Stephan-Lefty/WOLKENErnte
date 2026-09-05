@@ -1,0 +1,83 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wolkenernte"
+# Die Fassung steht ausschließlich in wolkenernte/__init__.py und wird von dort
+# gelesen. Sie hier zu wiederholen ging bei MailBurg schief: pyproject.toml
+# blieb bei 0.1.0 stehen, während das Programm längst 0.9.0 meldete.
+dynamic = ["version"]
+description = "Bilder und Videos aus den Wolken holen und dort aufräumen"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Stephan Rösner" }]
+keywords = ["cloud", "fotos", "videos", "backup", "duplikate", "rclone"]
+
+classifiers = [
+    # Ein Gerüst, kein Programm. Solange nichts heruntergeladen und
+    # nichts gelöscht wird, steht hier nichts anderes.
+    "Development Status :: 2 - Pre-Alpha",
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "Natural Language :: German",
+    # Nur, was tatsächlich gelaufen ist. Bei MailBurg stand hier bis zur
+    # 1.0 "OS Independent" und behauptete macOS mit - dort liefen zwar
+    # die Tests, benutzt hat es aber niemand.
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: System :: Archiving :: Backup",
+]
+
+# Der Kern kommt ohne Fremdpakete aus. Das ist Absicht und hier sogar
+# leichter als anderswo: Die ganze Arbeit an den Wolken erledigt rclone,
+# und das wird über eine gewöhnliche HTTP-Schnittstelle angesprochen -
+# urllib und json aus der Standardbibliothek genügen dafür.
+#
+# rclone selbst ist kein Python-Paket, sondern ein Programm. Es wird
+# nicht über pip installiert, sondern beigelegt oder auf dem Rechner
+# gesucht. Seine Lizenz ist MIT, das Beilegen also unbedenklich.
+dependencies = []
+
+[project.optional-dependencies]
+# Bilder ansehen und Doppelgänger finden.
+#
+# pi-heif und nicht pillow-heif: Beide stammen vom selben Entwickler und
+# teilen den Code, aber die fertigen Pakete von pillow-heif enthalten
+# x265 - einen HEVC-*Kodierer* unter GPL. Wer das mitliefert, verteilt
+# GPL-Code und muss sein eigenes Programm darunter stellen. WOLKENErnte
+# zeigt Bilder nur an, es erzeugt keine; der reine Dekodierer in pi-heif
+# genügt und steht unter LGPL.
+bilder = ["Pillow>=11.1", "pi-heif>=1.4", "ImageHash>=4.3"]
+
+# Vorschaubilder aus Videos.
+#
+# ffmpeg als eigener Prozess, nicht als eingebundene Bibliothek: Ein
+# beschädigtes Video reißt dann das Programm nicht mit. imageio-ffmpeg
+# bringt das Programm mit, damit der Anwender nichts installieren muss -
+# und steht unter BSD, anders als PyAV, dessen Pakete GPL sind.
+video = ["imageio-ffmpeg>=0.6"]
+
+# Die grafische Oberfläche. Bewusst nicht im Kern: PySide6 sind über
+# hundert Megabyte, und die Kommandozeile läuft ohne.
+#
+# PySide6-Essentials genügt hier *nicht*. Die Videowiedergabe steckt in
+# QtMultimedia, und das liegt in PySide6-Addons.
+oberflaeche = ["PySide6>=6.8"]
+
+alles = ["wolkenernte[bilder,video,oberflaeche]"]
+
+[project.scripts]
+wolkenernte = "wolkenernte.__main__:main"
+
+[project.urls]
+Quelltext = "https://github.com/Stephan-Lefty/WOLKENErnte"
+
+[tool.setuptools.dynamic]
+version = { attr = "wolkenernte.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["wolkenernte*"]
