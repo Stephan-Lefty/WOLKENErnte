@@ -112,6 +112,39 @@ nur die Hälfte geht.
 - [ ] Der Löschknopf erscheint nur, wo `anbieter.darf_loeschen()` es erlaubt.
   Bei den anderen steht der Grund, nicht ein ausgegrauter Knopf.
 
+### Ausliefern – der Anwender soll nichts nachinstallieren müssen
+
+**Grundsatz:** Was WOLKENErnte braucht, bringt WOLKENErnte mit oder lässt
+es vom Paketverwalter mitbringen. Niemand soll rclone von Hand herunterladen.
+
+- [ ] **rclone unter Linux als Paketabhängigkeit**, nicht mitgeliefert. Dann
+  installiert der Paketverwalter es mit, und der Anwender bekommt
+  Sicherheitsaktualisierungen über sein System.
+  **Vorher prüfen:** Wir brauchen **mindestens 1.75.0** – erst dort gibt es
+  `config/oauthstatus` (die Anmelde-Adresse für den Browser) und den Fix für
+  die iCloud-2FA. Arch und Manjaro sind aktuell genug; **bei Debian stable ist
+  das offen**. Liegt dort eine ältere Fassung, muss rclone auch im .deb
+  mitgeliefert werden.
+- [ ] **rclone unter Windows mitliefern.** Kein Paketverwalter, also liegt
+  `rclone.exe` im Programmordner. Rund 70 MB – die Fassung wird spürbar
+  größer als MailBurg.
+- [ ] **ffmpeg über `imageio-ffmpeg`.** Bringt die Binärdatei mit, steht unter
+  BSD, keine Systeminstallation auf keinem der drei Systeme.
+- [ ] **Beim Start prüfen, was da ist**, und im Klartext sagen, was fehlt –
+  statt mitten im Abruf abzubrechen mit einer Meldung, die nach einem Defekt
+  des Rechners aussieht. Auch die Fassung prüfen, nicht nur die Anwesenheit.
+- [ ] **Windows: `.exe` nach dem Muster von `MailBurg/werkzeuge/mailburg.spec`** –
+  aber als **Ordner** (`--onedir`), nicht als einzelne Datei. PySide6 steht
+  unter LGPLv3, und die verlangt, dass der Anwender die Bibliothek austauschen
+  kann; bei einer eingebackenen Einzeldatei geht das nicht.
+- [ ] **Debian: `.deb`.** Gibt es in keinem der Repositorys bisher – das wäre
+  das erste. Abhängigkeiten: python3, rclone (Fassung s. o.).
+- [ ] **Arch/Manjaro: `PKGBUILD`**, damit es auf Stephans eigenem System
+  ordentlich installierbar ist. Ebenfalls neu.
+- [ ] `.desktop`-Datei und Symbole an den vorgesehenen Ort
+  (`/usr/share/applications`, `/usr/share/icons/hicolor/<größe>/apps/`) –
+  Muster in `Denkzettel/desktop/` und `SilentInstaller/data/`.
+
 ### Später
 
 - [ ] Windows und macOS überhaupt erst einmal ausprobieren. Bisher ist nichts

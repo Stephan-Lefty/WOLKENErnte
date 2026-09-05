@@ -103,6 +103,39 @@ anyway.
 - [ ] The delete button only appears where `anbieter.darf_loeschen()` permits
   it. Elsewhere the reason is shown, not a greyed-out button.
 
+### Shipping – the user must not have to install anything
+
+**Principle:** whatever WOLKENErnte needs, it either brings along or has the
+package manager bring along. Nobody should download rclone by hand.
+
+- [ ] **rclone as a package dependency on Linux**, not bundled. The package
+  manager then installs it alongside, and the user gets security updates
+  through their system.
+  **Check first:** we need **at least 1.75.0** – only there do
+  `config/oauthstatus` (the sign-in URL for the browser) and the iCloud 2FA fix
+  exist. Arch and Manjaro are current enough; **for Debian stable this is
+  open**. If an older version ships there, rclone must be bundled in the .deb
+  as well.
+- [ ] **Bundle rclone on Windows.** No package manager, so `rclone.exe` sits in
+  the program folder. Around 70 MB – the build will be noticeably larger than
+  MailBurg.
+- [ ] **ffmpeg via `imageio-ffmpeg`.** Ships the binary, BSD licensed, no
+  system installation on any of the three platforms.
+- [ ] **Check at startup what is present** and state plainly what is missing –
+  rather than aborting mid-transfer with a message that reads like a broken
+  machine. Check the version, not just presence.
+- [ ] **Windows: `.exe` following `MailBurg/werkzeuge/mailburg.spec`** – but as
+  a **folder** (`--onedir`), not a single file. PySide6 is LGPLv3, which
+  requires the user to be able to replace the library; with everything baked
+  into one executable that is impossible.
+- [ ] **Debian: `.deb`.** Does not exist in any of the repositories yet – this
+  would be the first. Dependencies: python3, rclone (version see above).
+- [ ] **Arch/Manjaro: `PKGBUILD`**, so it installs properly on Stephan's own
+  system. Also new.
+- [ ] `.desktop` file and icons in the expected places
+  (`/usr/share/applications`, `/usr/share/icons/hicolor/<size>/apps/`) –
+  patterns in `Denkzettel/desktop/` and `SilentInstaller/data/`.
+
 ### Later
 
 - [ ] Actually try Windows and macOS at all. Nothing has run there yet; the
