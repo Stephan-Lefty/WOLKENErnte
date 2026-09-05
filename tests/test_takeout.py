@@ -150,6 +150,53 @@ class WennEtwasNichtStimmt(unittest.TestCase):
             self.assertEqual(len(archiv), 1)
 
 
+class GrosseArchive(unittest.TestCase):
+    """ZIP64 – und das ist bei Takeout kein Sonderfall, sondern die Regel.
+
+    Ein Teilarchiv über vier Gigabyte wird im 64-Bit-Format geschrieben,
+    und Google liefert genau solche. Hier wird ZIP64 nicht über die
+    Dateigröße erzwungen, sondern über die Zahl der Einträge – über
+    65535 verlangen denselben Endsatz, kosten aber keine vier Gigabyte
+    Plattenplatz.
+
+    Nebenbei ist das die Größenordnung eines echten Bestands: 35.000
+    Fotos ergeben mit ihren Metadaten 70.000 Einträge.
+    """
+
+    ANZAHL = 70_000
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.ordner = Path(tempfile.mkdtemp())
+        cls.datei = cls.ordner / "takeout-20260905T084500Z-001.zip"
+        with zipfile.ZipFile(cls.datei, "w", allowZip64=True) as z:
+            for i in range(cls.ANZAHL):
+                z.writestr(f"Takeout/Google Fotos/2024/IMG_{i:05d}.jpg", b"x" * 20)
+
+    def test_ist_wirklich_zip64(self) -> None:
+        """Sonst prüft der Rest dieser Klasse nichts.
+
+        Ein früherer Versuch nahm ``force_zip64`` beim Schreiben einer
+        einzelnen kleinen Datei – das setzt nur den lokalen Kopf, das
+        Inhaltsverzeichnis blieb 32-bittig, und der Test war wertlos.
+        ``PK\\x06\\x06`` ist der ZIP64-Endsatz; steht er nicht drin, ist
+        es kein ZIP64.
+        """
+        self.assertIn(b"PK\x06\x06", self.datei.read_bytes())
+
+    def test_alle_eintraege_werden_gefunden(self) -> None:
+        with Archiv([self.datei]) as archiv:
+            self.assertEqual(len(archiv), self.ANZAHL)
+
+    def test_der_letzte_eintrag_ist_lesbar(self) -> None:
+        """Wahlfreier Zugriff über das Inhaltsverzeichnis – nicht
+        sequentielles Durchlaufen. Bei einem Archiv über vier Gigabyte
+        ist das der Unterschied zwischen Augenblick und Minuten."""
+        letzter = f"Takeout/Google Fotos/2024/IMG_{self.ANZAHL - 1:05d}.jpg"
+        with Archiv([self.datei]) as archiv:
+            self.assertEqual(archiv.lesen(letzter), b"x" * 20)
+
+
 class DasArchivWirdWiederGeschlossen(unittest.TestCase):
     def test_nach_dem_block_sind_die_dateien_zu(self) -> None:
         ordner = Path(tempfile.mkdtemp())
