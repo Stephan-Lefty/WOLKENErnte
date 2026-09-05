@@ -7,6 +7,33 @@ not deleted but moved down – with the date they were finished.
 
 ## Open
 
+### The order: whatever can be tested comes first
+
+Available for testing: **Nextcloud, Proton Drive and Google Photos**.
+These three come first – not because they are the easiest, but because
+everything else would be code that only works on paper. Same rule as
+MailBurg and macOS: what has not run is not declared finished.
+
+1. **Nextcloud.** The whole path once, end to end – list, fetch, compare
+   checksum, delete – without a third-party provider interfering. No
+   browser sign-in, just address, username and app password.
+2. **Proton Drive.** The most valuable test of all: the access is
+   reverse-engineered, classed as beta, and tends to break after Proton
+   updates. This is where it shows how well WOLKENErnte copes with a
+   provider that suddenly stops answering. Setup pitfall: the 2FA code
+   expires while you are still configuring.
+3. **Google Takeout.** Technically unrelated to the rest – not a fetch
+   but an archive reader. **Request the archive in good time:** Google
+   takes hours to days to produce it.
+
+Only then OneDrive, Dropbox and pCloud (they share the same browser
+sign-in flow), and finally iCloud Photos, where only half of it works
+anyway.
+
+- [ ] Start using the `erprobt` (tested) field in `anbieter.py` once a
+  provider has actually run – and make visible in the interface what is
+  merely implemented versus genuinely tested.
+
 ### Next up: talking to rclone
 
 - [ ] **Find rclone or bundle it.** Look on the machine first

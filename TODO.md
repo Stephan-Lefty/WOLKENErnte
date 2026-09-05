@@ -8,6 +8,36 @@ wurde.
 
 ## Offen
 
+### Die Reihenfolge: erst das, was sich erproben lässt
+
+Zum Ausprobieren stehen bereit: **Nextcloud, Proton Drive und Google
+Fotos**. Diese drei kommen deshalb zuerst – nicht weil sie die
+einfachsten wären, sondern weil alles andere Code wäre, der nur der
+Papierlage nach funktioniert. Dieselbe Regel wie bei MailBurg und macOS:
+Was nicht gelaufen ist, wird auch nicht als fertig ausgegeben.
+
+1. **Nextcloud.** Der ganze Weg einmal komplett – auflisten, holen,
+   Prüfsumme vergleichen, löschen –, ohne dass ein fremder Anbieter
+   dazwischenfunkt. Keine Browser-Anmeldung, nur Adresse, Benutzername
+   und App-Passwort.
+2. **Proton Drive.** Der wertvollste Test von allen: Der Zugang ist
+   nachgebaut, gilt als Beta und bricht erfahrungsgemäß nach
+   Proton-Aktualisierungen. Hier zeigt sich, wie gut WOLKENErnte mit
+   einem Anbieter umgeht, der plötzlich nicht mehr antwortet.
+   Stolperstein bei der Einrichtung: Der 2FA-Code läuft ab, während man
+   noch konfiguriert.
+3. **Google Takeout.** Technisch mit dem Rest nicht verwandt – kein
+   Abruf, sondern ein Archivleser. **Das Archiv rechtzeitig anfordern:**
+   Google braucht dafür Stunden bis Tage.
+
+Danach erst OneDrive, Dropbox und pCloud (sie teilen sich denselben
+Ablauf über die Browser-Anmeldung) und zuletzt iCloud Fotos, wo ohnehin
+nur die Hälfte geht.
+
+- [ ] Das Feld `erprobt` in `anbieter.py` benutzen, sobald ein Anbieter
+  tatsächlich gelaufen ist – und in der Oberfläche kenntlich machen, was
+  bisher nur eingebaut und was wirklich erprobt ist.
+
 ### Als Nächstes: rclone ansprechen
 
 - [ ] **rclone finden oder beilegen.** Erst auf dem Rechner suchen
