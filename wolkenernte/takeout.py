@@ -46,6 +46,20 @@ class Eintrag:
     groesse: int
     """Die entpackte Größe in Bytes."""
 
+    pruefsumme: int = 0
+    """Die CRC-32, die im ZIP ohnehin mitgeführt wird.
+
+    **Damit lassen sich Doppelgänger finden, ohne auch nur ein Byte zu
+    entpacken.** Bei einem Takeout ist das der Unterschied zwischen
+    Sekunden und einer Viertelstunde: Google legt jedes Bild, das in
+    einem Album steckt, ein zweites Mal ab.
+
+    Als alleiniger Beweis taugt sie nicht – eine CRC-32 ist zum Erkennen
+    von Übertragungsfehlern gedacht, nicht gegen absichtliche
+    Kollisionen. Zusammen mit der Größe ist sie aber ein sehr guter
+    Vorfilter; nachrechnen muss man dann nur noch die wenigen
+    Verdächtigen."""
+
     @property
     def name(self) -> str:
         """Der reine Dateiname ohne Verzeichnisse."""
@@ -95,7 +109,8 @@ class Archiv:
                     self.doppelte.append(info.filename)
                     continue
                 self._index[info.filename] = Eintrag(
-                    pfad=info.filename, quelle=teil, groesse=info.file_size
+                    pfad=info.filename, quelle=teil, groesse=info.file_size,
+                    pruefsumme=info.CRC,
                 )
 
     # -- Aufbau ------------------------------------------------------------
