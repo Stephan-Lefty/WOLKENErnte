@@ -34,3 +34,8 @@ build/
 dist/
 *.deb
 *.AppImage
+
+# Pakete, die beim Bauen entstehen
+verpacken/**/*.pkg.tar.zst
+verpacken/**/src/
+verpacken/**/pkg/

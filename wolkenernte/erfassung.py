@@ -19,13 +19,11 @@ import time
 import zlib
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
-from wolkenernte.bestand import Bestand  # noqa: E402
-from wolkenernte.lokal import MEDIEN, Ordner, jahr_aus_ordner  # noqa: E402
-from wolkenernte.metadaten import MetadatenFehler, aus_json  # noqa: E402
-from wolkenernte.takeout import Archiv as Takeout  # noqa: E402
-from wolkenernte.zuordnung import zuordnen  # noqa: E402
+from .bestand import Bestand
+from .lokal import MEDIEN, Ordner, jahr_aus_ordner
+from .metadaten import MetadatenFehler, aus_json
+from .takeout import Archiv as Takeout
+from .zuordnung import zuordnen
 
 #: Ordner, die kein Album sind, sondern Googles eigene Fächer.
 KEIN_ALBUM = {
@@ -156,10 +154,3 @@ def erfassen(archiv: Path, quellen: list[Path]) -> int:
         for name, anzahl in bestand.alben()[:12]:
             print(f"    {anzahl:>5}  {name}")
     return 0
-
-
-if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        sys.exit(f"Aufruf: {sys.argv[0]} <Archiv> <Quelle> [<Quelle> ...]")
-    raise SystemExit(erfassen(Path(sys.argv[1]).expanduser(),
-                              [Path(p).expanduser() for p in sys.argv[2:]]))

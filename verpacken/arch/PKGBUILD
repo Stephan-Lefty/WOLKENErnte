@@ -1,0 +1,78 @@
+# Baut WOLKENErnte für Arch und Manjaro aus dem Arbeitsverzeichnis.
+#
+#     cd verpacken/arch
+#     makepkg -si
+#
+# **Warum kein pip.** Auf Arch und Manjaro ist das System-Python
+# geschützt (PEP 668, `EXTERNALLY-MANAGED`); ein `pip install` bricht
+# dort ab oder verlangt `--break-system-packages` und legt Dateien
+# neben der Paketverwaltung ab. Was so installiert wurde, sieht pacman
+# nicht, und beim nächsten Python-Wechsel bleibt es liegen. Ein Paket
+# ist der Weg, den das System vorsieht.
+#
+# Gebaut wird aus dem Arbeitsverzeichnis, nicht aus einem Release: So
+# lässt sich der jeweils aktuelle Stand ausprobieren, ohne vorher
+# etwas zu veröffentlichen.
+
+pkgname=wolkenernte
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Bilder und Videos aus den Wolken holen und dort aufräumen"
+arch=('any')
+url="https://github.com/Stephan-Lefty/WOLKENErnte"
+license=('MIT')
+
+depends=('python')
+
+# Alles Weitere ist Kür und wird zur Laufzeit geprüft.
+#
+# **rclone steht hier noch bei den Empfehlungen, nicht bei den
+# Abhängigkeiten.** Sobald der Abruf aus den Wolken eingebaut ist,
+# gehört es nach `depends` - mit `rclone>=1.75.0`, denn erst dort gibt
+# es die Schnittstelle, über die ein Programm die Anmelde-Adresse für
+# den Browser erfährt. Es jetzt schon zu verlangen wäre eine Zusage,
+# die das Programm nicht einlöst.
+optdepends=(
+    'rclone>=1.75.0: Bilder aus Wolkenspeichern holen (noch nicht eingebaut)'
+    'python-pillow: Aufnahmedatum aus dem Bild lesen, wenn keine Metadaten dabei sind'
+    'ffmpeg: Vorschaubilder aus Videos (noch nicht eingebaut)'
+    'perl-image-exiftool: Metadaten von Fotos und Videos (noch nicht eingebaut)'
+)
+
+makedepends=('python-build' 'python-installer' 'python-setuptools' 'python-wheel')
+options=(!debug)
+
+# Kein `source`: gebaut wird, was im Arbeitsverzeichnis liegt.
+_wurzel="${startdir}/../.."
+
+pkgver() {
+    # Die Fassung steht ausschließlich in wolkenernte/__init__.py.
+    # Sie hier zu wiederholen ging bei MailBurg schief.
+    grep -Po '(?<=^__version__ = ")[^"]+' "${_wurzel}/wolkenernte/__init__.py"
+}
+
+build() {
+    cd "${_wurzel}"
+    python -m build --wheel --no-isolation
+}
+
+check() {
+    cd "${_wurzel}"
+    python -m unittest discover -s tests -t .
+}
+
+package() {
+    cd "${_wurzel}"
+    python -m installer --destdir="${pkgdir}" dist/${pkgname}-*.whl
+
+    install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+    install -Dm644 README.md "${pkgdir}/usr/share/doc/${pkgname}/README.md"
+    install -Dm644 docs/anbieter.md "${pkgdir}/usr/share/doc/${pkgname}/anbieter.md"
+    install -Dm644 docs/takeout.md "${pkgdir}/usr/share/doc/${pkgname}/takeout.md"
+
+    # Die Symbole an den Ort, an dem Arbeitsumgebungen sie suchen.
+    for groesse in 16 24 32 48 64 128 256 512; do
+        install -Dm644 "assets/icon-${groesse}.png" \
+            "${pkgdir}/usr/share/icons/hicolor/${groesse}x${groesse}/apps/${pkgname}.png"
+    done
+}

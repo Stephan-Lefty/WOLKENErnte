@@ -20,10 +20,8 @@ import time
 import zlib
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
-from wolkenernte.lokal import MEDIEN, Ordner  # noqa: E402
-from wolkenernte.takeout import Archiv as Takeout  # noqa: E402
+from .lokal import MEDIEN, Ordner
+from .takeout import Archiv as Takeout
 
 
 def _ist_medium(name: str) -> bool:
@@ -105,10 +103,3 @@ def pruefen(archiv: Path, quellen: list[Path]) -> int:
         print(f"    ... und {len(fehlend) - 40} weitere")
     print("\n  Nichts löschen, bevor das geklärt ist.")
     return 1
-
-
-if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        sys.exit(f"Aufruf: {sys.argv[0]} <Archiv> <Quelle> [<Quelle> ...]")
-    raise SystemExit(pruefen(Path(sys.argv[1]).expanduser(),
-                             [Path(p).expanduser() for p in sys.argv[2:]]))

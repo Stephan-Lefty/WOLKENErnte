@@ -137,26 +137,26 @@ class Albumerkennung(unittest.TestCase):
 
     def setUp(self) -> None:
         import sys
-        sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "werkzeuge"))
+        sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
     def test_jahresordner_ist_kein_album(self) -> None:
-        from erfassen import albumname
+        from wolkenernte.erfassung import albumname
         self.assertIsNone(albumname("Fotos von 2023/IMG.jpg"))
         self.assertIsNone(albumname("Photos from 2019/IMG.jpg"))
 
     def test_googles_faecher_sind_keine_alben(self) -> None:
-        from erfassen import albumname
+        from wolkenernte.erfassung import albumname
         for ordner in ("Archiv", "Papierkorb", "Failed Videos", "Takeout"):
             with self.subTest(ordner):
                 self.assertIsNone(albumname(f"{ordner}/IMG.jpg"))
 
     def test_echtes_album(self) -> None:
-        from erfassen import albumname
+        from wolkenernte.erfassung import albumname
         self.assertEqual(albumname("Mein Viertel/IMG.jpg"), "Mein Viertel")
 
     def test_album_mit_jahreszahl_bleibt_album(self) -> None:
         """»Nordsee 2023« enthält eine Jahreszahl, ist aber ein Album."""
-        from erfassen import albumname
+        from wolkenernte.erfassung import albumname
         self.assertEqual(albumname("Nordsee 2023/IMG.jpg"), "Nordsee 2023")
 
 

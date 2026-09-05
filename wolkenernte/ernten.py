@@ -22,18 +22,16 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
-from wolkenernte.archiv import uebernehmen  # noqa: E402
-from wolkenernte.lokal import (  # noqa: E402
+from .archiv import uebernehmen
+from .lokal import (
     MEDIEN,
     Ordner,
     exif_datum,
     jahr_aus_ordner,
 )
-from wolkenernte.metadaten import Angaben, MetadatenFehler, aus_json  # noqa: E402
-from wolkenernte.takeout import Archiv as Takeout  # noqa: E402
-from wolkenernte.zuordnung import Zuordnung, zuordnen  # noqa: E402
+from .metadaten import Angaben, MetadatenFehler, aus_json
+from .takeout import Archiv as Takeout
+from .zuordnung import Zuordnung, zuordnen
 
 
 def quelle_oeffnen(pfad: Path):
@@ -161,10 +159,3 @@ def ernten(ziel: Path, quellen: list[Path]) -> int:
     print(f"  {gesamt_bytes/1e9:.2f} GB in {(time.time()-t_start)/60:.1f} Minuten")
     print(f"  Ziel: {ziel}")
     return 0
-
-
-if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        sys.exit(f"Aufruf: {sys.argv[0]} <Ziel> <Quelle> [<Quelle> ...]")
-    raise SystemExit(ernten(Path(sys.argv[1]).expanduser(),
-                            [Path(p).expanduser() for p in sys.argv[2:]]))
