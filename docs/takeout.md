@@ -56,6 +56,22 @@ kommen groß **und** klein vor – 4.616 mal `.jpg`, 1.943 mal `.JPG`. Die
 Metadatendatei übernimmt die Schreibweise des Bildes, weshalb genau
 verglichen werden muss und nicht in Kleinschreibung.
 
+Was am Ende dabei herauskommt – alle 7.331 Dateien in 2,3 Sekunden
+ausgewertet, ohne Auspacken:
+
+| | |
+|---|---|
+| sicher zugeordnet | 7.276 (99,2 %) |
+| unsicher (bearbeitete Fassungen) | 55 (0,8 %) |
+| ohne Metadaten | 0 |
+| **mit Aufnahmedatum** | 7.276 (99,2 %) |
+| **mit Ortsangabe** | 2.985 (40,7 %) |
+| unlesbare Metadatendateien | 0 |
+
+**Nur vier von zehn Bildern tragen eine Ortsangabe.** Das ist kein
+Fehler des Lesers, sondern der Normalfall: Ältere Aufnahmen, Bildschirm-
+fotos und alles aus Messengern haben nie eine gehabt.
+
 ## Die Metadatendateien
 
 Neben jedem Bild liegt eine JSON mit Aufnahmedatum, Ort und Titel. Ihr
