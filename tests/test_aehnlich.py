@@ -15,6 +15,15 @@ except ImportError:
     PILLOW = False
 
 
+#: Zwei Fingerabdrücke mit echter Struktur: acht verschiedene Zeilen.
+#:
+#: Hier standen einmal ``0x0F0F...`` und ``0x3333...`` – Werte mit acht
+#: **gleichen** Zeilen. Seit die Suche solche als nichtssagend verwirft,
+#: prüften die Tests damit nichts mehr.
+MUSTER_A = 0x0F1E2D3C4B5A6978
+MUSTER_B = 0xC3A5961E7834D20F
+
+
 def _bild(pfad: Path, muster, groesse=(120, 120), qualitaet=95) -> Path:
     """Ein Testbild aus einer Funktion (u, v) -> Helligkeit.
 
@@ -102,19 +111,19 @@ class DerFingerabdruck(unittest.TestCase):
 
 class DieGruppen(unittest.TestCase):
     def test_gleiche_werte_kommen_zusammen(self) -> None:
-        ergebnis = gruppen([("a", 0x0F0F0F0F0F0F0F0F), ("b", 0x0F0F0F0F0F0F0F0F),
-                            ("c", 0x3333333333333333)])
+        ergebnis = gruppen([("a", MUSTER_A), ("b", MUSTER_A),
+                            ("c", MUSTER_B)])
         self.assertEqual(len(ergebnis), 1)
         self.assertEqual(set(ergebnis[0]), {"a", "b"})
 
     def test_ein_bit_unterschied_reicht_noch(self) -> None:
-        ergebnis = gruppen([("a", 0x0F0F0F0F0F0F0F0F),
-                            ("b", 0x0F0F0F0F0F0F0F0E)])
+        ergebnis = gruppen([("a", MUSTER_A),
+                            ("b", MUSTER_A ^ 1)])
         self.assertEqual(len(ergebnis), 1)
 
     def test_zu_weit_auseinander_bleibt_getrennt(self) -> None:
-        self.assertEqual(gruppen([("a", 0x0F0F0F0F0F0F0F0F),
-                                  ("b", 0xF0F0F0F0F0F0F0F0)]), [])
+        self.assertEqual(gruppen([("a", MUSTER_A),
+                                  ("b", MUSTER_B)]), [])
 
     def test_einzelgaenger_kommen_nicht_vor(self) -> None:
         """Gezählt werden unterschiedliche *Bit*, nicht Zahlengröße.
@@ -122,22 +131,22 @@ class DieGruppen(unittest.TestCase):
         Hier stand einmal ``1`` gegen ``1 << 40`` - das sind zwei Bit
         Unterschied und damit ähnlich, obwohl die Zahlen weit
         auseinanderliegen."""
-        self.assertEqual(gruppen([("a", 0x0F0F0F0F0F0F0F0F),
-                                  ("b", 0x3333333333333333)]), [])
+        self.assertEqual(gruppen([("a", MUSTER_A),
+                                  ("b", MUSTER_B)]), [])
 
     def test_ketten_werden_zusammengefasst(self) -> None:
         """a ähnelt b, b ähnelt c – dann gehören alle drei zusammen."""
-        ergebnis = gruppen([("a", 0x0F0F0F0F0F0F0F00),
-                            ("b", 0x0F0F0F0F0F0F0F01),
-                            ("c", 0x0F0F0F0F0F0F0F03)])
+        ergebnis = gruppen([("a", MUSTER_A ^ 0x0F),
+                            ("b", MUSTER_A ^ 0x0E),
+                            ("c", MUSTER_A ^ 0x0C)])
         self.assertEqual(len(ergebnis), 1)
         self.assertEqual(set(ergebnis[0]), {"a", "b", "c"})
 
     def test_groesste_gruppe_zuerst(self) -> None:
         ergebnis = gruppen([
-            ("a", 0x0F0F0F0F0F0F0F0F), ("b", 0x0F0F0F0F0F0F0F0F),
-            ("c", 0x0F0F0F0F0F0F0F0F),
-            ("x", 0x3333333333333333), ("y", 0x3333333333333333),
+            ("a", MUSTER_A), ("b", MUSTER_A),
+            ("c", MUSTER_A),
+            ("x", MUSTER_B), ("y", MUSTER_B),
         ])
         self.assertEqual(len(ergebnis[0]), 3)
         self.assertEqual(len(ergebnis[1]), 2)
@@ -172,6 +181,40 @@ class DieGruppen(unittest.TestCase):
                                   ("leer", 0)]), [])
         self.assertEqual(gruppen([("voll", (1 << 64) - 1),
                                   ("auch", (1 << 64) - 1)]), [])
+
+
+class NichtssagendeFingerabdruecke(unittest.TestCase):
+    """Ein Fingerabdruck kann viele Bit haben und trotzdem nichts sagen.
+
+    Der Fall aus einem echten Bestand: Zwei Aufnahmen mit schlichtem
+    Hell-Dunkel-Verlauf ergaben beide ``00001111``, achtmal
+    untereinander – 32 gesetzte Bit, aber keine senkrechte Struktur.
+    Die Bilder stammten aus verschiedenen Jahren und zeigten
+    Verschiedenes; die Suche spannte sie trotzdem zusammen.
+    """
+
+    def test_einfarbig_ist_nichtssagend(self) -> None:
+        from wolkenernte.aehnlich import aussagekraeftig
+        self.assertFalse(aussagekraeftig(0))
+        self.assertFalse(aussagekraeftig((1 << 64) - 1))
+
+    def test_lauter_gleiche_zeilen_sind_nichtssagend(self) -> None:
+        from wolkenernte.aehnlich import aussagekraeftig
+        # 0b00001111, achtmal untereinander.
+        self.assertFalse(aussagekraeftig(0x0F0F0F0F0F0F0F0F))
+
+    def test_zwei_verschiedene_zeilen_reichen_nicht(self) -> None:
+        from wolkenernte.aehnlich import aussagekraeftig
+        self.assertFalse(aussagekraeftig(0x0F0FF0F00F0FF0F0))
+
+    def test_echte_struktur_zaehlt(self) -> None:
+        from wolkenernte.aehnlich import aussagekraeftig
+        self.assertTrue(aussagekraeftig(MUSTER_A))
+
+    def test_gleichfoermige_bilder_bilden_keine_gruppe(self) -> None:
+        """Der Fall aus dem echten Bestand: zwei Verläufe, kein Motiv."""
+        self.assertEqual(gruppen([("a", 0x0F0F0F0F0F0F0F0F),
+                                  ("b", 0x0F0F0F0F0F0F0F0E)]), [])
 
 
 if __name__ == "__main__":

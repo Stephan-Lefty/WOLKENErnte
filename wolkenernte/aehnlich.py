@@ -57,6 +57,22 @@ _BLOCKBREITE = 16
 #: Inhalt liegt weit darüber.
 MINDESTSTRUKTUR = 6
 
+#: Wie viele der acht Zeilen sich mindestens voneinander unterscheiden
+#: müssen.
+#:
+#: **Die Bitzahl allein genügt nicht.** Ein Bild mit einem schlichten
+#: Hell-Dunkel-Verlauf von links nach rechts ergibt in jeder Zeile
+#: dasselbe Muster – etwa ``00001111`` achtmal untereinander. Das sind
+#: 32 gesetzte Bit, die Mindestprüfung oben ist also zufrieden, und
+#: trotzdem sagt der Fingerabdruck nichts über das Motiv: **Jedes**
+#: Bild mit ähnlichem Verlauf bekommt denselben Wert.
+#:
+#: Bei einem echten Bestand hat genau das zwei Aufnahmen aus 2023 und
+#: 2026 zusammengespannt, die nichts miteinander zu tun hatten. Drei
+#: verschiedene Zeilen sind wenig verlangt und schließen nur die Fälle
+#: aus, in denen sich das Bild senkrecht praktisch nicht ändert.
+MINDESTZEILEN = 3
+
 
 def fingerabdruck(pfad: Path) -> int | None:
     """Der Differenz-Hash eines Bildes, oder ``None``.
@@ -87,6 +103,22 @@ def fingerabdruck(pfad: Path) -> int | None:
     return wert
 
 
+def aussagekraeftig(wert: int) -> bool:
+    """Ob ein Fingerabdruck überhaupt etwas über das Motiv sagt.
+
+    Zwei Prüfungen, und beide sind nötig: genug gesetzte **und** genug
+    ungesetzte Bit (sonst ist das Bild einfarbig), und genug
+    verschiedene **Zeilen** (sonst ändert sich das Bild senkrecht
+    nicht).
+    """
+    if wert.bit_count() < MINDESTSTRUKTUR:
+        return False
+    if (~wert & ((1 << 64) - 1)).bit_count() < MINDESTSTRUKTUR:
+        return False
+    zeilen = {(wert >> (i * 8)) & 0xFF for i in range(HOEHE)}
+    return len(zeilen) >= MINDESTZEILEN
+
+
 def abstand(a: int, b: int) -> int:
     """In wie vielen Bit sich zwei Fingerabdrücke unterscheiden."""
     return (a ^ b).bit_count()
@@ -104,11 +136,10 @@ def gruppen(
     – siehe die Erklärung oben. Nur die wenigen Kandidaten, die sich
     einen Block teilen, werden wirklich verglichen.
     """
-    # Strukturlose Bilder fliegen vorher heraus. Sonst bilden weiße
-    # Wände und schwarze Videobilder eine einzige Riesengruppe.
-    eintraege = [(p, w) for p, w in eintraege
-                 if w.bit_count() >= MINDESTSTRUKTUR
-                 and (~w & ((1 << 64) - 1)).bit_count() >= MINDESTSTRUKTUR]
+    # Nichtssagende Fingerabdrücke fliegen vorher heraus - weiße Wände,
+    # schwarze Videobilder, schlichte Verläufe. Sonst bilden sie eine
+    # einzige Riesengruppe aus Bildern, die nichts gemeinsam haben.
+    eintraege = [(p, w) for p, w in eintraege if aussagekraeftig(w)]
 
     faecher: list[dict[int, list[int]]] = [defaultdict(list) for _ in range(_BLOECKE)]
     for nummer, (_, wert) in enumerate(eintraege):

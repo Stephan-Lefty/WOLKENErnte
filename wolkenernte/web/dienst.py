@@ -109,7 +109,8 @@ class Behandler(http.server.BaseHTTPRequestHandler):
             wort = eins("q") or ""
             self._seite(seiten.suche(liste, wort, liste.suchen(wort)))
         elif zerlegt.path == "/doppelt":
-            self._doppelt(liste)
+            nummer = eins("seite")
+            self._doppelt(liste, int(nummer) if (nummer or "").isdigit() else 1)
         elif zerlegt.path == "/bild":
             self._einzeln(liste, eins("p"))
         elif zerlegt.path == "/vorschau":
@@ -124,7 +125,7 @@ class Behandler(http.server.BaseHTTPRequestHandler):
         else:
             self._fehler("Diese Seite gibt es nicht.")
 
-    def _doppelt(self, liste) -> None:
+    def _doppelt(self, liste, seite: int = 1) -> None:
         """Gruppen ähnlicher Bilder.
 
         Gerechnet wird hier **nicht** – das dauert Minuten und darf
@@ -132,7 +133,7 @@ class Behandler(http.server.BaseHTTPRequestHandler):
         Seite das und verweist auf den Befehl.
         """
         from ..bestand import ORT as DB_ORT
-        from ..doppelgaenger import finden
+        from ..doppelgaenger import einstufen, finden
 
         if not (liste.archiv / DB_ORT).exists():
             self._seite(seiten.doppelt(liste, [], fertig=False))
@@ -149,8 +150,8 @@ class Behandler(http.server.BaseHTTPRequestHandler):
         for pfade in finden(liste.archiv):
             bilder = [b for b in (liste.bei(p) for p in pfade) if b]
             if len(bilder) > 1:
-                gruppen.append(bilder)
-        self._seite(seiten.doppelt(liste, gruppen, fertig=True))
+                gruppen.append((bilder, einstufen(pfade)))
+        self._seite(seiten.doppelt(liste, gruppen, fertig=True, seite=seite))
 
     def _raster(self, liste, werte, eins) -> None:
         jahr = None

@@ -4,6 +4,54 @@
 
 Alle nennenswerten Änderungen an WOLKENErnte. Neueste zuerst.
 
+## 0.2.0 – 2026-09-05
+
+**Eine Oberfläche im Browser.** `wolkenernte oberflaeche` startet einen
+Dienst, der nur auf diesem Rechner erreichbar ist: Bilder in Kacheln,
+Filter nach Jahr und Album, Einzelansicht mit Ort und Datum, Videos
+spielt der Browser ab. Keine Fensterbibliothek nötig – das wären über
+hundert Megabyte, und die Videowiedergabe macht auf jeder Plattform
+eigene Schwierigkeiten.
+
+**Suche** über Dateinamen, Titel, Alben und Datum. **Doppelgängersuche**
+über einen selbstgebauten Wahrnehmungs-Fingerabdruck, der auch dasselbe
+Foto in zwei Auflösungen findet.
+
+**Die Datenbank neben dem Archiv** hält fest, was nicht in die Bilddatei
+passt: Ortsangaben, Titel, Alben, Favoriten. Ohne sie wären beim Löschen
+der Quellen 3.770 Ortsangaben verloren gewesen – Google entfernt sie
+beim Hochladen aus dem Bild.
+
+**Menüeintrag unter »Grafik«** und ein PKGBUILD für Arch und Manjaro.
+
+An einem echten Bestand: 14.770 Bilder aus 47 GB Quellen, 29 GB im
+Archiv, 13.605 bytegleiche Kopien übergangen. Von 1.708 Gruppen
+ähnlicher Bilder zeigen 1.332 dieselbe Aufnahme in mehreren Fassungen;
+dort sind 1.447 Fassungen überzählig.
+
+### Fehler, die erst das Ausprobieren zeigte
+
+Ein `replace(",", ".")` für Tausenderpunkte lief über die ganze Seite
+und zerlegte den `viewport`-Eintrag – auf dem Handy unbrauchbar.
+
+SQLite kennt nur vorzeichenbehaftete 64-Bit-Zahlen; der Fingerabdruck
+nutzt alle 64. Die Hälfte aller Bilder brach den Lauf ab.
+
+Bilder ohne Aufnahmedatum standen in der Jahresliste unter »2026« – sie
+tragen den Zeitstempel der Übernahme. Jetzt gesondert gezählt: 291.
+
+Bilder mit schlichtem Hell-Dunkel-Verlauf ergeben achtmal dasselbe
+Zeilenmuster und galten als »ähnlich«, obwohl sie nichts gemeinsam
+hatten. 468 solcher Fingerabdrücke bleiben jetzt draußen.
+
+Ein Regex zum Vergleichen von Dateinamen entfernte `_<Ziffern>` und
+machte aus `IMG_20210110_113920` den Stamm `img` – jedes Kamerabild
+hätte denselben gehabt.
+
+Und die Doppelgängerseite zeigte 60 Gruppen auf einmal, über
+vierhundert Vorschaubilder; der Browser lief in eine
+Zeitüberschreitung. Jetzt zwanzig je Seite.
+
 ## 0.1.0 – 2026-09-05
 
 Der erste Stand. Ein Gerüst mit genau einer Fähigkeit – aber der, die

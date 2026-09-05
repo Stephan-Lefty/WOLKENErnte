@@ -44,7 +44,11 @@ header input:focus {{ outline: 2px solid #fff; background: rgba(255,255,255,.3);
 
 .gruppe {{ margin: 0 0 1.6rem; padding: 1rem; border-radius: 10px;
   background: var(--flaeche); }}
-.gruppe h3 {{ margin: 0 0 .8rem; font-size: .95rem; font-weight: 600; }}
+.gruppe h3 {{ margin: 0 0 .8rem; font-size: .95rem; font-weight: 600;
+  display: flex; gap: .6rem; align-items: center; }}
+.stufe {{ font-size: .75rem; font-weight: 500; padding: .1rem .6rem;
+  border-radius: 999px; background: var(--blau); color: #fff; }}
+.stufe.lose {{ background: var(--linie); color: var(--leise); }}
 .gruppe .raster {{ grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }}
 .gruppe .beste {{ outline: 2px solid var(--leucht); }}
 .hinweis {{ padding: 1rem 1.2rem; border-radius: 10px; margin-bottom: 1.5rem;
@@ -288,8 +292,18 @@ def suche(liste: Bestandsliste, wort: str, treffer: list[Bild]) -> str:
             + _navigation(liste, None, None) + inhalt + _fuss())
 
 
-def doppelt(liste: Bestandsliste, gruppen: list[list[Bild]],
-            fertig: bool) -> str:
+#: Wie viele Gruppen eine Seite zeigt.
+#:
+#: **Zwanzig, nicht sechzig.** Bei sechzig Gruppen mit bis zu zwanzig
+#: Bildern standen über vierhundert Vorschaubilder auf einer Seite; der
+#: Browser brauchte dafür so lange, dass er beim Prüfen in eine
+#: Zeitüberschreitung lief. Was ein Programm nicht darstellen kann,
+#: kann ein Mensch erst recht nicht vergleichen.
+GRUPPEN_JE_SEITE = 20
+
+
+def doppelt(liste: Bestandsliste, gruppen: list[tuple[list[Bild], str]],
+            fertig: bool, seite: int = 1) -> str:
     """Gruppen ähnlicher Bilder, jede für sich zum Vergleichen."""
     if not fertig:
         inhalt = ('<main><div class="hinweis"><b>Die Fingerabdrücke '
@@ -309,19 +323,33 @@ def doppelt(liste: Bestandsliste, gruppen: list[list[Bild]],
         return (_kopf("Doppelgänger", liste) + _navigation(liste, None, None)
                 + inhalt + _fuss())
 
-    ueberzaehlig = sum(len(g) - 1 for g in gruppen)
-    teile = [f'<main><h2>{zahl(len(gruppen))} Gruppen, '
-             f'{zahl(ueberzaehlig)} überzählige Fassungen</h2>'
-             f'<div class="hinweis">Diese Bilder <b>sehen</b> gleich aus, '
-             f'sind aber verschiedene Dateien – meist dasselbe Foto in '
-             f'zwei Auflösungen. Umrandet ist jeweils die größte Fassung. '
+    sicher = [g for g, stufe in gruppen if stufe == "dieselbe Aufnahme"]
+    ueberzaehlig = sum(len(g) - 1 for g in sicher)
+    teile = [f'<main><h2>{zahl(len(gruppen))} Gruppen</h2>'
+             f'<div class="hinweis">'
+             f'<b>{zahl(len(sicher))} Gruppen zeigen dieselbe Aufnahme</b> in '
+             f'mehreren Fassungen – erkennbar am gleichen Dateinamen unter '
+             f'Anhängseln wie <code>(1)</code> oder <code>-bearbeitet</code>. '
+             f'Dort sind {zahl(ueberzaehlig)} Fassungen überzählig.<br><br>'
+             f'Die übrigen <b>sehen nur ähnlich aus</b> – meist '
+             f'Serienaufnahmen, die verschiedene Augenblicke zeigen. '
+             f'Umrandet ist jeweils die größte Fassung. '
              f'<b>Es wird nichts gelöscht;</b> die Ansicht ist zum '
              f'Vergleichen da.</div>']
 
-    for nummer, gruppe in enumerate(gruppen[:60], 1):
+    seiten_zahl = max(1, -(-len(gruppen) // GRUPPEN_JE_SEITE))
+    seite = max(1, min(seite, seiten_zahl))
+    ausschnitt = gruppen[(seite - 1) * GRUPPEN_JE_SEITE: seite * GRUPPEN_JE_SEITE]
+
+    for nummer, (gruppe, stufe) in enumerate(
+        ausschnitt, (seite - 1) * GRUPPEN_JE_SEITE + 1
+    ):
         nach_groesse = sorted(gruppe, key=lambda b: -b.groesse)
+        lose = "" if stufe == "dieselbe Aufnahme" else " lose"
         teile.append(f'<div class="gruppe"><h3>Gruppe {nummer} · '
-                     f'{len(gruppe)} Fassungen</h3><div class="raster">')
+                     f'{len(gruppe)} Fassungen '
+                     f'<span class="stufe{lose}">{escape(stufe)}</span></h3>'
+                     f'<div class="raster">')
         for stelle, bild in enumerate(nach_groesse):
             p = quote(bild.pfad)
             rand = " beste" if stelle == 0 else ""
@@ -333,8 +361,14 @@ def doppelt(liste: Bestandsliste, gruppen: list[list[Bild]],
                 f'{escape(bild.zeit.strftime("%d.%m.%Y"))}</span></a>')
         teile.append("</div></div>")
 
-    if len(gruppen) > 60:
-        teile.append(f"<p>… und {zahl(len(gruppen) - 60)} weitere Gruppen.</p>")
+    if seiten_zahl > 1:
+        teile.append('<div class="blaetter">')
+        if seite > 1:
+            teile.append(f'<a href="/doppelt?seite={seite-1}">← zurück</a>')
+        teile.append(f'<span class="jetzt">Seite {seite} von {seiten_zahl}</span>')
+        if seite < seiten_zahl:
+            teile.append(f'<a href="/doppelt?seite={seite+1}">weiter →</a>')
+        teile.append("</div>")
     teile.append("</main>")
 
     return (_kopf("Doppelgänger", liste) + _navigation(liste, None, None)
