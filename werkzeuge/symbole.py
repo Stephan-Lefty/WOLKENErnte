@@ -29,11 +29,22 @@ ASSETS = Path(__file__).resolve().parent.parent / "assets"
 #: Die Grenzen sind erprobt, nicht geraten: Bei 48 Pixeln trägt das
 #: volle Bild noch, bei 32 zerfällt der Filmstreifen zu einem grauen
 #: Rechteck, und bei 16 frisst die Bildkachel die Wolke von innen auf.
+#:
+#: **Ab 48 Pixeln gilt das Original**, ``icon-quelle.png``. Es ist von
+#: Hand entworfen und wird nur verkleinert, nicht nachgebaut. Ein
+#: früherer Versuch, es als SVG nachzuzeichnen, geriet zu einer eigenen
+#: Auslegung - andere Kachelgrößen, ein Gipfel statt zwei, sechs statt
+#: acht Filmlöcher. Wer hier etwas ändern will, ändert bitte die
+#: Bilddatei, nicht diesen Eintrag.
 QUELLEN: dict[str, tuple[int, ...]] = {
-    "icon.svg": (48, 64, 128, 256, 512, 1024),
+    "icon-quelle.png": (48, 64, 128, 256, 512, 1024),
     "icon-klein.svg": (24, 32),
     "icon-winzig.svg": (16,),
 }
+
+#: Aus welcher Quelle ``icon.png`` entsteht - die Fassung, die READMEs
+#: und Paketbauer erwarten.
+HAUPTBILD = ("icon-quelle.png", 512)
 
 #: Was in die .ico für Windows kommt.
 ICO_GROESSEN = (16, 32, 48, 64, 128, 256)
@@ -46,9 +57,30 @@ def _werkzeug(name: str) -> str:
     return pfad
 
 
+def _umrechnen(quelle: Path, groesse: int, ziel: Path) -> None:
+    """Eine Quelle in einer Größe ablegen.
+
+    SVG wird gerastert, PNG verkleinert. Beim Verkleinern ausdrücklich
+    ``-filter Lanczos``: ImageMagick wählt sonst je nach Fassung einen
+    anderen Filter, und dann sähe dasselbe Symbol auf zwei Rechnern
+    unterschiedlich scharf aus.
+    """
+    if quelle.suffix.lower() == ".svg":
+        subprocess.run(
+            [_werkzeug("rsvg-convert"), "-w", str(groesse), "-h", str(groesse),
+             str(quelle), "-o", str(ziel)],
+            check=True,
+        )
+    else:
+        subprocess.run(
+            [_werkzeug("magick"), str(quelle), "-filter", "Lanczos",
+             "-resize", f"{groesse}x{groesse}", "-strip", str(ziel)],
+            check=True,
+        )
+
+
 def erzeugen() -> list[Path]:
     """Alle PNG erzeugen. Gibt die geschriebenen Dateien zurück."""
-    rsvg = _werkzeug("rsvg-convert")
     geschrieben: list[Path] = []
 
     for quelle, groessen in QUELLEN.items():
@@ -57,22 +89,15 @@ def erzeugen() -> list[Path]:
             sys.exit(f"{pfad} fehlt.")
         for groesse in groessen:
             ziel = ASSETS / f"icon-{groesse}.png"
-            subprocess.run(
-                [rsvg, "-w", str(groesse), "-h", str(groesse),
-                 str(pfad), "-o", str(ziel)],
-                check=True,
-            )
+            _umrechnen(pfad, groesse, ziel)
             geschrieben.append(ziel)
             print(f"{ziel.name:<16} aus {quelle}")
 
-    # icon.png ist die Fassung, die READMEs und Paketbauer erwarten.
+    name, groesse = HAUPTBILD
     ziel = ASSETS / "icon.png"
-    subprocess.run(
-        [rsvg, "-w", "512", "-h", "512", str(ASSETS / "icon.svg"), "-o", str(ziel)],
-        check=True,
-    )
+    _umrechnen(ASSETS / name, groesse, ziel)
     geschrieben.append(ziel)
-    print(f"{ziel.name:<16} aus icon.svg")
+    print(f"{ziel.name:<16} aus {name}")
     return geschrieben
 
 
