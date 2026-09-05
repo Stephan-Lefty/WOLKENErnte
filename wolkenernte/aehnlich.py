@@ -90,7 +90,12 @@ def fingerabdruck(pfad: Path) -> int | None:
         with Image.open(pfad) as bild:
             bild.draft("L", (BREITE * 4, HOEHE * 4))
             klein = bild.convert("L").resize((BREITE, HOEHE), Image.Resampling.LANCZOS)
-            punkte = list(klein.getdata())
+            # get_flattened_data() ab Pillow 11.3; getdata() verschwindet
+            # mit Pillow 14 (Oktober 2027). Beides ansprechen, damit das
+            # Programm weder heute auf älteren Fassungen noch übermorgen
+            # auf neueren stehenbleibt.
+            hole = getattr(klein, "get_flattened_data", None) or klein.getdata
+            punkte = list(hole())
     except Exception:
         return None
 

@@ -53,6 +53,11 @@ pkgver() {
 
 build() {
     cd "${_wurzel}"
+    # **dist/ vorher leeren.** Sonst sammeln sich dort die Pakete
+    # früherer Fassungen, package() findet mehrere und der Installer
+    # bricht beim zweiten mit "File already exists: .../bin/wolkenernte"
+    # ab - er hat das Startskript da schon geschrieben.
+    rm -rf dist
     python -m build --wheel --no-isolation
 }
 
@@ -63,7 +68,8 @@ check() {
 
 package() {
     cd "${_wurzel}"
-    python -m installer --destdir="${pkgdir}" dist/${pkgname}-*.whl
+    python -m installer --destdir="${pkgdir}" \
+        "dist/${pkgname}-${pkgver}-py3-none-any.whl"
 
     install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
     install -Dm644 README.md "${pkgdir}/usr/share/doc/${pkgname}/README.md"
