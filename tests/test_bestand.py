@@ -162,3 +162,49 @@ class Albumerkennung(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DerFingerabdruckPasstInSqlite(unittest.TestCase):
+    """SQLite kennt nur vorzeichenbehaftete 64-Bit-Zahlen.
+
+    Der Fingerabdruck nutzt alle 64 Bit ohne Vorzeichen. Ohne
+    Umrechnung scheitert jeder Wert mit gesetztem oberstem Bit – das
+    ist ungefähr die Hälfte aller Bilder, und der Fehler tritt erst
+    mitten in einem Lauf über zehntausende Dateien auf.
+    """
+
+    def setUp(self) -> None:
+        self.b = Bestand(Path(tempfile.mkdtemp()))
+
+    def tearDown(self) -> None:
+        self.b.schliessen()
+
+    def test_kleiner_wert(self) -> None:
+        kennung = self.b.bild_merken(100, 1)
+        self.b.fingerabdruck_merken(kennung, 12345)
+        self.assertEqual(self.b.fingerabdruecke(), [])  # ohne Pfad kein Eintrag
+
+    def test_groesster_moeglicher_wert(self) -> None:
+        kennung = self.b.bild_merken(100, 1, pfad="x.jpg")
+        self.b.fingerabdruck_merken(kennung, (1 << 64) - 1)
+        self.assertEqual(self.b.fingerabdruecke(), [("x.jpg", (1 << 64) - 1)])
+
+    def test_oberstes_bit_gesetzt(self) -> None:
+        wert = 1 << 63
+        kennung = self.b.bild_merken(100, 1, pfad="x.jpg")
+        self.b.fingerabdruck_merken(kennung, wert)
+        self.assertEqual(self.b.fingerabdruecke()[0][1], wert)
+
+    def test_hin_und_zurueck_fuer_viele_werte(self) -> None:
+        for wert in (0, 1, (1 << 63) - 1, 1 << 63, (1 << 64) - 1, 0xDEADBEEFCAFEBABE):
+            with self.subTest(hex(wert)):
+                self.assertEqual(
+                    self.b._ohne_vorzeichen(self.b._als_vorzeichen(wert)), wert
+                )
+
+    def test_null_ist_ein_gueltiger_wert(self) -> None:
+        """0 heißt »gerechnet, aber ohne Aussage« – nicht »fehlt noch«."""
+        kennung = self.b.bild_merken(100, 1, pfad="x.jpg")
+        self.b.fingerabdruck_merken(kennung, 0)
+        self.assertEqual(self.b.ohne_fingerabdruck(), [])
+        self.assertEqual(self.b.fingerabdruecke(), [("x.jpg", 0)])

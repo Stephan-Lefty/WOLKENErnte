@@ -70,6 +70,10 @@ package() {
     install -Dm644 docs/anbieter.md "${pkgdir}/usr/share/doc/${pkgname}/anbieter.md"
     install -Dm644 docs/takeout.md "${pkgdir}/usr/share/doc/${pkgname}/takeout.md"
 
+    # Der Menüeintrag - unter "Grafik" im Anwendungsmenü.
+    install -Dm644 verpacken/wolkenernte.desktop \
+        "${pkgdir}/usr/share/applications/${pkgname}.desktop"
+
     # Die Symbole an den Ort, an dem Arbeitsumgebungen sie suchen.
     for groesse in 16 24 32 48 64 128 256 512; do
         install -Dm644 "assets/icon-${groesse}.png" \

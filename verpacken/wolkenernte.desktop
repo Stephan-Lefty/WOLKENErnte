@@ -1,0 +1,30 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=WOLKENErnte
+GenericName=Bildbetrachter
+GenericName[en]=Photo viewer
+Comment=Bilder und Videos aus den Wolken holen und dort aufräumen
+Comment[en]=Harvest photos and videos from your clouds and clear them out there
+
+# Der Eintrag startet den Webdienst, der daraufhin den Browser öffnet.
+# %f nimmt einen Ordner entgegen, den ein Dateimanager übergibt - so
+# lässt sich ein Archiv auch per "Öffnen mit" anzeigen.
+#
+# Ohne Ordnerangabe nimmt das Programm den zuletzt benutzten. Beim
+# allerersten Start gibt es keinen; dann schreibt es einen Hinweis ins
+# Terminal - deshalb Terminal=true. Sobald die Oberfläche selbst nach
+# dem Archiv fragen kann, gehört hier false hin.
+Exec=wolkenernte oberflaeche %f
+Terminal=true
+
+Icon=wolkenernte
+StartupNotify=true
+
+# Unter "Grafik" im Anwendungsmenü. Photography ist die zusätzliche
+# Einordnung, die Fotoverwaltungen tragen; Viewer sagt, dass es ein
+# Betrachter ist und kein Bearbeitungsprogramm.
+Categories=Graphics;Photography;Viewer;
+Keywords=Fotos;Bilder;Videos;Cloud;Google;Archiv;Doppelgänger;Photos;Backup;
+
+MimeType=inode/directory;

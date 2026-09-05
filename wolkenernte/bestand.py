@@ -71,6 +71,22 @@ CREATE INDEX IF NOT EXISTS bild_zeit ON bild(aufgenommen);
 CREATE INDEX IF NOT EXISTS bild_ort  ON bild(breite, laenge);
 """
 
+#: Nachträglich hinzugekommene Spalten.
+#:
+#: SQLite kennt kein ``ADD COLUMN IF NOT EXISTS``; deshalb wird
+#: nachgesehen und nur ergänzt, was fehlt. So bleibt eine Datenbank
+#: benutzbar, die mit einer älteren Fassung angelegt wurde – bei einem
+#: Bestand, für den 29 GB durchgerechnet wurden, wäre ein Neuanlegen
+#: eine Zumutung.
+NACHRUESTEN = {
+    "bild": {
+        # Der Wahrnehmungs-Fingerabdruck aus wolkenernte.aehnlich.
+        # NULL heißt: noch nicht gerechnet. 0 heißt: gerechnet, aber
+        # ohne Aussage - ein strukturloses Bild.
+        "fingerabdruck": "INTEGER",
+    },
+}
+
 
 @dataclass
 class Zahlen:
@@ -99,7 +115,62 @@ class Bestand:
         self.db = sqlite3.connect(pfad)
         self.db.execute("PRAGMA foreign_keys = ON")
         self.db.executescript(SCHEMA)
+        self._nachruesten()
         self.db.commit()
+
+    def _nachruesten(self) -> None:
+        """Fehlende Spalten ergänzen, ohne die Daten anzutasten."""
+        for tabelle, spalten in NACHRUESTEN.items():
+            vorhanden = {
+                zeile[1] for zeile in
+                self.db.execute(f"PRAGMA table_info({tabelle})")
+            }
+            for name, art in spalten.items():
+                if name not in vorhanden:
+                    self.db.execute(
+                        f"ALTER TABLE {tabelle} ADD COLUMN {name} {art}"
+                    )
+
+    # -- Fingerabdruecke ---------------------------------------------------
+    #
+    # **SQLite kennt nur vorzeichenbehaftete 64-Bit-Zahlen.** Der
+    # Fingerabdruck nutzt alle 64 Bit ohne Vorzeichen; jeder Wert mit
+    # gesetztem oberstem Bit - also ungefähr die Hälfte - führt beim
+    # Speichern zu »Python int too large to convert to SQLite INTEGER«.
+    # Deshalb wird beim Schreiben in den vorzeichenbehafteten Bereich
+    # umgerechnet und beim Lesen zurück. Die Bitmuster bleiben dabei
+    # unverändert, und nur auf sie kommt es an.
+
+    @staticmethod
+    def _als_vorzeichen(wert: int) -> int:
+        return wert - (1 << 64) if wert >= (1 << 63) else wert
+
+    @staticmethod
+    def _ohne_vorzeichen(wert: int) -> int:
+        return wert + (1 << 64) if wert < 0 else wert
+
+    def ohne_fingerabdruck(self) -> list[tuple[int, str]]:
+        """Bilder, deren Fingerabdruck noch fehlt – Kennung und Pfad."""
+        return [
+            (int(kennung), pfad) for kennung, pfad in self.db.execute(
+                "SELECT id, pfad FROM bild "
+                "WHERE fingerabdruck IS NULL AND pfad IS NOT NULL"
+            )
+        ]
+
+    def fingerabdruck_merken(self, bild_id: int, wert: int) -> None:
+        self.db.execute("UPDATE bild SET fingerabdruck = ? WHERE id = ?",
+                        (self._als_vorzeichen(wert), bild_id))
+
+    def fingerabdruecke(self) -> list[tuple[str, int]]:
+        """Alle vorhandenen Fingerabdrücke als Paare aus Pfad und Wert."""
+        return [
+            (pfad, self._ohne_vorzeichen(int(wert)))
+            for pfad, wert in self.db.execute(
+                "SELECT pfad, fingerabdruck FROM bild "
+                "WHERE fingerabdruck IS NOT NULL AND pfad IS NOT NULL"
+            )
+        ]
 
     # -- Schreiben ---------------------------------------------------------
 

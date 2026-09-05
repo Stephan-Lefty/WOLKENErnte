@@ -12,7 +12,11 @@ Datenbank, denn die stehen nur in den Quellen. Dann ``pruefen`` – der
 Nachweis, dass wirklich alles angekommen ist. **Und erst danach darf
 eine Quelle gelöscht werden**, von Hand und mit Bedacht.
 
-Eine grafische Oberfläche gibt es noch nicht.
+    wolkenernte doppelt     <Archiv>
+    wolkenernte oberflaeche <Archiv>
+
+Die Oberfläche läuft im Browser: ``oberflaeche`` startet einen Dienst,
+der ausschließlich auf diesem Rechner erreichbar ist, und öffnet ihn.
 """
 
 from __future__ import annotations
@@ -129,15 +133,48 @@ def main(argv: list[str] | None = None) -> int:
     p = unter.add_parser("bestand", help="zeigen, was in der Datenbank steht")
     p.add_argument("archiv", type=Path)
 
+    p = unter.add_parser("doppelt", help="ähnliche Bilder im Archiv finden")
+    p.add_argument("archiv", type=Path)
+
+    p = unter.add_parser("oberflaeche", help="Archiv im Browser durchsehen")
+    # Ohne Angabe das zuletzt benutzte Archiv: Der Menüeintrag im
+    # Anwendungsmenü kann keinen Pfad kennen.
+    p.add_argument("archiv", type=Path, nargs="?")
+    p.add_argument("--port", type=int, default=0,
+                   help="feste Portnummer statt einer freien vom System")
+    p.add_argument("--kein-browser", action="store_true",
+                   help="Browser nicht selbst öffnen")
+
     werte = zerleger.parse_args(argv)
 
     if werte.befehl in (None, "anbieter"):
         return anbieter_zeigen()
 
-    archiv = werte.archiv.expanduser()
+    archiv = werte.archiv.expanduser() if werte.archiv else None
+    if archiv is None:
+        from .einstellungen import letztes_archiv
+        archiv = letztes_archiv()
+        if archiv is None:
+            print("Kein Archiv angegeben, und es ist keines vermerkt.\n")
+            print("Beim ersten Mal den Ordner mit angeben:")
+            print("  wolkenernte oberflaeche ~/Bilder/WOLKENErnte\n")
+            print("Danach merkt sich das Programm ihn.")
+            return 1
+        print(f"Zuletzt benutztes Archiv: {archiv}")
 
     if werte.befehl == "bestand":
         return bestand_zeigen(archiv)
+
+    if werte.befehl == "doppelt":
+        from .doppelgaenger import bericht
+        return bericht(archiv)
+
+    if werte.befehl == "oberflaeche":
+        from .einstellungen import archiv_merken
+        from .web.dienst import starten
+        if archiv.is_dir():
+            archiv_merken(archiv)
+        return starten(archiv, port=werte.port, browser=not werte.kein_browser)
 
     quellen = [q.expanduser() for q in werte.quelle]
     for quelle in quellen:
