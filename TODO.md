@@ -112,6 +112,34 @@ nur die Hälfte geht.
 - [ ] Der Löschknopf erscheint nur, wo `anbieter.darf_loeschen()` es erlaubt.
   Bei den anderen steht der Grund, nicht ein ausgegrauter Knopf.
 
+### Eine Fensteranwendung statt des Browsers
+
+Gewünscht als nächster großer Schritt. Der Kern trägt das bereits: Nur
+`wolkenernte/web/` ist browserabhängig, alles darunter weiß nichts von einer
+Oberfläche. Eine Qt-Fassung käme **daneben**, nicht anstelle – wer keine
+hundert Megabyte nachinstallieren will, behält den Browserweg.
+
+- [ ] **PySide6** als optionale Abhängigkeit (`oberflaeche`-Extra), Aufruf über
+  `wolkenernte fenster <Archiv>`.
+- [ ] **Rasteransicht virtualisiert**, nicht als Liste aller Bilder. Bei 15.000
+  Aufnahmen entscheidet das über flüssig oder unbenutzbar – `QListView` im
+  Icon-Modus mit eigenem Modell, das Vorschaubilder erst beim Sichtbarwerden
+  nachlädt.
+- [ ] Vorschaubilder im Hintergrund erzeugen (`QThreadPool`), sonst steht die
+  Oberfläche beim ersten Öffnen minutenlang.
+- [ ] **Videos mit `QMediaPlayer`.** Seit Qt 6.5 ist FFmpeg das Standard-Backend
+  und in den PySide6-Paketen enthalten; die H.264- und HEVC-*Dekoder* sind LGPL
+  und damit dabei. **An echtem iPhone-Material prüfen**, bevor darauf gebaut
+  wird. Scheitert es, ist libmpv der Rückfall – **nicht** python-vlc, das hat
+  unter Wayland bis heute keine Einbettung.
+- [ ] **HEIC über pi-heif**, als Pillow-Erweiterung; Qt bringt außerhalb von
+  macOS kein HEIF-Modul mit.
+- [ ] Tastatursteuerung: Pfeiltasten, Leertaste für Vollbild, Entf für den
+  Löschkorb. Das ist der eigentliche Gewinn gegenüber dem Browser.
+- [ ] **Beide Oberflächen teilen sich den Kern.** Was in `web/bestandsliste.py`
+  an Auswertung steckt, gehört vorher eine Ebene tiefer – sonst wird es
+  doppelt gepflegt und läuft auseinander.
+
 ### Ausliefern – der Anwender soll nichts nachinstallieren müssen
 
 **Grundsatz:** Was WOLKENErnte braucht, bringt WOLKENErnte mit oder lässt

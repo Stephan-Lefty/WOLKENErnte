@@ -1,18 +1,21 @@
 name: Tests
 
-# **Dieses Repository ist privat.** Actions-Minuten kosten hier also
-# echtes Kontingent, und das ist der Grund für den Zuschnitt unten.
+# **Seit das Repository öffentlich ist, kosten die Actions-Minuten
+# nichts mehr.** Der Zuschnitt unten bleibt trotzdem.
 #
-# GitHub rundet *jeden einzelnen Job* auf volle Minuten auf und rechnet
-# macOS zehnfach, Windows zweifach. Ein macOS-Job, der neun Sekunden
-# läuft, zählt als zehn Minuten. Bei MailBurg lief die erste Fassung
-# noch über drei Betriebssysteme: 53 abgerechnete Minuten für einen
-# Durchlauf von unter einer Minute, und an einem einzigen Arbeitstag
-# 1.800 von 2.000 Minuten - das gesamte Monatskontingent.
+# Denn der zweite Grund gilt weiter: Ein Durchlauf über drei
+# Betriebssysteme bei jedem Push hieße mehrere Minuten Rechenzeit für
+# jede geänderte Zeile, auch für die, die Windows nie zu sehen bekommt.
+# Und die Rückmeldung wäre langsamer, nicht besser.
 #
-# Deshalb hier von Anfang an: Bei jedem Push *ein* Job auf Linux. Die
-# teuren Systeme laufen einmal die Woche und wenn jemand sie ruft.
-# Solange das Repository privat ist, bleibt das so.
+# Zur Erinnerung, falls dieses oder ein anderes Repository je wieder
+# privat wird: GitHub rundet *jeden einzelnen Job* auf volle Minuten auf
+# und rechnet macOS zehnfach, Windows zweifach. Ein macOS-Job von neun
+# Sekunden zählt als zehn Minuten. Bei MailBurg summierte sich das an
+# einem einzigen Arbeitstag auf 1.800 von 2.000 Minuten.
+#
+# Deshalb: Bei jedem Push *ein* Job auf Linux. Die anderen Systeme
+# laufen einmal die Woche und wenn jemand sie ruft.
 
 on:
   push:

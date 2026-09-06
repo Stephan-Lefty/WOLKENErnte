@@ -10,13 +10,13 @@ Bilder und Videos aus den Wolken holen – und dort aufräumen.
 
 Fotos liegen heute verstreut: ein Teil bei Google, ein Teil bei Apple, ein Teil
 bei Proton, dazu OneDrive, Dropbox und die eigene Nextcloud. WOLKENErnte holt
-sie an einen Ort Ihrer Wahl, zeigt sie Ihnen, findet Doppelgänger – und löscht
-auf Ihr Wort hin drüben, was Sie nicht mehr brauchen.
+sie an einen Ort Ihrer Wahl, ordnet sie nach Aufnahmedatum, findet Doppelgänger
+– und soll später auf Ihr Wort hin drüben löschen, was Sie nicht mehr brauchen.
 
-**Das ist ein Gerüst, noch kein Programm.** Bisher kann WOLKENErnte genau
-eines: Auskunft darüber geben, was bei welchem Anbieter überhaupt möglich ist.
-Das klingt nach wenig, ist aber der Teil, den man zuerst braucht – siehe den
-nächsten Abschnitt.
+**Was heute schon geht:** Google-Takeout-Archive einlesen, Bilder aus Ordnern
+übernehmen, Doppelgänger finden, alles im Browser durchsehen.
+**Was noch nicht geht:** der Abruf aus den Wolken und das Löschen dort. Dafür
+fehlt der rclone-Teil – siehe [TODO.md](TODO.md).
 
 ## Was bei welchem Anbieter geht
 
@@ -44,51 +44,95 @@ WOLKENErnte wertet es aus. Aufgeräumt wird danach von Hand im Browser.
 
 **iCloud Fotos** lässt sich vollständig ansehen und herunterladen, aber nicht
 anfassen – der Zugang ist ausdrücklich nur lesend. Mit eingeschaltetem
-*erweitertem Datenschutz* (Advanced Data Protection) geht dort gar nichts.
+*erweitertem Datenschutz* geht dort gar nichts.
 
 **Proton Fotos** liegt in einem eigenen Bereich, den fremde Programme nicht
 sehen. Dafür gibt es derzeit keinen Weg – auch keinen umständlichen.
 
-Die Belege zu jeder dieser Aussagen stehen in [docs/anbieter.md](docs/anbieter.md).
-Diese Lage ändert sich schnell; das Datum dort sagt Ihnen, wie alt die Auskunft ist.
+Die Belege zu jeder Aussage stehen in [docs/anbieter.md](docs/anbieter.md), mit
+Datum. Diese Lage ändert sich schnell.
 
-## Warum es das braucht
-
-Es gibt viele gute Fotoverwalter – immich, PhotoPrism, Ente. Sie alle sind
-**Zielarchive**: Sie holen Bilder herein und fassen die Quelle nie wieder an.
-Und es gibt Dateimanager für Wolkenspeicher, die löschen können, aber keine
-Doppelgänger finden. Und es gibt Doppelgängersucher, die nur auf der eigenen
-Platte arbeiten.
-
-Kein einziges freies Programm verbindet beides: mehrere Wolken, Vorschau,
-Doppelgängersuche **und** Aufräumen in der Quelle.
-
-## Ausprobieren
+## Loslegen
 
 ```
-git clone https://github.com/Stephan-Lefty/WOLKENErnte.git
-cd WOLKENErnte
-python3 -m wolkenernte
+wolkenernte ernten      ~/Bilder/Archiv  ~/Downloads/takeout-Ordner
+wolkenernte erfassen    ~/Bilder/Archiv  ~/Downloads/takeout-Ordner
+wolkenernte pruefen     ~/Bilder/Archiv  ~/Downloads/takeout-Ordner
+wolkenernte oberflaeche ~/Bilder/Archiv
 ```
 
-Zeigt die Anbietertabelle mitsamt den Einschränkungen. Mehr kann es noch nicht.
+**Die Reihenfolge ist keine Geschmackssache.** Erst *ernten* – die Bilder ins
+Archiv. Dann *erfassen* – Orte, Titel und Alben in die Datenbank, denn die
+stehen nur in den Quellen und wären beim Löschen verloren. Dann *pruefen* – der
+Nachweis, dass wirklich jedes Bild angekommen ist. **Und erst danach** darf eine
+Quelle gelöscht werden.
+
+Weitere Befehle: `wolkenernte anbieter` zeigt die Tabelle von oben,
+`wolkenernte bestand` die Zahlen aus der Datenbank, `wolkenernte doppelt` sucht
+ähnliche Bilder.
+
+## Das Archiv
+
+```
+Archiv/
+├── 2023/2023-07/IMG_1234.jpg     nach Aufnahmedatum geordnet
+├── ohne-datum/IMG_5678.jpg       wenn keines zu ermitteln war
+└── .wolkenernte/
+    ├── bestand.db                Orte, Titel, Alben, Favoriten
+    └── vorschau/                 Vorschaubilder
+```
+
+Nach Datum und nicht nach Alben: Ein Bild kann in mehreren Alben liegen, aber
+nur an einer Stelle auf der Platte. Die Albumzugehörigkeit steht in der
+Datenbank.
+
+**Ihre Bilder bleiben gewöhnliche Dateien.** Kein eigenes Format, keine
+Verschlüsselung, kein Verzeichnisdienst. Wer WOLKENErnte in zehn Jahren nicht
+mehr hat, öffnet den Ordner mit jedem beliebigen Programm.
+
+## Die Oberfläche
+
+`wolkenernte oberflaeche` startet einen Dienst und öffnet den Browser: Bilder in
+Kacheln, Filter nach Jahr und Album, Suche über Dateinamen, Titel und Alben,
+Einzelansicht mit Ort und Aufnahmedatum, Videowiedergabe.
+
+**Der Dienst hört ausschließlich auf 127.0.0.1** und ist von außen nicht
+erreichbar. Er zeigt private Fotos und hat keine Anmeldung.
+
+Warum der Browser und kein Fenster: Er kann Bilder und Videos bereits anzeigen,
+in jedem Format, das das System beherrscht. Eine Fensteranwendung ist geplant –
+siehe [TODO.md](TODO.md) – aber sie kostet über hundert Megabyte zusätzlich, und
+das soll man nicht zahlen müssen, nur um seine Fotos anzusehen.
+
+## Einrichten
+
+**Arch und Manjaro**
+
+```
+cd verpacken/arch && makepkg -si
+```
+
+**Alle anderen** – der Kern läuft mit Python 3.11 aufwärts ohne Fremdpakete:
+
+```
+python3 -m wolkenernte oberflaeche ~/Bilder/Archiv
+```
+
+Empfohlen, aber nicht nötig: **Pillow** für Vorschaubilder und die
+Doppelgängersuche (`pacman -S python-pillow`). Ohne Pillow zeigt die Oberfläche
+die Originale – das ist langsamer, aber sie bleibt benutzbar.
 
 ## Wie es gebaut ist
 
-Der Kern kommt **ohne Fremdpakete** aus. Die Arbeit an den Wolken erledigt
-[rclone](https://rclone.org/), das als eigener Dienst läuft und über eine
-gewöhnliche HTTP-Schnittstelle angesprochen wird – dafür genügen `urllib` und
-`json` aus der Standardbibliothek. rclone steht unter MIT und darf beigelegt
-werden.
+Der Kern kommt **ohne Fremdpakete** aus. Der geplante Abruf aus den Wolken wird
+[rclone](https://rclone.org/) übernehmen, das als eigener Dienst läuft und über
+eine gewöhnliche HTTP-Schnittstelle angesprochen wird – dafür genügen `urllib`
+und `json` aus der Standardbibliothek.
 
-Das hat einen Nebeneffekt, der bares Geld spart: Weil die Zugangsdaten zu
-Google der Anwender selbst anlegt, entfällt das jährliche
-CASA-Sicherheitsaudit, das Google für weitreichende Zugriffsrechte verlangt –
-je nach Prüflabor 500 bis 4.500 US-Dollar im Jahr.
-
-Alles Weitere ist Kür und wird zur Laufzeit geprüft: Pillow und pi-heif für
-Bilder, ImageHash für Doppelgänger, ffmpeg für Videovorschauen, PySide6 für die
-Oberfläche.
+Das hat einen Nebeneffekt, der Geld spart: Weil die Zugangsdaten zu Google der
+Anwender selbst anlegt, entfällt das jährliche CASA-Sicherheitsaudit, das Google
+für weitreichende Zugriffsrechte verlangt – je nach Prüflabor 500 bis 4.500
+US-Dollar im Jahr.
 
 ## Lizenz
 

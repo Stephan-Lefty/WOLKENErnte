@@ -103,6 +103,33 @@ anyway.
 - [ ] The delete button only appears where `anbieter.darf_loeschen()` permits
   it. Elsewhere the reason is shown, not a greyed-out button.
 
+### A desktop application instead of the browser
+
+Requested as the next major step. The core already supports it: only
+`wolkenernte/web/` depends on the browser; everything below knows nothing about
+any interface. A Qt version would sit **alongside**, not replace it – anyone
+unwilling to install a hundred megabytes keeps the browser route.
+
+- [ ] **PySide6** as an optional dependency (`oberflaeche` extra), invoked via
+  `wolkenernte fenster <archive>`.
+- [ ] **Virtualised grid view**, not a list of all images. With 15,000 pictures
+  this decides between smooth and unusable – `QListView` in icon mode with a
+  custom model that loads thumbnails only as they become visible.
+- [ ] Generate thumbnails in the background (`QThreadPool`), otherwise the
+  interface freezes for minutes on first open.
+- [ ] **Videos via `QMediaPlayer`.** Since Qt 6.5 FFmpeg is the default backend
+  and ships inside the PySide6 packages; the H.264 and HEVC *decoders* are LGPL
+  and therefore included. **Verify against real iPhone footage** before relying
+  on it. If it fails, libmpv is the fallback – **not** python-vlc, which still
+  has no Wayland embedding.
+- [ ] **HEIC via pi-heif** as a Pillow plugin; outside macOS, Qt ships no HEIF
+  module.
+- [ ] Keyboard control: arrow keys, space for fullscreen, Delete for the
+  removal basket. That is the actual gain over the browser.
+- [ ] **Both interfaces share the core.** The evaluation logic now sitting in
+  `web/bestandsliste.py` must move one layer down first – otherwise it gets
+  maintained twice and drifts apart.
+
 ### Shipping – the user must not have to install anything
 
 **Principle:** whatever WOLKENErnte needs, it either brings along or has the

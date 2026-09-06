@@ -3,126 +3,110 @@
 Landkarte des Repositorys. Ergänzt [README.md](README.md) und
 [TODO.md](TODO.md), wiederholt sie nicht.
 
-## Hier war Schluss (Stand 2026-09-05)
+## Hier war Schluss (Stand 2026-09-05, Samstagabend)
 
-**Das Repository ist neu und privat.** Es gibt ein Gerüst, 29 grüne Tests
-und genau eine Fähigkeit: `python3 -m wolkenernte` gibt aus, was bei
-welchem Anbieter möglich ist. Sonst nichts – kein Abruf, kein Löschen,
-keine Oberfläche.
+**0.2.0, 198 Tests grün, seit heute öffentlich.** Was steht: Takeout
+lesen, Bilder ins Archiv übernehmen, Metadaten in einer Datenbank
+sichern, Doppelgänger finden, alles im Browser durchsehen. Was fehlt:
+**der ganze rclone-Teil** – also Abruf aus den Wolken und Löschen dort.
+Das ist der eigentliche Zweck des Programms und noch keine Zeile Code.
 
-Der Name entstand nach vier verworfenen Vorschlägen; die Begründungen
-stehen im erledigten Teil der [TODO.md](TODO.md). Schreibweise wie bei
-POSTKutsche: **WOLKENErnte**, das Python-Paket dagegen klein,
-`wolkenernte`.
+Am echten Bestand erprobt: 14.770 Bilder aus 47 GB Quellen, 29 GB im
+Archiv, 13.605 bytegleiche Kopien übergangen.
 
-## Das Wichtigste zuerst: die Anbietertabelle
+**Als Nächstes gewünscht: eine Fensteranwendung ohne Browser.** Der
+Zuschnitt dafür steht in der TODO. Wichtig dabei: Was in
+`web/bestandsliste.py` an Auswertung steckt, muss vorher eine Ebene
+tiefer – sonst wird es für zwei Oberflächen doppelt gepflegt.
 
-`wolkenernte/anbieter.py` ist der Kern dieses Programms, obwohl dort
-nichts gerechnet wird. Sie hält fest, was ein Wolkenspeicher einem
-fremden Programm erlaubt – **einzeln nach auflisten, laden, löschen**,
-nicht als »unterstützt ja/nein«.
+## Der Aufbau
 
-**Warum das keine Fußnote in der Anleitung ist.** Der Wunsch, aus dem
-dieses Programm entstand, lautete: alle Bilder aus allen Wolken holen
-und dort löschen. Genau die drei zuerst genannten Anbieter können das
-nicht:
+```
+wolkenernte/
+├── anbieter.py     was bei welchem Anbieter geht - das Herzstück
+├── takeout.py      ZIP-Archive lesen, ohne auszupacken
+├── zuordnung.py    Bild ↔ Metadatendatei
+├── metadaten.py    JSON auswerten
+├── lokal.py        Ordner auf der Platte als Quelle
+├── archiv.py       ins Archiv übernehmen
+├── bestand.py      die Datenbank daneben
+├── aehnlich.py     Wahrnehmungs-Fingerabdruck
+├── doppelgaenger.py  Gruppen bilden und einstufen
+├── ernten.py / erfassung.py / nachweis.py   die drei Abläufe
+└── web/            die Oberfläche - das Einzige, was den Browser kennt
+```
 
-- **Google Fotos** – seit 31.03.2025 sieht ein fremdes Programm nur
-  noch die eigenen Uploads; eine Löschmethode gab es nie.
-- **iCloud Fotos** – vollständig lesbar, ausdrücklich nur lesend.
-- **Proton Fotos** – eigener Bereich, für rclone unsichtbar.
+## Fünf Entscheidungen, die man ohne den Grund umdreht
 
-Die Belege mit Datum in [docs/anbieter.md](docs/anbieter.md).
-
-**Drei Dinge daran sind Absicht und sollten so bleiben:**
-
-`darf_loeschen()` gibt für **unbekannte** Kennungen `False` zurück. Wer
-einen Anbieter hinzufügt und die Tabelle vergisst, bekommt ein Programm,
-das zu wenig anbietet – nicht eines, das zu viel verspricht.
-
-**Die Oberfläche fragt diese Tabelle, bevor sie einen Löschknopf
-anzeigt.** Einen Knopf, der nichts tut, soll es nicht geben.
-
-`tests/test_anbieter.py` nagelt die drei bekannten Grenzen fest. Wenn
-eine davon eines Tages fällt, schlägt der Test fehl und zwingt dazu, den
-Beleg nachzutragen – statt dass eine Zusage stillschweigend hereinrutscht.
-
-## Wie es weitergehen soll
-
-rclone als Motor, angesprochen über `rclone rcd` und dessen
-HTTP-Schnittstelle. **Anmeldung ist dabei Pflicht, nicht Kür:** Wer die
-Schnittstelle erreicht, kann über `core/command` beliebige Befehle
-ausführen und über `config/dump` sämtliche Zugangsdaten auslesen. An
-`127.0.0.1` binden, Benutzer und Kennwort setzen, und einen Test dafür
-schreiben.
-
-Der Kern bleibt ohne Fremdpakete – `urllib` und `json` genügen für
-rclone. Alles Weitere ist Kür und wird zur Laufzeit geprüft.
-
-## Zwei Entscheidungen, die man leicht rückgängig macht, ohne den Grund zu kennen
+**Die Anbietertabelle steht im Code**, nicht in der Anleitung. Die
+Oberfläche fragt sie, bevor sie einen Löschknopf zeigt; einen Knopf, der
+nichts tut, soll es nicht geben. `darf_loeschen()` gibt für **unbekannte**
+Kennungen `False` zurück – wer einen Anbieter hinzufügt und die Tabelle
+vergisst, bekommt ein Programm, das zu wenig anbietet, nicht eines, das
+zu viel verspricht.
 
 **Keine Browser-Steuerung.** Sie wäre der einzige Weg, in Google Fotos
 und iCloud Fotos zu löschen. Sie sitzt aber auf undokumentierten
-internen Schnittstellen, bricht ohne Vorwarnung, und bei Apple verstößt
-sie ausdrücklich gegen die Nutzungsbedingungen. Für Google Fotos ist der
-vorgesehene Weg deshalb: Takeout einlesen, ansehen, Doppelgänger finden –
-und beim Aufräumen ehrlich auf den Browser verweisen.
+internen Schnittstellen und verstößt bei Apple gegen die
+Nutzungsbedingungen.
+
+**Kopieren, nicht verschieben, und nichts löschen ohne Nachweis.** Der
+Ablauf ist ernten → erfassen → pruefen, und erst danach darf eine Quelle
+weg. `nachweis.py` rechnet dafür jede Datei einzeln nach; der
+Größen-Vorfilter aus dem Ernten taugt zum Finden von Doppelgängern, nicht
+zum Beweis der Vollständigkeit.
+
+**Verknüpft wird über Größe und Prüfsumme, nicht über den Dateinamen.**
+Bilder werden im Archiv umbenannt, wenn ihr Name belegt ist; ihr Inhalt
+ändert sich nicht.
 
 **pi-heif statt pillow-heif.** Gleicher Entwickler, gleicher Code, aber
-die fertigen Pakete von pillow-heif enthalten x265, einen HEVC-Kodierer
-unter GPL. Wer die mitliefert, verteilt GPL-Code und muss das eigene
-Programm darunter stellen. WOLKENErnte zeigt Bilder nur an; der reine
-Dekodierer genügt.
+die fertigen Pakete von pillow-heif enthalten x265 unter GPL.
 
-## Das Programmsymbol – es gibt **drei** Quellen, nicht eine
+## Was das Ausprobieren gelehrt hat
 
-```
-python3 werkzeuge/symbole.py
-```
+Diese Fehler waren alle grün getestet, bevor echte Daten sie zeigten.
 
-Erzeugt alle PNG und die `.ico`. Der Verlauf ist `BLAU_HELL →
-BLAU_TIEF` aus `farben.py`, derselbe wie bei MailBurg.
+**Die 51-Zeichen-Regel für Takeout-Metadateien gilt nicht immer.** Sie
+steht so in GooglePhotosTakeoutHelper; in einem Archiv vom 05.09.2026
+kürzt Google gar nicht. Mit der Regel fanden 62,6 % der Bilder ihre
+Metadaten, ohne sie 99,2 %. **Der Test, der das hätte fangen müssen,
+behauptete das Gegenteil** – er verlangte ausdrücklich, dass kein
+Kandidat länger als 51 Zeichen ist.
 
-| Quelle | Größen | was fehlt |
-|---|---|---|
-| `assets/icon.svg` | 48 bis 1024 | – |
-| `assets/icon-klein.svg` | 24, 32 | Filmstreifen; Kachel gerade und kleiner |
-| `assets/icon-winzig.svg` | 16 | Kachel ganz; nur Wolke und Pfeil |
+**SQLite kennt nur vorzeichenbehaftete 64-Bit-Zahlen.** Der
+Fingerabdruck nutzt alle 64; die Hälfte aller Bilder brach den Lauf ab.
 
-**Bitte nicht zu einer Quelle zusammenfassen.** Beim Verkleinern
-verschwinden nicht alle Bestandteile gleichmäßig, sondern die feinsten
-zuerst – heraus kommt dann kein reduziertes Bild, sondern ein
-zerfallenes. Die Zuordnung steht in `werkzeuge/symbole.py`, damit
-niemand `icon-16.png` versehentlich aus `icon.svg` neu erzeugt.
+**Ein `replace(",", ".")` für Tausenderpunkte** lief über die ganze
+HTML-Seite und zerlegte den `viewport`-Eintrag.
 
-Vier Dinge, die beim Bauen schiefgingen und wieder schiefgehen würden:
+**Bilder ohne Aufnahmedatum** tragen den Zeitstempel der Übernahme und
+standen deshalb in der Jahresliste unter »2026«.
 
-**Die Wolke muss die breiteste Form im Bild sein** – ist sie schmaler
-als das, was darunter steht, verschmelzen beide beim Verkleinern zu
-etwas, das wie eine Eistüte aussieht.
+**Ein Regex für Dateinamen** entfernte `_<Ziffern>` und machte aus
+`IMG_20210110_113920` den Stamm `img` – jedes Kamerabild hätte denselben
+gehabt, alles wäre »dieselbe Aufnahme« gewesen.
 
-**Motive vertragen nur wenige, große Elemente**: zwei Berggipfel oder
-acht Filmlöcher sind bei 32 Pixeln nicht mehr auseinanderzuhalten.
+**Und die eigenen Testbilder taugten nicht:** Synthetische Sägezahn-
+muster werden beim Verkleinern zu gleichmäßigem Grau; beide Testbilder
+bekamen denselben Fingerabdruck. Testmuster müssen **relativ zur
+Bildgröße** definiert sein, sonst prüfen sie beim Skalieren etwas
+anderes.
 
-**Die Kachel darf die Wolke nicht ausfüllen.** Ein Entwurf machte sie
-groß, damit der Gipfel erkennbar bleibt – und erzeugte ein Rechteck mit
-weißem Saum, das niemand mehr als Wolke las. Sichtbare Wolkenrundungen
-sind wichtiger als der Gipfel.
+## Das Programmsymbol
 
-**Wolke und Pfeil brauchen bei 16 Pixeln etwa gleich viel Platz.** Bekam
-die Wolke die volle Höhe, wirkte der Pfeil wie ihr Fortsatz statt wie
-eine eigene Form.
+`assets/icon-quelle.png` ist die Vorlage und wird **nicht nachgezeichnet**
+– ein früherer SVG-Nachbau geriet zu einer eigenen Auslegung. Daraus
+erzeugt `werkzeuge/symbole.py` alle Größen ab 48 Pixeln. Für 16, 24 und
+32 gibt es eigene, ärmere SVG-Fassungen: Dort überleben weder
+Perforation noch zwei Berggipfel.
 
-## Die Testläufe kosten Kontingent
+## Vor der nächsten Veröffentlichung
 
-Dieses Repository ist **privat**, Actions-Minuten werden also
-abgerechnet. GitHub rundet jeden einzelnen Job auf volle Minuten auf und
-rechnet macOS zehnfach, Windows zweifach. Bei MailBurg summierte sich
-das an einem Arbeitstag auf 1.800 von 2.000 Minuten.
-
-Deshalb: bei jedem Push **ein** Job auf Linux, die teuren Systeme
-wöchentlich und auf Zuruf. Solange das Repository privat ist, bleibt das
-so.
+Im Repo dürfen keine echten Albumnamen stehen. »Nordsee 2023« und »Mein
+Viertel« sind Platzhalter; die ursprünglichen verrieten Wohnort und
+Urlaubsziel. Bilddateien vor dem Übernehmen mit `-strip` von Metadaten
+befreien.
 
 ## Tests
 
@@ -130,5 +114,12 @@ so.
 python3 -m unittest discover -s tests -t .
 ```
 
-`tests/__init__.py` muss existieren, sonst findet `discover` das
-Verzeichnis nicht.
+`tests/__init__.py` muss existieren, sonst findet `discover` nichts.
+Der Testlauf ist auch mit `-W error::DeprecationWarning` grün – Warnungen
+gelten als Fehler.
+
+**Gegenproben gehören dazu.** Grüne Tests sind verdächtig: Bei der
+Zuordnung fielen vier Tests um, als die Klammer-Verschiebung
+herausgenommen wurde; beim Takeout-Leser fünf, als nur das erste
+Teilarchiv gelesen wurde. Solche Proben in einer **Kopie** machen, nicht
+in der Arbeitskopie.

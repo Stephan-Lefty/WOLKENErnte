@@ -10,12 +10,13 @@ Harvest photos and videos from your clouds – and clear them out over there.
 
 Photos end up scattered: some at Google, some at Apple, some at Proton, plus
 OneDrive, Dropbox and your own Nextcloud. WOLKENErnte brings them to a place of
-your choosing, shows them to you, finds duplicates – and, on your word, deletes
-what you no longer need at the source.
+your choosing, orders them by capture date, finds duplicates – and is meant to
+delete at the source, on your word, whatever you no longer need.
 
-**This is scaffolding, not yet a program.** So far WOLKENErnte does exactly one
-thing: tell you what is actually possible with each provider. That sounds like
-little, but it is the part you need first – see the next section.
+**What already works:** reading Google Takeout archives, importing images from
+folders, finding duplicates, browsing everything in the browser.
+**What does not work yet:** fetching from the clouds and deleting there. The
+rclone part is still missing – see [TODO.en.md](TODO.en.md).
 
 ## What works with which provider
 
@@ -48,44 +49,88 @@ there at all.
 **Proton Photos** lives in a separate area that third-party programs cannot see.
 There is currently no way in – not even an awkward one.
 
-The evidence for each of these statements is in [docs/anbieter.md](docs/anbieter.md).
-This situation changes quickly; the date there tells you how old the information is.
+The evidence for each statement is in [docs/anbieter.md](docs/anbieter.md), with
+a date. This situation changes quickly.
 
-## Why this is needed
-
-There are many good photo managers – immich, PhotoPrism, Ente. All of them are
-**destination archives**: they pull pictures in and never touch the source
-again. And there are file managers for cloud storage that can delete but cannot
-find duplicates. And there are duplicate finders that only work on your own disk.
-
-Not a single free program combines all of it: multiple clouds, preview,
-duplicate detection **and** clearing out at the source.
-
-## Trying it out
+## Getting started
 
 ```
-git clone https://github.com/Stephan-Lefty/WOLKENErnte.git
-cd WOLKENErnte
-python3 -m wolkenernte
+wolkenernte ernten      ~/Pictures/Archive  ~/Downloads/takeout-folder
+wolkenernte erfassen    ~/Pictures/Archive  ~/Downloads/takeout-folder
+wolkenernte pruefen     ~/Pictures/Archive  ~/Downloads/takeout-folder
+wolkenernte oberflaeche ~/Pictures/Archive
 ```
 
-Prints the provider table along with its limitations. That is all it can do so far.
+**The order is not a matter of taste.** First *ernten* (harvest) – images into
+the archive. Then *erfassen* (record) – places, titles and albums into the
+database, because those exist only in the sources and would be lost. Then
+*pruefen* (verify) – proof that every image really arrived. **And only then**
+may a source be deleted.
+
+Further commands: `wolkenernte anbieter` prints the table above,
+`wolkenernte bestand` the figures from the database, `wolkenernte doppelt`
+searches for similar images.
+
+## The archive
+
+```
+Archive/
+├── 2023/2023-07/IMG_1234.jpg     ordered by capture date
+├── ohne-datum/IMG_5678.jpg       when none could be determined
+└── .wolkenernte/
+    ├── bestand.db                places, titles, albums, favourites
+    └── vorschau/                 thumbnails
+```
+
+By date and not by album: an image can be in several albums but only in one
+place on disk. Album membership lives in the database.
+
+**Your pictures stay ordinary files.** No custom format, no encryption, no
+directory service. Anyone who no longer has WOLKENErnte in ten years opens the
+folder with any program they like.
+
+## The interface
+
+`wolkenernte oberflaeche` starts a service and opens the browser: images as
+tiles, filters by year and album, search across filenames, titles and albums,
+single view with location and capture date, video playback.
+
+**The service listens on 127.0.0.1 only** and cannot be reached from outside. It
+shows private photos and has no authentication.
+
+Why the browser and not a window: it can already display images and videos, in
+every format the system supports. A desktop application is planned – see
+[TODO.en.md](TODO.en.md) – but it costs over a hundred megabytes extra, and
+nobody should have to pay that just to look at their photos.
+
+## Installing
+
+**Arch and Manjaro**
+
+```
+cd verpacken/arch && makepkg -si
+```
+
+**Everywhere else** – the core runs on Python 3.11+ with no third-party packages:
+
+```
+python3 -m wolkenernte oberflaeche ~/Pictures/Archive
+```
+
+Recommended but not required: **Pillow** for thumbnails and duplicate detection.
+Without it the interface serves the originals – slower, but still usable.
 
 ## How it is built
 
-The core needs **no third-party packages**. The cloud work is done by
-[rclone](https://rclone.org/), which runs as its own service and is addressed
-over an ordinary HTTP interface – `urllib` and `json` from the standard library
-are enough for that. rclone is MIT licensed and may be bundled.
+The core needs **no third-party packages**. The planned cloud access will be
+handled by [rclone](https://rclone.org/), which runs as its own service and is
+addressed over an ordinary HTTP interface – `urllib` and `json` from the
+standard library are enough for that.
 
-This has a side effect that saves real money: because the user creates their own
+This has a side effect that saves money: because the user creates their own
 Google credentials, there is no need for the annual CASA security audit that
-Google requires for far-reaching access scopes – depending on the assessor, 500
-to 4,500 US dollars per year.
-
-Everything else is optional and checked at runtime: Pillow and pi-heif for
-images, ImageHash for duplicates, ffmpeg for video thumbnails, PySide6 for the
-interface.
+Google requires for far-reaching access scopes – 500 to 4,500 US dollars per
+year, depending on the assessor.
 
 ## Licence
 
