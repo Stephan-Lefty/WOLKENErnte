@@ -2,6 +2,7 @@
 
     wolkenernte anbieter
     wolkenernte rclone
+    wolkenernte zugang
     wolkenernte ernten   <Archiv> <Quelle> [<Quelle> ...]
     wolkenernte erfassen <Archiv> <Quelle> [<Quelle> ...]
     wolkenernte pruefen  <Archiv> <Quelle> [<Quelle> ...]
@@ -116,6 +117,16 @@ def main(argv: list[str] | None = None) -> int:
     unter.add_parser("anbieter", help="zeigen, was wo möglich ist")
     unter.add_parser("rclone", help="nachsehen, ob rclone bereit ist")
 
+    p = unter.add_parser("zugang", help="Zugänge zu Wolkenspeichern verwalten")
+    zugaenge = p.add_subparsers(dest="zugangsbefehl")
+    q = zugaenge.add_parser("nextcloud", help="einen Nextcloud-Zugang anlegen")
+    q.add_argument("name", help="wie der Zugang heißen soll")
+    q.add_argument("adresse", help="https://wolke.example")
+    q.add_argument("benutzer")
+    q = zugaenge.add_parser("neu", help="Zugang beliebiger Art, mit Rückfragen")
+    q.add_argument("art", help="dropbox, onedrive, pcloud, protondrive, …")
+    q.add_argument("name")
+
     p = unter.add_parser("ernten", help="Bilder aus Quellen ins Archiv holen")
     p.add_argument("archiv", type=Path)
     p.add_argument("quelle", type=Path, nargs="+")
@@ -155,6 +166,14 @@ def main(argv: list[str] | None = None) -> int:
     if werte.befehl == "rclone":
         from .rclone import bericht
         return bericht()
+
+    if werte.befehl == "zugang":
+        from .zugang import anlegen, nextcloud_anlegen, zeigen
+        if werte.zugangsbefehl == "nextcloud":
+            return nextcloud_anlegen(werte.name, werte.adresse, werte.benutzer)
+        if werte.zugangsbefehl == "neu":
+            return anlegen(werte.art, werte.name)
+        return zeigen()
 
     archiv = werte.archiv.expanduser() if werte.archiv else None
     if archiv is None:

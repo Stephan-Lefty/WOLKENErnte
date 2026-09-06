@@ -3,21 +3,35 @@
 Landkarte des Repositorys. Ergänzt [README.md](README.md) und
 [TODO.md](TODO.md), wiederholt sie nicht.
 
-## Hier war Schluss (Stand 2026-09-05, Samstagabend)
+## Hier war Schluss (Stand 2026-09-06, Sonntagabend)
 
-**0.2.0, 198 Tests grün, seit heute öffentlich.** Was steht: Takeout
-lesen, Bilder ins Archiv übernehmen, Metadaten in einer Datenbank
-sichern, Doppelgänger finden, alles im Browser durchsehen. Was fehlt:
-**der ganze rclone-Teil** – also Abruf aus den Wolken und Löschen dort.
-Das ist der eigentliche Zweck des Programms und noch keine Zeile Code.
+**239 Tests grün, öffentlich.** Der rclone-Anschluss steht jetzt: Das
+Programm findet rclone, prüft die Fassung, startet es als abgesicherten
+Dienst, richtet Zugänge ein, listet auf und löscht. **Vier Tests laufen
+gegen das echte rclone** – mit dem `local`-Backend, das keine
+Zugangsdaten braucht, sich für die Schnittstelle aber wie jede Wolke
+verhält.
+
+Was damit noch nicht geht: **aus einer echten Wolke ernten.** Der Weg
+von `rclone.auflisten()` zu `archiv.uebernehmen()` fehlt – bisher kann
+nur ein Takeout-Archiv oder ein Ordner als Quelle dienen.
 
 Am echten Bestand erprobt: 14.770 Bilder aus 47 GB Quellen, 29 GB im
-Archiv, 13.605 bytegleiche Kopien übergangen.
+Archiv, 13.605 bytegleiche Kopien übergangen, 1.332 Gruppen mit
+derselben Aufnahme in mehreren Fassungen.
 
-**Als Nächstes gewünscht: eine Fensteranwendung ohne Browser.** Der
-Zuschnitt dafür steht in der TODO. Wichtig dabei: Was in
-`web/bestandsliste.py` an Auswertung steckt, muss vorher eine Ebene
-tiefer – sonst wird es für zwei Oberflächen doppelt gepflegt.
+### Die beiden nächsten Schritte
+
+**Nextcloud wirklich ernten.** `wolkenernte zugang nextcloud` legt einen
+Zugang an; was fehlt, ist eine Quelle nach dem Muster von `lokal.py`,
+die über rclone liest. Dann gilt derselbe Ablauf wie bisher: ernten,
+erfassen, pruefen – und erst danach löschen, **ausschließlich über
+`anbieter.darf_loeschen()`**.
+
+**Eine Fensteranwendung ohne Browser**, gewünscht als übernächster
+Schritt. Zuschnitt in der TODO. Wichtig: Was in `web/bestandsliste.py`
+an Auswertung steckt, muss vorher eine Ebene tiefer – sonst wird es für
+zwei Oberflächen doppelt gepflegt.
 
 ## Der Aufbau
 
@@ -32,6 +46,9 @@ wolkenernte/
 ├── bestand.py      die Datenbank daneben
 ├── aehnlich.py     Wahrnehmungs-Fingerabdruck
 ├── doppelgaenger.py  Gruppen bilden und einstufen
+├── rclone.py       rclone finden, starten, ansprechen
+├── einrichten.py   Zugänge anlegen (das Frage-Antwort-Spiel)
+├── zugang.py       dasselbe von der Kommandozeile
 ├── ernten.py / erfassung.py / nachweis.py   die drei Abläufe
 └── web/            die Oberfläche - das Einzige, was den Browser kennt
 ```
@@ -63,6 +80,12 @@ Bilder werden im Archiv umbenannt, wenn ihr Name belegt ist; ihr Inhalt
 **pi-heif statt pillow-heif.** Gleicher Entwickler, gleicher Code, aber
 die fertigen Pakete von pillow-heif enthalten x265 unter GPL.
 
+**Die rclone-Schnittstelle ist Shell-Zugriff.** Das steht so in rclones
+eigener Doku. Deshalb: nur `127.0.0.1`, Zugangsdaten bei jedem Start neu
+gewürfelt und über die **Prozessumgebung** übergeben – die
+Kommandozeile kann unter Linux jeder in `/proc` lesen – und
+`--rc-no-auth` niemals. Drei Tests nageln das fest.
+
 ## Was das Ausprobieren gelehrt hat
 
 Diese Fehler waren alle grün getestet, bevor echte Daten sie zeigten.
@@ -86,6 +109,10 @@ standen deshalb in der Jahresliste unter »2026«.
 **Ein Regex für Dateinamen** entfernte `_<Ziffern>` und machte aus
 `IMG_20210110_113920` den Stamm `img` – jedes Kamerabild hätte denselben
 gehabt, alles wäre »dieselbe Aufnahme« gewesen.
+
+**Bei `operations/list` gehört der ganze Pfad in `fs`.** Ein erster
+Anlauf trennte am Doppelpunkt und übergab den Rest als `remote`; rclone
+antwortete »directory not found«, obwohl der Ordner existierte.
 
 **Und die eigenen Testbilder taugten nicht:** Synthetische Sägezahn-
 muster werden beim Verkleinern zu gleichmäßigem Grau; beide Testbilder
