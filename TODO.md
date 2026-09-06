@@ -139,8 +139,8 @@ es vom Paketverwalter mitbringen. Niemand soll rclone von Hand herunterladen.
   kann; bei einer eingebackenen Einzeldatei geht das nicht.
 - [ ] **Debian: `.deb`.** Gibt es in keinem der Repositorys bisher – das wäre
   das erste. Abhängigkeiten: python3, rclone (Fassung s. o.).
-- [ ] **Arch/Manjaro: `PKGBUILD`**, damit es auf Stephans eigenem System
-  ordentlich installierbar ist. Ebenfalls neu.
+- [ ] **Arch/Manjaro: `PKGBUILD`** – ebenfalls neu, in keinem der
+  Repositorys gibt es bisher eines.
 - [ ] `.desktop`-Datei und Symbole an den vorgesehenen Ort
   (`/usr/share/applications`, `/usr/share/icons/hicolor/<größe>/apps/`) –
   Muster in `Denkzettel/desktop/` und `SilentInstaller/data/`.

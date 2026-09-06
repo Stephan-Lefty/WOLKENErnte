@@ -130,8 +130,8 @@ package manager bring along. Nobody should download rclone by hand.
   into one executable that is impossible.
 - [ ] **Debian: `.deb`.** Does not exist in any of the repositories yet – this
   would be the first. Dependencies: python3, rclone (version see above).
-- [ ] **Arch/Manjaro: `PKGBUILD`**, so it installs properly on Stephan's own
-  system. Also new.
+- [ ] **Arch/Manjaro: `PKGBUILD`** – also new; none of the repositories has
+  one yet.
 - [ ] `.desktop` file and icons in the expected places
   (`/usr/share/applications`, `/usr/share/icons/hicolor/<size>/apps/`) –
   patterns in `Denkzettel/desktop/` and `SilentInstaller/data/`.
