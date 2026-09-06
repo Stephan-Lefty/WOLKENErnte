@@ -20,6 +20,13 @@ Am echten Bestand erprobt: 14.770 Bilder aus 47 GB Quellen, 29 GB im
 Archiv, 13.605 bytegleiche Kopien übergangen, 1.332 Gruppen mit
 derselben Aufnahme in mehreren Fassungen.
 
+**Die Videofrage ist geklärt** (2026-09-06): `QMediaPlayer` spielt H.264,
+HEVC und VP9 aus diesem Bestand ab – geprüft mit
+`werkzeuge/videoprobe.py`, das auf ein tatsächlich ankommendes Einzelbild
+wartet und nicht bloß darauf, dass kein Fehler kommt. libmpv wird nicht
+gebraucht. Nebenbei kam heraus: Der Bestand enthält **kein**
+iPhone-Material – 239 VP9, 140 H.264 und nur 5 HEVC.
+
 ### Die beiden nächsten Schritte
 
 **Nextcloud wirklich ernten.** `wolkenernte zugang nextcloud` legt einen

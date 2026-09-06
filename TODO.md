@@ -127,11 +127,11 @@ hundert Megabyte nachinstallieren will, behält den Browserweg.
   nachlädt.
 - [ ] Vorschaubilder im Hintergrund erzeugen (`QThreadPool`), sonst steht die
   Oberfläche beim ersten Öffnen minutenlang.
-- [ ] **Videos mit `QMediaPlayer`.** Seit Qt 6.5 ist FFmpeg das Standard-Backend
-  und in den PySide6-Paketen enthalten; die H.264- und HEVC-*Dekoder* sind LGPL
-  und damit dabei. **An echtem iPhone-Material prüfen**, bevor darauf gebaut
-  wird. Scheitert es, ist libmpv der Rückfall – **nicht** python-vlc, das hat
-  unter Wayland bis heute keine Einbettung.
+- [x] **Videos mit `QMediaPlayer`** – geprüft am 2026-09-06 mit
+  `werkzeuge/videoprobe.py`: H.264, HEVC und VP9 werden abgespielt, und zwar
+  mit tatsächlich ankommenden Einzelbildern, nicht bloß ohne Fehlermeldung.
+  libmpv wird damit nicht gebraucht; **python-vlc** wäre ohnehin ausgeschieden,
+  weil es unter Wayland bis heute keine Einbettung hat.
 - [ ] **HEIC über pi-heif**, als Pillow-Erweiterung; Qt bringt außerhalb von
   macOS kein HEIF-Modul mit.
 - [ ] Tastatursteuerung: Pfeiltasten, Leertaste für Vollbild, Entf für den

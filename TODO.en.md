@@ -117,11 +117,11 @@ unwilling to install a hundred megabytes keeps the browser route.
   custom model that loads thumbnails only as they become visible.
 - [ ] Generate thumbnails in the background (`QThreadPool`), otherwise the
   interface freezes for minutes on first open.
-- [ ] **Videos via `QMediaPlayer`.** Since Qt 6.5 FFmpeg is the default backend
-  and ships inside the PySide6 packages; the H.264 and HEVC *decoders* are LGPL
-  and therefore included. **Verify against real iPhone footage** before relying
-  on it. If it fails, libmpv is the fallback – **not** python-vlc, which still
-  has no Wayland embedding.
+- [x] **Videos via `QMediaPlayer`** – verified on 2026-09-06 with
+  `werkzeuge/videoprobe.py`: H.264, HEVC and VP9 all play, with frames actually
+  arriving rather than merely no error being raised. libmpv is not needed;
+  **python-vlc** would have been ruled out anyway for lacking Wayland
+  embedding.
 - [ ] **HEIC via pi-heif** as a Pillow plugin; outside macOS, Qt ships no HEIF
   module.
 - [ ] Keyboard control: arrow keys, space for fullscreen, Delete for the
