@@ -242,15 +242,21 @@ class Dienst:
         antwort = self.rufen("config/listremotes")
         return list(antwort.get("remotes") or [])
 
-    def auflisten(self, pfad: str, *, nur_dateien: bool = True) -> list[dict]:
+    def auflisten(self, pfad: str, *, nur_dateien: bool = True,
+                  mit_unterordnern: bool = False) -> list[dict]:
         """Den Inhalt eines Ordners auflisten.
 
         ``pfad`` in rclones Schreibweise, etwa ``meinecloud:Fotos/2024``.
+
+        **Der ganze Pfad gehört in ``fs``, nicht aufgeteilt.** Ein erster
+        Anlauf trennte am Doppelpunkt und übergab den Rest als
+        ``remote`` – rclone antwortete darauf mit »directory not
+        found«, obwohl der Ordner existierte. ``remote`` ist relativ zu
+        ``fs`` gedacht, nicht als zweite Hälfte davon.
         """
-        ordner, _, unterordner = pfad.partition(":")
         antwort = self.rufen("operations/list", {
-            "fs": f"{ordner}:", "remote": unterordner,
-            "opt": {"filesOnly": nur_dateien, "recurse": False},
+            "fs": pfad, "remote": "",
+            "opt": {"filesOnly": nur_dateien, "recurse": mit_unterordnern},
         })
         return list(antwort.get("list") or [])
 
@@ -261,8 +267,11 @@ class Dienst:
         Diese Klasse kennt die Grenzen der Anbieter nicht; sie führt aus,
         was ihr gesagt wird.
         """
-        ordner, _, datei = pfad.partition(":")
-        self.rufen("operations/deletefile", {"fs": f"{ordner}:", "remote": datei})
+        ordner, _, datei = pfad.rpartition("/")
+        if not ordner:
+            ordner, _, datei = pfad.rpartition(":")
+            ordner += ":"
+        self.rufen("operations/deletefile", {"fs": ordner, "remote": datei})
 
     def zahlen(self) -> dict:
         """Fortschritt und Durchsatz des laufenden Betriebs."""

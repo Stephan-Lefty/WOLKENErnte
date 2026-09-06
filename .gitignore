@@ -39,3 +39,7 @@ dist/
 verpacken/**/*.pkg.tar.zst
 verpacken/**/src/
 verpacken/**/pkg/
+
+# Sicherung der Historie, die werkzeuge/historie-bereinigen.sh anlegt.
+# Nach einem geglückten Lauf von Hand löschen.
+.git-sicherung/
