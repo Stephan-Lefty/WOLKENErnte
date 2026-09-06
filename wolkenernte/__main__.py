@@ -1,6 +1,7 @@
 """Der Einstieg von der Kommandozeile.
 
     wolkenernte anbieter
+    wolkenernte rclone
     wolkenernte ernten   <Archiv> <Quelle> [<Quelle> ...]
     wolkenernte erfassen <Archiv> <Quelle> [<Quelle> ...]
     wolkenernte pruefen  <Archiv> <Quelle> [<Quelle> ...]
@@ -113,6 +114,7 @@ def main(argv: list[str] | None = None) -> int:
     unter = zerleger.add_subparsers(dest="befehl")
 
     unter.add_parser("anbieter", help="zeigen, was wo möglich ist")
+    unter.add_parser("rclone", help="nachsehen, ob rclone bereit ist")
 
     p = unter.add_parser("ernten", help="Bilder aus Quellen ins Archiv holen")
     p.add_argument("archiv", type=Path)
@@ -149,6 +151,10 @@ def main(argv: list[str] | None = None) -> int:
 
     if werte.befehl in (None, "anbieter"):
         return anbieter_zeigen()
+
+    if werte.befehl == "rclone":
+        from .rclone import bericht
+        return bericht()
 
     archiv = werte.archiv.expanduser() if werte.archiv else None
     if archiv is None:
