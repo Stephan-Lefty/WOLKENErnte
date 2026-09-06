@@ -6,6 +6,12 @@ Titel –, aber sie ist eine Beigabe. Wer eine Datei von Hand hineinlegt
 oder herausnimmt, soll das in der Oberfläche sehen, ohne erst ein
 Werkzeug laufen lassen zu müssen. Und wer die Datenbank löscht, verliert
 Zusatzangaben, nicht seine Fotos.
+
+**Dieses Modul lag zuerst unter ``web/``** – und wäre damit für eine
+zweite Oberfläche nicht zu haben gewesen. Jahre zählen, Alben sammeln,
+suchen, filtern: Das braucht jede Oberfläche gleichermaßen, und was
+zwei Teile brauchen, gehört keinem von beiden. Hier steht deshalb
+nichts, was einen Browser oder ein Fenster kennt.
 """
 
 from __future__ import annotations
@@ -20,12 +26,6 @@ OHNE_DATUM = "ohne-datum"
 
 BILDER = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".avif", ".heic", ".heif"}
 VIDEOS = {".mp4", ".mov", ".m4v", ".webm", ".avi", ".mkv", ".3gp", ".mpg", ".m2ts"}
-
-#: Was der Browser von sich aus anzeigen kann. HEIC gehört nicht dazu –
-#: dafür braucht es das Vorschaubild, das Pillow erzeugt.
-IM_BROWSER = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".avif",
-              ".mp4", ".webm", ".mov"}
-
 
 @dataclass
 class Bild:
@@ -62,11 +62,6 @@ class Bild:
     @property
     def endung(self) -> str:
         return "." + self.name.rsplit(".", 1)[-1].lower() if "." in self.name else ""
-
-    @property
-    def direkt_anzeigbar(self) -> bool:
-        """Ob der Browser die Datei selbst darstellen kann."""
-        return self.endung in IM_BROWSER
 
 
 class Bestandsliste:
@@ -113,7 +108,7 @@ class Bestandsliste:
         Fehlt sie, zeigt die Oberfläche eben nur Bilder und Daten. Sie
         ist eine Beigabe, keine Voraussetzung.
         """
-        from ..bestand import ORT as DB_ORT
+        from .bestand import ORT as DB_ORT
 
         if not (self.archiv / DB_ORT).exists():
             return

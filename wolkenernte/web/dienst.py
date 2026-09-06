@@ -26,7 +26,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 from . import seiten, vorschau
-from .bestandsliste import Bestandsliste
+from ..bestandsliste import Bestandsliste
 
 JE_SEITE = 120
 

@@ -14,7 +14,7 @@ from html import escape
 from urllib.parse import quote
 
 from .. import __version__, farben
-from .bestandsliste import Bestandsliste, Bild
+from ..bestandsliste import Bestandsliste, Bild
 
 STIL = f"""
 :root {{
@@ -95,6 +95,21 @@ main {{ padding: 1.2rem; }}
 .karte span {{ color: var(--leise); font-size: .85rem; }}
 footer {{ padding: 2rem 1.2rem; color: var(--leise); font-size: .8rem; }}
 """
+
+
+#: Was der Browser von sich aus anzeigen kann.
+#:
+#: HEIC gehört nicht dazu – dafür wird das Vorschaubild gezeigt, das
+#: Pillow erzeugt hat. **Diese Liste steht hier und nicht bei den
+#: Bildern:** Was ein Browser darstellen kann, geht das Archiv nichts
+#: an, und eine Fensteranwendung hätte eine andere Antwort darauf.
+IM_BROWSER = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".avif",
+              ".mp4", ".webm", ".mov"}
+
+
+def im_browser(bild: Bild) -> bool:
+    """Ob der Browser die Datei selbst darstellen kann."""
+    return bild.endung in IM_BROWSER
 
 
 def zahl(wert: int) -> str:
@@ -232,7 +247,7 @@ def einzeln(liste: Bestandsliste, bild: Bild) -> str:
     if bild.ist_video:
         anzeige = (f'<video controls preload="metadata" src="/datei?p={p}">'
                    f'</video>')
-    elif bild.direkt_anzeigbar:
+    elif im_browser(bild):
         anzeige = f'<img src="/datei?p={p}" alt="{escape(bild.name)}">'
     else:
         # HEIC und Verwandte kann der Browser nicht - dafür gibt es das
