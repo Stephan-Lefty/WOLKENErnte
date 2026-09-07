@@ -195,24 +195,56 @@ class Hauptfenster(QMainWindow):
         super().closeEvent(ereignis)
 
 
-def starten(archiv: Path) -> int:
+def archiv_erfragen(app) -> Path | None:
+    """Nach dem Archivordner fragen – im Dialog, nicht im Terminal.
+
+    **Nötig, weil der Menüeintrag keinen Pfad kennen kann.** Vorher gab
+    das Programm an dieser Stelle eine Textmeldung aus und beendete
+    sich; aus dem Anwendungsmenü gestartet sah das aus, als sei nichts
+    passiert. Wer auf ein Programm klickt, soll gefragt werden.
+    """
+    from PySide6.QtWidgets import QFileDialog, QMessageBox
+
+    QMessageBox.information(
+        None, "WOLKENErnte",
+        "Noch kein Archiv bekannt.\n\n"
+        "Bitte den Ordner auswählen, in dem Ihre Bilder liegen –\n"
+        "oder einen leeren Ordner, in den geerntet werden soll.\n\n"
+        "Beim nächsten Mal merkt sich WOLKENErnte ihn.",
+    )
+    gewaehlt = QFileDialog.getExistingDirectory(
+        None, "Archivordner auswählen", str(Path.home()),
+    )
+    return Path(gewaehlt) if gewaehlt else None
+
+
+def starten(archiv: Path | None) -> int:
     """Das Fenster öffnen und laufen lassen."""
     import sys
 
-    from PySide6.QtWidgets import QApplication
-
-    if not archiv.is_dir():
-        print(f"Kein Archiv: {archiv}")
-        return 1
+    from PySide6.QtWidgets import QApplication, QMessageBox
 
     app = QApplication.instance() or QApplication(sys.argv)
+
+    if archiv is None or not archiv.is_dir():
+        archiv = archiv_erfragen(app)
+        if archiv is None:
+            return 1
+        from ..einstellungen import archiv_merken
+        archiv_merken(archiv)
     app.setApplicationName("WOLKENErnte")
     app.setApplicationDisplayName("WOLKENErnte")
 
     fenster = Hauptfenster(archiv)
     if not fenster.liste.bilder:
-        print(f"In {archiv} liegen keine Bilder.")
-        print("Erst »wolkenernte ernten« laufen lassen.")
+        # Auch das gehört in einen Dialog: Aus dem Menü gestartet sieht
+        # eine Textmeldung im Nichts aus wie ein abgestürztes Programm.
+        QMessageBox.information(
+            None, "WOLKENErnte",
+            f"In {archiv} liegen keine Bilder.\n\n"
+            "Erst ernten – auf der Kommandozeile:\n"
+            f"    wolkenernte ernten \"{archiv}\" <Quelle>",
+        )
         return 1
 
     fenster.show()

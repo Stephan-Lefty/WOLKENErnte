@@ -183,6 +183,11 @@ def main(argv: list[str] | None = None) -> int:
     if archiv is None:
         from .einstellungen import letztes_archiv
         archiv = letztes_archiv()
+        # Die Fensteranwendung fragt selbst nach - im Dialog, nicht im
+        # Terminal, das beim Start aus dem Menü niemand sieht.
+        if archiv is None and werte.befehl == "fenster":
+            from .fenster import starten
+            return starten(None)
         if archiv is None:
             print("Kein Archiv angegeben, und es ist keines vermerkt.\n")
             print("Beim ersten Mal den Ordner mit angeben:")

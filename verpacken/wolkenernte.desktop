@@ -7,19 +7,25 @@ GenericName[en]=Photo viewer
 Comment=Bilder und Videos aus den Wolken holen und dort aufräumen
 Comment[en]=Harvest photos and videos from your clouds and clear them out there
 
-# Der Eintrag startet den Webdienst, der daraufhin den Browser öffnet.
-# %f nimmt einen Ordner entgegen, den ein Dateimanager übergibt - so
-# lässt sich ein Archiv auch per "Öffnen mit" anzeigen.
+# Aus dem Menü startet die **Fensteranwendung**, nicht die
+# Weboberfläche. Wer im Anwendungsmenü auf ein Programm klickt, erwartet
+# ein Fenster - und keinen Browser, der sich öffnet.
 #
-# Ohne Ordnerangabe nimmt das Programm den zuletzt benutzten. Beim
-# allerersten Start gibt es keinen; dann schreibt es einen Hinweis ins
-# Terminal - deshalb Terminal=true. Sobald die Oberfläche selbst nach
-# dem Archiv fragen kann, gehört hier false hin.
-Exec=wolkenernte oberflaeche %f
-Terminal=true
+# %f nimmt einen Ordner entgegen, den ein Dateimanager übergibt; so
+# lässt sich ein Archiv auch per »Öffnen mit« anzeigen. Ohne Angabe
+# nimmt das Programm den zuletzt benutzten Ordner, und wenn es keinen
+# gibt, fragt es in einem Dialog danach.
+Exec=wolkenernte fenster %f
+
+# **Kein Terminal.** Das war nötig, solange das Programm beim ersten
+# Start nur eine Textmeldung ausgeben konnte. Seit es nach dem Ordner
+# fragt, gibt es nichts mehr zu lesen - und ein Terminalfenster hinter
+# der Anwendung sieht nach einem Versehen aus.
+Terminal=false
 
 Icon=wolkenernte
 StartupNotify=true
+StartupWMClass=wolkenernte
 
 # Unter "Grafik" im Anwendungsmenü. Photography ist die zusätzliche
 # Einordnung, die Fotoverwaltungen tragen; Viewer sagt, dass es ein
@@ -28,3 +34,10 @@ Categories=Graphics;Photography;Viewer;
 Keywords=Fotos;Bilder;Videos;Cloud;Google;Archiv;Doppelgänger;Photos;Backup;
 
 MimeType=inode/directory;
+
+Actions=Weboberflaeche;
+
+[Desktop Action Weboberflaeche]
+Name=Im Browser öffnen
+Name[en]=Open in browser
+Exec=wolkenernte oberflaeche %f

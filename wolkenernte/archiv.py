@@ -149,11 +149,19 @@ def uebernehmen(
             bilanz.fehler.append(f"{zuordnung.medium}: nicht im Archiv")
             continue
 
+        # **Nur vergleichen, wenn die Prüfsumme wirklich bekannt ist.**
+        # 0 heißt »unbekannt«, nicht »null« - Nextcloud etwa führt über
+        # WebDAV keine Hashes. Ohne diese Unterscheidung gälten alle
+        # gleich großen Dateien einer solchen Quelle als dasselbe Bild
+        # und flögen reihenweise als Doppelgänger heraus. Bei
+        # unbekannter Summe wird erst nach dem Lesen verglichen, weiter
+        # unten.
         kennung = (eintrag.groesse, eintrag.pruefsumme)
-        if kennung in gesehen:
-            bilanz.doppelt += 1
-            continue
-        gesehen.add(kennung)
+        if eintrag.pruefsumme:
+            if kennung in gesehen:
+                bilanz.doppelt += 1
+                continue
+            gesehen.add(kennung)
 
         angaben = angaben_zu(zuordnung)
         ordner = ziel / zielordner(angaben)
@@ -168,21 +176,32 @@ def uebernehmen(
             # Schon da? Dann nur nachrechnen, nicht neu schreiben. So
             # lässt sich ein abgebrochener Lauf einfach wiederholen.
             vorhanden = ordner / name
-            if vorhanden.exists() and vorhanden.stat().st_size == eintrag.groesse:
+            if (eintrag.pruefsumme and vorhanden.exists()
+                    and vorhanden.stat().st_size == eintrag.groesse):
                 if _pruefsumme(vorhanden) == eintrag.pruefsumme:
                     bilanz.uebergangen += 1
                     _zeit_setzen(vorhanden, angaben)
                     continue
 
             inhalt = takeout.lesen(zuordnung.medium)
+            gerechnet = zlib.crc32(inhalt)
 
             # **Vor dem Schreiben prüfen, nicht danach.** Eine Datei,
             # die schon auf der Platte liegt, hat der Anwender bereits
             # gesehen; ein Fehler fällt dann später auf oder nie.
-            if zlib.crc32(inhalt) != eintrag.pruefsumme:
+            if eintrag.pruefsumme and gerechnet != eintrag.pruefsumme:
                 bilanz.gescheitert += 1
                 bilanz.fehler.append(f"{name}: Prüfsumme stimmt nicht")
                 continue
+
+            if not eintrag.pruefsumme:
+                # Jetzt ist sie bekannt - die Doppelgängerprüfung holt
+                # das nach, was vor dem Lesen nicht möglich war.
+                kennung = (eintrag.groesse, gerechnet)
+                if kennung in gesehen:
+                    bilanz.doppelt += 1
+                    continue
+                gesehen.add(kennung)
 
             pfad = _freier_name(ordner, name)
             pfad.write_bytes(inhalt)
