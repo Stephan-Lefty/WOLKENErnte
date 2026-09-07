@@ -67,6 +67,23 @@ CREATE TABLE IF NOT EXISTS fundort (
     PRIMARY KEY (bild_id, quelle, pfad)
 );
 
+CREATE TABLE IF NOT EXISTS schlagwort (
+    id   INTEGER PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS bild_schlagwort (
+    bild_id      INTEGER NOT NULL REFERENCES bild(id) ON DELETE CASCADE,
+    schlagwort_id INTEGER NOT NULL REFERENCES schlagwort(id) ON DELETE CASCADE,
+    -- Woher es stammt: "zeit", "ort", "form", "herkunft", "bild".
+    -- Bei begrenztem Platz entscheidet das mit darüber, was bleibt.
+    quelle       TEXT NOT NULL DEFAULT '',
+    -- Wie sicher, zwischen 0 und 1. Aus Metadaten abgeleitete
+    -- Schlagwörter sind sicher; erkannte sind es nicht.
+    sicherheit   REAL NOT NULL DEFAULT 1.0,
+    PRIMARY KEY (bild_id, schlagwort_id)
+);
+
 CREATE INDEX IF NOT EXISTS bild_zeit ON bild(aufgenommen);
 CREATE INDEX IF NOT EXISTS bild_ort  ON bild(breite, laenge);
 """
@@ -98,6 +115,7 @@ class Zahlen:
     favoriten: int = 0
     alben: int = 0
     fundorte: int = 0
+    schlagwoerter: int = 0
 
     def __str__(self) -> str:
         return (f"{self.bilder} Bilder, {self.mit_datum} mit Datum, "
@@ -231,6 +249,61 @@ class Bestand:
         )
         return kennung
 
+    def schlagwort_setzen(self, bild_id: int, name: str, *,
+                          quelle: str = "", sicherheit: float = 1.0) -> None:
+        """Ein Schlagwort an ein Bild hängen."""
+        self.db.execute("INSERT OR IGNORE INTO schlagwort (name) VALUES (?)",
+                        (name,))
+        self.db.execute(
+            "INSERT INTO bild_schlagwort (bild_id, schlagwort_id, quelle, "
+            "sicherheit) SELECT ?, id, ?, ? FROM schlagwort WHERE name = ? "
+            "ON CONFLICT(bild_id, schlagwort_id) DO UPDATE SET "
+            "sicherheit = MAX(sicherheit, excluded.sicherheit)",
+            (bild_id, quelle, sicherheit, name),
+        )
+
+    def schlagwoerter_ersetzen(self, bild_id: int, quelle: str,
+                               woerter: list[tuple[str, float]]) -> None:
+        """Alle Schlagwörter **einer Herkunft** durch neue ersetzen.
+
+        So lässt sich die Bilderkennung wiederholen, ohne die aus dem
+        Datum abgeleiteten Schlagwörter mitzureißen – und umgekehrt.
+        """
+        self.db.execute(
+            "DELETE FROM bild_schlagwort WHERE bild_id = ? AND quelle = ?",
+            (bild_id, quelle),
+        )
+        for name, sicherheit in woerter:
+            self.schlagwort_setzen(bild_id, name, quelle=quelle,
+                                   sicherheit=sicherheit)
+
+    def schlagwoerter(self, bild_id: int) -> list[tuple[str, str, float]]:
+        """Die Schlagwörter eines Bildes, sicherste zuerst."""
+        return [
+            (name, quelle, float(sicherheit))
+            for name, quelle, sicherheit in self.db.execute(
+                "SELECT schlagwort.name, bild_schlagwort.quelle, "
+                "bild_schlagwort.sicherheit FROM bild_schlagwort "
+                "JOIN schlagwort ON schlagwort.id = bild_schlagwort.schlagwort_id "
+                "WHERE bild_schlagwort.bild_id = ? "
+                "ORDER BY bild_schlagwort.sicherheit DESC, schlagwort.name",
+                (bild_id,),
+            )
+        ]
+
+    def haeufigste_schlagwoerter(self, hoechstens: int = 40
+                                 ) -> list[tuple[str, int]]:
+        """Welche Schlagwörter im Bestand vorkommen, häufigste zuerst."""
+        return [
+            (name, anzahl) for name, anzahl in self.db.execute(
+                "SELECT schlagwort.name, COUNT(*) FROM schlagwort "
+                "JOIN bild_schlagwort ON schlagwort.id = "
+                "bild_schlagwort.schlagwort_id "
+                "GROUP BY schlagwort.id ORDER BY COUNT(*) DESC LIMIT ?",
+                (hoechstens,),
+            )
+        ]
+
     def album_zuordnen(self, bild_id: int, name: str) -> None:
         self.db.execute("INSERT OR IGNORE INTO album (name) VALUES (?)", (name,))
         self.db.execute(
@@ -263,9 +336,12 @@ class Bestand:
         ).fetchone()
         alben = self.db.execute("SELECT COUNT(*) FROM album").fetchone()[0]
         fundorte = self.db.execute("SELECT COUNT(*) FROM fundort").fetchone()[0]
+        woerter = self.db.execute(
+            "SELECT COUNT(*) FROM schlagwort").fetchone()[0]
         return Zahlen(
             bilder=einzeln[0], mit_datum=einzeln[1], mit_ort=einzeln[2],
             favoriten=einzeln[3] or 0, alben=alben, fundorte=fundorte,
+            schlagwoerter=woerter,
         )
 
     def alben(self) -> list[tuple[str, int]]:
