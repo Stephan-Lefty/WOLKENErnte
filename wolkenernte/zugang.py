@@ -74,11 +74,18 @@ def zeigen() -> int:
                 return 0
             print(f"Eingerichtete Zugänge ({len(namen)}):\n")
             for name in namen:
-                kennung = name.rstrip(":")
-                anbieter = NACH_KENNUNG.get(kennung)
-                zusatz = ""
-                if anbieter and not anbieter.loeschen:
-                    zusatz = "  – dort kann nur gelesen werden"
+                # **Die Art, nicht der Name.** Hier stand zuerst der
+                # Name des Zugangs; wer seine Nextcloud »meinewolke«
+                # nennt, fand damit keinen Anbieter – und bekam weder
+                # den richtigen Namen noch den Hinweis aufs Löschen.
+                # Was dahintersteckt, weiß nur rclone.
+                anbieter = NACH_KENNUNG.get(dienst.art(name))
+                if anbieter is None:
+                    zusatz = "  – unbekannte Art, kein Aufräumen"
+                elif not anbieter.loeschen:
+                    zusatz = f"  – {anbieter.name}, dort kann nur gelesen werden"
+                else:
+                    zusatz = f"  – {anbieter.name}"
                 print(f"  {name}{zusatz}")
             print(f"\nAbgelegt in {pfad}")
     except RcloneFehler as fehler:

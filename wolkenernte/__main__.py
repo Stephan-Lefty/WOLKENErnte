@@ -151,6 +151,14 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("quelle", nargs="+")
 
     p = unter.add_parser(
+        "aufraeumen", help="in der Wolke löschen, was im Archiv liegt"
+    )
+    p.add_argument("archiv", type=Path)
+    p.add_argument("zugang", help="etwa meinewolke:Fotos")
+    p.add_argument("--wirklich", action="store_true",
+                   help="tatsächlich löschen statt nur zu zählen")
+
+    p = unter.add_parser(
         "verschlagworten", help="Schlagwörter vergeben und in die Datenbank "
         "schreiben"
     )
@@ -212,6 +220,10 @@ def main(argv: list[str] | None = None) -> int:
             print("Danach merkt sich das Programm ihn.")
             return 1
         print(f"Zuletzt benutztes Archiv: {archiv}")
+
+    if werte.befehl == "aufraeumen":
+        from .aufraeumen import bericht
+        return bericht(archiv, werte.zugang, wirklich=werte.wirklich)
 
     if werte.befehl == "verschlagworten":
         from .verschlagworten import bericht

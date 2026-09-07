@@ -260,6 +260,33 @@ class Dienst:
         })
         return list(antwort.get("list") or [])
 
+    def art(self, name: str) -> str:
+        """Welcher Anbieter hinter einem Zugang steckt.
+
+        **Der Name eines Zugangs sagt darüber nichts.** Wer seine
+        Nextcloud »meinewolke« nennt, hat trotzdem eine Nextcloud – und
+        genau daran hing ein Fehler: :func:`wolkenernte.anbieter.darf_loeschen`
+        bekam den *Namen* übergeben, fand ihn in keiner Tabelle und
+        antwortete »nein«. Sicher, aber unbrauchbar: Es hätte sich nie
+        irgendwo etwas aufräumen lassen.
+
+        Zurück kommt die Kennung aus :mod:`wolkenernte.anbieter`, also
+        ``"nextcloud"`` und nicht ``"webdav"``. Leer, wenn der Zugang
+        unbekannt ist.
+        """
+        try:
+            angaben = self.rufen("config/get", {"name": name.rstrip(":")})
+        except RcloneFehler:
+            return ""
+        art = str(angaben.get("type") or "")
+        # Nextcloud ist ein WebDAV-Server unter vielen. rclone merkt
+        # sich die Unterscheidung in »vendor«, und genau die ist für
+        # uns der Unterschied zwischen einem erprobten Anbieter und
+        # irgendeinem Server.
+        if art == "webdav":
+            return str(angaben.get("vendor") or "").lower() or "webdav"
+        return art
+
     def loeschen(self, pfad: str) -> None:
         """Eine einzelne Datei löschen.
 

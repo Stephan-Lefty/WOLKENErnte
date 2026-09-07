@@ -12,10 +12,13 @@ Prüfung findet beim Schreiben statt – dort, wo die Daten ohnehin durch
 die Hand gehen. Bei Anbietern, die Hashes kennen, wird schon vor dem
 Herunterladen verglichen und mancher Griff gespart.
 
-**Was hier nicht steht, ist das Löschen.** Das gehört nicht zu einer
-Quelle: Eine Quelle liefert, sie räumt nicht auf. Und vor allem darf
-nichts gelöscht werden, ohne dass
-:func:`wolkenernte.anbieter.darf_loeschen` gefragt wurde.
+**Löschen geht nur über einen einzigen Weg.** :meth:`Wolke.loeschen`
+gibt es, aber sie ist absichtlich schmucklos: Sie prüft nichts, sie
+entscheidet nichts, sie führt aus. Wer sie ruft, hat vorher
+:func:`wolkenernte.aufraeumen.erlaubnis_pruefen` gefragt und
+nachgewiesen, dass der Inhalt im Archiv liegt. Diese Klasse weiß über
+den Anbieter dahinter nichts und kann darum auch nicht beurteilen, ob
+gelöscht werden darf.
 """
 
 from __future__ import annotations
@@ -158,6 +161,34 @@ class Wolke:
         if ziel.parent == self._ablage:
             self._geholt[pfad] = ziel
         return ziel
+
+    def loeschen(self, pfad: str) -> None:
+        """Eine Datei in der Wolke löschen. Endgültig.
+
+        **Diese Methode prüft nichts.** Kein Anbieter, kein Nachweis,
+        keine Rückfrage – das steht alles in
+        :mod:`wolkenernte.aufraeumen`, und dort gehört es hin. Hier
+        wäre eine halbe Prüfung schlimmer als keine: Sie sähe nach
+        Sicherheit aus und wäre keine.
+
+        Der Eintrag verschwindet auch aus dem Verzeichnis dieser
+        Wolke. Sonst zeigte ein zweiter Durchgang eine Datei, die es
+        nicht mehr gibt.
+        """
+        eintrag = self._index.get(pfad)
+        if eintrag is None:
+            raise TakeoutFehler(f"{pfad} liegt nicht in {self.wurzel}.")
+        try:
+            self.dienst.rufen("operations/deletefile", {
+                "fs": self.wurzel, "remote": pfad,
+            })
+        except RcloneFehler as fehler:
+            raise TakeoutFehler(
+                f"{pfad} ließ sich nicht löschen: {fehler}") from fehler
+        del self._index[pfad]
+        weg = self._geholt.pop(pfad, None)
+        if weg is not None:
+            weg.unlink(missing_ok=True)
 
     # -- Prüfsummen --------------------------------------------------------
 
