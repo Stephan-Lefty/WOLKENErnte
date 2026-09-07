@@ -39,7 +39,7 @@ from pathlib import Path
 
 from .anbieter import NACH_KENNUNG, darf_loeschen
 from .lokal import MEDIEN
-from .nachweis import archiv_kennungen
+from .nachweis import archiv_kennungen, im_terminal
 from .rclone import RcloneFehler
 from .takeout import TakeoutFehler
 from .wolke import Wolke
@@ -60,6 +60,19 @@ class Urteil:
 
     geloescht: bool = False
     grund: str = ""
+
+    ablage: Path | None = None
+    """Wo die geholte Datei liegt, solange die Wolke offen ist.
+
+    **Für die Oberfläche.** Zum Prüfen muss ohnehin jede Datei
+    heruntergeladen werden; daraus ein Vorschaubild zu machen, kostet
+    nichts extra – und ohne Bilder vor Augen liest niemand eine Liste
+    aus vierhundert Dateinamen durch, bevor er sie löscht.
+
+    Nach :meth:`wolkenernte.wolke.Wolke.schliessen` zeigt der Pfad ins
+    Leere. Das ist in Ordnung: Danach gibt es auch nichts mehr zu
+    entscheiden.
+    """
 
 
 @dataclass
@@ -168,7 +181,7 @@ def durchgehen(
         # dann soll nichts gelöscht werden.
         groesse = datei.stat().st_size
         gesichert = (groesse, summe) in kennungen
-        urteil = Urteil(pfad, groesse, gesichert)
+        urteil = Urteil(pfad, groesse, gesichert, ablage=datei)
 
         if gesichert:
             bilanz.gesichert += 1
@@ -223,7 +236,8 @@ def bericht(archiv: Path, zugang: str, *, wirklich: bool = False) -> int:
         print(f"=== {zugang}  ({NACH_KENNUNG[art].name}) ===")
         print(f"Archiv: {archiv}\n")
         print("Prüfsummen des Archivs werden gerechnet …")
-        kennungen = archiv_kennungen(archiv)
+        kennungen = archiv_kennungen(archiv, im_terminal)
+        print(f"  {len(kennungen)} verschiedene Inhalte      ")
 
         with Wolke(dienst, name, unterordner) as wolke:
             print(f"\n{len(wolke)} Dateien in {wolke.wurzel}, "

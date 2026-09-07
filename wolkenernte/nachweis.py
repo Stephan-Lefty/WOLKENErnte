@@ -18,6 +18,7 @@ from __future__ import annotations
 import sys
 import time
 import zlib
+from collections.abc import Callable
 from pathlib import Path
 
 from .lokal import MEDIEN, Ordner
@@ -28,30 +29,48 @@ def _ist_medium(name: str) -> bool:
     return "." in name and "." + name.rsplit(".", 1)[-1].lower() in MEDIEN
 
 
-def archiv_kennungen(archiv: Path) -> set[tuple[int, int]]:
-    """Größe und Prüfsumme jeder Datei im Archiv."""
+def archiv_kennungen(
+    archiv: Path,
+    melden: Callable[[int, int], None] | None = None,
+) -> set[tuple[int, int]]:
+    """Größe und Prüfsumme jeder Datei im Archiv.
+
+    **Ohne ``melden`` schweigt die Funktion.** Sie hat lange von sich
+    aus ins Terminal geschrieben – für ein Werkzeug richtig, für die
+    Fensteranwendung falsch: Dort sieht niemand ein Terminal, und die
+    Meldungen landeten im Nichts, während der Anwender vor einem
+    Fortschrittsbalken saß, der von alledem nichts wusste.
+    """
     kennungen: set[tuple[int, int]] = set()
     dateien = [p for p in archiv.rglob("*") if p.is_file() and _ist_medium(p.name)]
     for nummer, pfad in enumerate(dateien, 1):
-        if nummer % 1000 == 0:
-            print(f"  Archiv {nummer}/{len(dateien)}", end="\r", flush=True)
+        if melden:
+            melden(nummer, len(dateien))
         try:
             summe = 0
             with pfad.open("rb") as datei:
                 while brocken := datei.read(1 << 20):
                     summe = zlib.crc32(brocken, summe)
             kennungen.add((pfad.stat().st_size, summe))
-        except OSError as fehler:
-            print(f"  ! {pfad.name}: {fehler}")
-    print(f"  {len(dateien)} Dateien im Archiv, "
-          f"{len(kennungen)} verschiedene Inhalte      ")
+        except OSError:
+            # Eine unlesbare Datei ist kein Grund abzubrechen - sie
+            # zählt nur nicht als Nachweis, und das ist die sichere
+            # Seite.
+            continue
     return kennungen
+
+
+def im_terminal(nummer: int, gesamt: int) -> None:
+    """Fortschritt für die Kommandozeile – als ``melden`` zu übergeben."""
+    if nummer % 1000 == 0 or nummer == gesamt:
+        print(f"  Archiv {nummer}/{gesamt}", end="\r", flush=True)
 
 
 def pruefen(archiv: Path, quellen: list[Path]) -> int:
     t0 = time.time()
     print(f"=== Archiv: {archiv} ===")
-    vorhanden = archiv_kennungen(archiv)
+    vorhanden = archiv_kennungen(archiv, im_terminal)
+    print(f"  {len(vorhanden)} verschiedene Inhalte im Archiv      ")
 
     fehlend: list[str] = []
     gesamt = 0

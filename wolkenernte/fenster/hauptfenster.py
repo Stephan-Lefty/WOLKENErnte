@@ -208,6 +208,10 @@ class Hauptfenster(QMainWindow):
         self.holen_menue.aboutToShow.connect(self._zugaenge_auffrischen)
 
         menue.addSeparator()
+        self.aufraeum_menue = menue.addMenu("In der Wolke aufräumen")
+        self.aufraeum_menue.aboutToShow.connect(self._zugaenge_auffrischen)
+
+        menue.addSeparator()
         eintrag = menue.addAction("Zugänge auffrischen")
         eintrag.triggered.connect(self._zugaenge_auffrischen)
 
@@ -249,24 +253,42 @@ class Hauptfenster(QMainWindow):
             self._durchsehen(dialog.angelegt)
 
     def _zugaenge_auffrischen(self) -> None:
-        from ..anbieter import NACH_KENNUNG
+        from ..anbieter import NACH_KENNUNG, darf_loeschen
 
         self.holen_menue.clear()
+        self.aufraeum_menue.clear()
         dienst = self._dienst()
         if dienst is None:
             return
         namen = dienst.remotes()
         if not namen:
-            eintrag = self.holen_menue.addAction("Noch kein Zugang angemeldet")
-            eintrag.setEnabled(False)
+            for wo in (self.holen_menue, self.aufraeum_menue):
+                eintrag = wo.addAction("Noch kein Zugang angemeldet")
+                eintrag.setEnabled(False)
             return
+
         for name in namen:
-            anbieter = NACH_KENNUNG.get(dienst.art(name))
+            art = dienst.art(name)
+            anbieter = NACH_KENNUNG.get(art)
             beschriftung = (f"{name}  ({anbieter.name})" if anbieter
                             else f"{name}  (unbekannte Art)")
+
             eintrag = self.holen_menue.addAction(beschriftung)
             eintrag.triggered.connect(
                 lambda _=False, n=name: self._durchsehen(n))
+
+            # **Kein Löscheintrag, wo nicht gelöscht werden kann.**
+            # Dieselbe Regel wie überall: einen Knopf, der nichts tut,
+            # soll es nicht geben. Statt ihn wegzulassen, steht hier
+            # der Grund - sonst sucht jemand einen Eintrag, den es nie
+            # gab.
+            eintrag = self.aufraeum_menue.addAction(beschriftung)
+            if darf_loeschen(art):
+                eintrag.triggered.connect(
+                    lambda _=False, n=name: self._aufraeumen(n))
+            else:
+                eintrag.setEnabled(False)
+                eintrag.setText(f"{beschriftung} – dort nur lesbar")
 
     def _durchsehen(self, zugang: str) -> None:
         from .wolken import Ernter, WolkeDurchsehen
@@ -290,6 +312,42 @@ class Hauptfenster(QMainWindow):
             "und was weg darf, entscheidet ein eigener Schritt – dort "
             "wird erst nachgewiesen, dass jede Datei angekommen ist.")
         self._neu_einlesen()
+
+    def _aufraeumen(self, zugang: str) -> None:
+        """Prüfen, zeigen, dann erst löschen."""
+        from ..aufraeumen import AufraeumFehler, erlaubnis_pruefen
+        from ..wolke import Wolke
+        from .aufraeumen import AufraeumenDialog
+        from .wolken import WolkeDurchsehen
+
+        dienst = self._dienst()
+        if dienst is None:
+            return
+        try:
+            erlaubnis_pruefen(dienst, zugang)
+        except AufraeumFehler as fehler:
+            QMessageBox.warning(self, "WOLKENErnte", str(fehler))
+            return
+
+        wahl = WolkeDurchsehen(dienst, zugang, self)
+        wahl.setWindowTitle(f"Aufräumen in {zugang}: – Ordner wählen")
+        wahl.holen.setText("Diesen Ordner prüfen")
+        if not wahl.exec() or not wahl.gewaehlt:
+            return
+
+        name, _, unterordner = wahl.gewaehlt.partition(":")
+        with Wolke(dienst, name, unterordner) as wolke:
+            if not wolke.medien():
+                QMessageBox.information(
+                    self, "WOLKENErnte",
+                    f"In {wolke.wurzel} liegen keine Bilder oder Videos.")
+                return
+            dialog = AufraeumenDialog(dienst, wolke, self.archiv, self)
+            dialog.exec()
+            if dialog.geloescht:
+                self.statusBar().showMessage(
+                    f"{dialog.geloescht} Dateien in {wolke.wurzel} gelöscht",
+                    8000)
 
     def _neu_einlesen(self) -> None:
         """Das Archiv noch einmal einlesen, nach dem Ernten."""
