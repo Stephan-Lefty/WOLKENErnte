@@ -29,11 +29,48 @@ def _ist_medium(name: str) -> bool:
     return "." in name and "." + name.rsplit(".", 1)[-1].lower() in MEDIEN
 
 
+def archiv_ist_leer(archiv: Path) -> bool:
+    """Ob im Archiv überhaupt ein Bild liegt.
+
+    Getrennt von :func:`archiv_kennungen`, seit die nur noch die
+    passenden Größen rechnet: »Keine Größe passt« heißt bloß, dass
+    diese Bilder noch nicht geerntet wurden – ein völlig normaler
+    Befund. »Gar kein Bild im Archiv« heißt dagegen, dass jemand
+    aufräumen will, bevor er geerntet hat, und das ist der
+    gefährlichste denkbare Fall.
+    """
+    return not any(p.is_file() and _ist_medium(p.name)
+                   for p in archiv.rglob("*"))
+
+
+def _groesse(pfad: Path) -> int:
+    try:
+        return pfad.stat().st_size
+    except OSError:
+        return -1
+
+
 def archiv_kennungen(
     archiv: Path,
     melden: Callable[[int, int], None] | None = None,
+    *,
+    nur_groessen: set[int] | None = None,
 ) -> set[tuple[int, int]]:
     """Größe und Prüfsumme jeder Datei im Archiv.
+
+    **``nur_groessen`` ist der Unterschied zwischen Sekunden und
+    Minuten.** Wer nachsehen will, ob 28 Bilder aus einer Cloud im
+    Archiv liegen, muss nicht 15.662 Archivdateien durchrechnen – nur
+    die, deren Größe überhaupt zu einer der 28 passt. Eine Datei
+    anderer Größe kann keine von ihnen sein.
+
+    Gemessen: über den ganzen Bestand 296 Sekunden, mit den 28 Größen
+    weniger als eine. Und es wird dabei nichts weicher geprüft – die
+    Prüfsumme wird nach wie vor gerechnet, nur eben nicht für Dateien,
+    die als Antwort ohnehin ausscheiden.
+
+    ``None`` heißt: alles rechnen. Das ist richtig für
+    :func:`pruefen`, wo der vollständige Bestand gebraucht wird.
 
     **Ohne ``melden`` schweigt die Funktion.** Sie hat lange von sich
     aus ins Terminal geschrieben – für ein Werkzeug richtig, für die
@@ -43,6 +80,10 @@ def archiv_kennungen(
     """
     kennungen: set[tuple[int, int]] = set()
     dateien = [p for p in archiv.rglob("*") if p.is_file() and _ist_medium(p.name)]
+    if nur_groessen is not None:
+        # Ein stat() je Datei statt sie ganz zu lesen.
+        dateien = [p for p in dateien
+                   if _groesse(p) in nur_groessen]
     for nummer, pfad in enumerate(dateien, 1):
         if melden:
             melden(nummer, len(dateien))

@@ -234,6 +234,49 @@ class DerDurchgang(unittest.TestCase):
             with self.subTest(name):
                 self.assertTrue((self.wolkenordner / name).exists())
 
+    def test_noch_nichts_geerntet_ist_kein_fehler(self) -> None:
+        """**Nur Auskunft, kein Abbruch.**
+
+        Ein Ordner, dessen Bilder noch gar nicht geerntet wurden, ist
+        ein völlig normaler Befund: nichts gesichert, alles bleibt
+        stehen. Ein erster Anlauf machte daraus einen Fehler, weil er
+        »keine passende Größe gefunden« mit »Archiv leer«
+        verwechselte.
+        """
+        anderes = self.tmp / "anderes-archiv" / "2024"
+        anderes.mkdir(parents=True)
+        (anderes / "fremd.jpg").write_bytes(b"etwas ganz anderes")
+
+        bilanz = durchgehen(self.tmp / "anderes-archiv", self.wolke)
+        self.assertEqual(bilanz.gesichert, 0)
+        self.assertEqual(bilanz.fehlt, 3)
+        for name in self.inhalte:
+            with self.subTest(name):
+                self.assertTrue((self.wolkenordner / name).exists())
+
+    def test_die_vorbereitung_wird_gemeldet(self) -> None:
+        """Ohne diese Meldung sah es aus wie ein Absturz: Bei 15.662
+        Bildern rechnete das Programm fünf Minuten ohne Lebenszeichen."""
+        gesehen: list[tuple[int, int]] = []
+        durchgehen(self.tmp / "archiv", self.wolke,
+                   vorbereitung=lambda n, g: gesehen.append((n, g)))
+        self.assertTrue(gesehen)
+
+    def test_nur_die_passenden_groessen_werden_gerechnet(self) -> None:
+        """Der Unterschied zwischen Sekunden und Minuten.
+
+        Eine Archivdatei anderer Größe kann keine der Clouddateien
+        sein; sie zu lesen wäre reine Zeitverschwendung.
+        """
+        # Ein großes Bild ins Archiv, das es drüben nicht gibt.
+        (self.tmp / "archiv" / "2024" / "2024-05" / "riesig.jpg").write_bytes(
+            b"x" * 5000)
+        gesehen: list[tuple[int, int]] = []
+        durchgehen(self.tmp / "archiv", self.wolke,
+                   vorbereitung=lambda n, g: gesehen.append((n, g)))
+        # Zwei Archivdateien passen der Größe nach, die dritte nicht.
+        self.assertEqual(gesehen[-1][1], 2)
+
     def test_eine_unbekannte_datei_laesst_sich_nicht_loeschen(self) -> None:
         with self.assertRaises(TakeoutFehler):
             self.wolke.loeschen("gibtsnicht.jpg")

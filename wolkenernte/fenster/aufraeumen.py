@@ -64,6 +64,7 @@ class Pruefung(QObject):
     """
 
     schritt = Signal(int, int, str)
+    vorbereitet = Signal(int, int)
     fertig = Signal(object)
     misslungen = Signal(str)
 
@@ -83,7 +84,8 @@ class Pruefung(QObject):
             # **wirklich=False, immer.** Dieser Lauf prüft nur; gelöscht
             # wird erst, nachdem jemand die Bilder gesehen hat.
             bilanz = durchgehen(self.archiv, self.wolke, wirklich=False,
-                                fortschritt=melden)
+                                fortschritt=melden,
+                                vorbereitung=self.vorbereitet.emit)
         except KeyboardInterrupt:
             self.misslungen.emit("Abgebrochen. Es wurde nichts gelöscht.")
             return
@@ -313,14 +315,30 @@ class AufraeumenDialog(QDialog):
         self.pruefung.moveToThread(self.faden)
         self.faden.started.connect(self.pruefung.laufen)
         self.pruefung.schritt.connect(self._schritt)
+        self.pruefung.vorbereitet.connect(self._vorbereitet)
         self.pruefung.fertig.connect(self._geprueft)
         self.pruefung.misslungen.connect(self._misslungen)
         self.faden.start()
 
     # -- Prüfen ------------------------------------------------------------
 
+    def _vorbereitet(self, nummer: int, gesamt: int) -> None:
+        """Wie weit das Archiv durchgesehen ist.
+
+        **Ohne diese Meldung sah es aus wie ein Absturz.** Bei einem
+        Bestand aus 15.662 Bildern rechnete das Programm hier fünf
+        Minuten lang, ohne ein Lebenszeichen – der Balken war
+        unbestimmt, die Zeile sagte nur »wird gerechnet«.
+        """
+        if not gesamt:
+            self.stand.setText("Passende Dateien im Archiv werden gesucht …")
+            return
+        self.balken.setRange(0, gesamt)
+        self.balken.setValue(nummer)
+        self.stand.setText(f"Archiv durchgesehen: {nummer} von {gesamt}")
+
     def _schritt(self, nummer: int, gesamt: int, pfad: str) -> None:
-        if self.balken.maximum() != gesamt:
+        if nummer == 1 or self.balken.maximum() != gesamt:
             self.balken.setRange(0, gesamt)
         self.balken.setValue(nummer)
         self.stand.setText(f"Geprüft: {nummer} von {gesamt}   ·   {pfad[-52:]}")
