@@ -30,6 +30,7 @@ from .lokal import (
     jahr_aus_ordner,
 )
 from .metadaten import Angaben, MetadatenFehler, aus_json
+from .nachweis import archiv_kennungen
 from .takeout import Archiv as Takeout
 from .takeout import TakeoutFehler
 from .wolke import Wolke
@@ -158,6 +159,23 @@ def _ernten(ziel: Path, quellen, dienst, gesehen, t_start) -> int:
                 tuple(MEDIEN)
             ):
                 alle_groessen.add(e.groesse)
+
+    # **Was schon im Archiv liegt, gilt als gesehen.**
+    #
+    # Ohne das kam dasselbe Bild aus zwei Clouds zweimal ins Archiv:
+    # Innerhalb *eines* Laufs erkennt ``gesehen`` die Doppelgänger, aber
+    # jeder Aufruf begann mit einer leeren Menge, und der zweite Weg -
+    # »liegt schon unter diesem Namen« - greift nur bei gleichem
+    # Dateinamen. Coast.jpg aus der einen Cloud und IMG_0001.jpg aus
+    # der anderen sind derselbe Inhalt und landeten beide im Archiv.
+    #
+    # Gerechnet wird nur, wo eine Größe überhaupt zusammenfällt - über
+    # ein gewachsenes Archiv wäre alles andere Minuten für nichts.
+    if ziel.is_dir() and alle_groessen:
+        vorher = len(gesehen)
+        gesehen.update(archiv_kennungen(ziel, nur_groessen=alle_groessen))
+        if len(gesehen) > vorher:
+            print(f"  {len(gesehen) - vorher} Inhalte liegen schon im Archiv")
 
     for pfad, quelle, art in geoeffnet:
         name = pfad.name if isinstance(pfad, Path) else str(pfad)

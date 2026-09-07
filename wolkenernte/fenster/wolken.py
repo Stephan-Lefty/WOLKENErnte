@@ -341,6 +341,7 @@ class Arbeit(QObject):
     def laufen(self) -> None:
         from ..archiv import uebernehmen
         from ..ernten import angaben_ermitteln, quelle_oeffnen
+        from ..nachweis import archiv_kennungen
         from ..zuordnung import zuordnen
 
         try:
@@ -367,6 +368,16 @@ class Arbeit(QObject):
                     f"In {self.quelle} liegen keine Bilder oder Videos.")
                 return
 
+            # **Was schon im Archiv liegt, gilt als gesehen.** Sonst
+            # kommt dasselbe Bild aus zwei Clouds zweimal an: Der
+            # Doppelgängerschutz innerhalb eines Laufs kennt die
+            # früheren Läufe nicht, und »liegt schon unter diesem
+            # Namen« greift nur bei gleichem Dateinamen.
+            groessen = {e.groesse for p in medien
+                        if (e := quelle.eintrag(p)) is not None}
+            gesehen = (archiv_kennungen(self.ziel, nur_groessen=groessen)
+                       if self.ziel.is_dir() and groessen else set())
+
             def melden(nummer: int, name: str) -> None:
                 if self.abbrechen:
                     # Kein eigener Abbruchweg in uebernehmen(): Eine
@@ -378,7 +389,7 @@ class Arbeit(QObject):
             bilanz = uebernehmen(
                 quelle, zuordnungen,
                 lambda z: angaben_ermitteln(quelle, z),
-                self.ziel, fortschritt=melden,
+                self.ziel, fortschritt=melden, gesehen=gesehen,
             )
         except KeyboardInterrupt:
             self.misslungen.emit("Abgebrochen. Was schon geholt wurde, bleibt.")
