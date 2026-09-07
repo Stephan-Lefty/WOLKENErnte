@@ -17,8 +17,13 @@ Harvesting, signing in and cleaning up are in place (see *Done*) – **but have
 never run against a real Nextcloud.** Everything has only been tried against
 rclone's `local` and `alias` backends.
 
-- [ ] **Try it against Stephan's Nextcloud.** Sign in, pick a folder, harvest,
-  then `aufraeumen` as a dry run first and with `--wirklich` afterwards.
+- [ ] **Deleting for real has never run.** Signing in, picking a folder,
+  harvesting and the dry run are proven against a real Nextcloud; `--wirklich`
+  is not. That needs a dedicated test folder in the cloud, not one holding
+  files in use.
+- [ ] **Remove a picture from the archive by hand.** Anyone who harvested
+  something they did not want there can only delete it in the file manager,
+  and the database learns nothing about it.
 - [ ] Progress via `core/stats`, long jobs asynchronously with `_async: true`
   and `job/status`. The harvester currently shows a file count, not a rate.
 
@@ -125,6 +130,29 @@ package manager bring along. Nobody should download rclone by hand.
   clean route – and perhaps the first way into Proton Photos.
 
 ## Done
+
+### Proven against a real Nextcloud (2026-09-07)
+
+Most of this only surfaced there – everything passed against rclone's `local`
+backend.
+
+- [x] **The "include subfolders" checkbox did nothing.** `recurse` was hard-wired
+  to `True`; anyone cleaning up one folder was shown everything below it.
+- [x] **`--ohne-unterordner` was in the help and arrived nowhere.** Hence
+  `tests/test_kommandozeile.py`: for every switch, check what reaches the
+  callee, not what it is called.
+- [x] **Five minutes of apparent freeze before cleanup.** The whole archive was
+  hashed to look for 17 images. Now only matching sizes: 296 seconds against
+  less than one.
+- [x] **The same image from two clouds landed twice.** Duplicate protection only
+  applied within a single run.
+- [x] **`erfassen` understands cloud accounts** – previously there was no way to
+  record places, titles, albums and origins for a cloud. That weighs more for a
+  cloud: after cleanup it is empty.
+- [x] **The window records origins while harvesting**, since there is no second
+  step there.
+- [x] **Verified: all 21,044 images from the Google Photos folder are in the
+  archive.** `wolkenernte pruefen`, 13.3 minutes.
 
 ### Harvesting from a cloud, in the window (2026-09-07)
 

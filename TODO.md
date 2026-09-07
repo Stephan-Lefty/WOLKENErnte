@@ -18,8 +18,13 @@ Ernten, anmelden und aufräumen stehen (siehe *Erledigt*) – **aber noch nie
 gegen eine echte Nextcloud gelaufen.** Erprobt ist alles nur gegen rclones
 `local`- und `alias`-Backend.
 
-- [ ] **Gegen Stephans Nextcloud erproben.** Anmelden, Ordner aussuchen, holen,
-  dann `aufraeumen` erst als Probelauf und danach mit `--wirklich`.
+- [ ] **Das scharfe Löschen ist noch nie gelaufen.** Anmelden, Ordner aussuchen,
+  holen und der Probelauf sind an einer echten Nextcloud erprobt; `--wirklich`
+  fehlt. Dafür braucht es einen eigenen Probeordner in der Cloud, nicht einen,
+  in dem gebrauchte Dateien liegen.
+- [ ] **Ein Bild von Hand aus dem Archiv nehmen.** Wer etwas geerntet hat, das
+  er dort nicht haben will – GuideOS-Grafiken zwischen Familienfotos –, kann
+  es bisher nur im Dateimanager löschen, und die Datenbank weiß nichts davon.
 - [ ] Fortschritt über `core/stats`, lange Aufträge asynchron mit
   `_async: true` und `job/status`. Der Ernter zeigt bisher die Zahl der
   Dateien, nicht die Übertragungsrate.
@@ -134,6 +139,28 @@ Paketverwalter mitbringen. Niemand soll rclone von Hand herunterladen.
   vielleicht auch der erste Zugang zu Proton Fotos.
 
 ## Erledigt
+
+### An einer echten Nextcloud erprobt (2026-09-07)
+
+Das meiste davon fiel erst dort auf – gegen rclones `local`-Backend lief alles.
+
+- [x] **Der Haken »Unterordner mitnehmen« tat nichts.** `recurse` stand fest
+  auf `True`; wer in einem Ordner aufräumen wollte, bekam alles darunter.
+- [x] **`--ohne-unterordner` stand in der Hilfe und kam nirgends an.** Seither
+  gibt es `tests/test_kommandozeile.py`: Für jeden Schalter wird geprüft, was
+  beim Aufgerufenen ankommt, nicht wie er heißt.
+- [x] **Fünf Minuten Stillstand vor dem Aufräumen.** Das ganze Archiv wurde
+  durchgerechnet, um 17 Bilder zu suchen. Jetzt nur die passenden Größen: 296
+  Sekunden gegen weniger als eine.
+- [x] **Dasselbe Bild aus zwei Clouds kam zweimal ins Archiv.** Der
+  Doppelgängerschutz galt nur innerhalb eines Laufs.
+- [x] **`erfassen` versteht Cloudzugänge** – vorher gab es für eine Cloud keinen
+  Weg, Orte, Titel, Alben und Fundorte festzuhalten. Bei einer Cloud wiegt das
+  schwerer: Nach dem Aufräumen ist sie leer.
+- [x] **Das Fenster erfasst gleich beim Holen mit**, weil es dort keinen
+  zweiten Schritt gibt.
+- [x] **Nachgewiesen: alle 21.044 Bilder aus dem Google-Fotos-Ordner sind im
+  Archiv.** `wolkenernte pruefen`, 13,3 Minuten.
 
 ### Aus der Wolke ernten, im Fenster (2026-09-07)
 

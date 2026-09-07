@@ -75,9 +75,21 @@ Dateien liegen beim Prüfen ohnehin schon auf der Platte. Was nicht
 nachgewiesen ist, lässt sich gar nicht erst ankreuzen – kein
 abgeblendetes Häkchen, sondern gar keins.
 
-**Erprobt ist das alles nur gegen rclones `local`- und
-`alias`-Backend.** Gegen eine echte Nextcloud ist noch nichts
-gelaufen; das ist der nächste Schritt und braucht Stephans Zugangsdaten.
+**An einer echten Nextcloud erprobt** – anmelden, Ordner aussuchen,
+holen, erfassen und der Aufräum-Probelauf. **Nicht erprobt ist
+`--wirklich`**, also das scharfe Löschen.
+
+Fünf Fehler fielen erst dort auf, obwohl alles gegen rclones
+`local`-Backend grün war. Sie haben eine gemeinsame Form: **Etwas war
+angelegt, beschrieben und kam nirgends an.** Der Haken »Unterordner
+mitnehmen« (``recurse`` stand fest auf ``True``), der Schalter
+``--ohne-unterordner`` (der Aufruf blieb unverändert), die
+Doppelgängerprüfung über mehrere Läufe hinweg, die Herkunft bei
+Cloudquellen – und fünf Minuten Stillstand, weil zum Suchen von 17
+Bildern das ganze Archiv gerechnet wurde.
+
+Daraus ist `tests/test_kommandozeile.py` entstanden: Für jeden Schalter
+wird geprüft, **was beim Aufgerufenen ankommt**, nicht wie er heißt.
 
 Vier Bedingungen fürs Löschen, alle vier müssen gelten: der Anbieter
 erlaubt es; gleiche Größe **und** Prüfsumme im Archiv; die Prüfsumme
