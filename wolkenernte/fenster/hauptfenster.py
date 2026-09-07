@@ -201,7 +201,7 @@ class Hauptfenster(QMainWindow):
         """
         menue = self.menuBar().addMenu("&Wolke")
 
-        eintrag = menue.addAction("Nextcloud anmelden …")
+        eintrag = menue.addAction("In einer Wolke anmelden …")
         eintrag.triggered.connect(self._zugang_anlegen)
 
         self.holen_menue = menue.addMenu("Bilder holen aus")
@@ -240,17 +240,19 @@ class Hauptfenster(QMainWindow):
         return self._rclone
 
     def _zugang_anlegen(self) -> None:
-        from .wolken import ZugangAnlegen
+        """Anbieter wählen, anmelden, gleich hineinsehen."""
+        from .anmelden import anmelden
 
         dienst = self._dienst()
         if dienst is None:
             return
-        dialog = ZugangAnlegen(dienst, self)
-        if dialog.exec() and dialog.angelegt:
-            self.statusBar().showMessage(
-                f"Zugang »{dialog.angelegt}« angelegt und erprobt", 6000)
-            self._zugaenge_auffrischen()
-            self._durchsehen(dialog.angelegt)
+        name = anmelden(dienst, self)
+        if not name:
+            return
+        self.statusBar().showMessage(
+            f"Zugang »{name}« angelegt und erprobt", 6000)
+        self._zugaenge_auffrischen()
+        self._durchsehen(name)
 
     def _zugaenge_auffrischen(self) -> None:
         from ..anbieter import NACH_KENNUNG, darf_loeschen
