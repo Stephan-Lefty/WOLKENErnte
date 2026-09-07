@@ -35,19 +35,18 @@ ohnehin nur die Hälfte geht.
 
 ### Schlagwörter
 
-Die Hälfte, die ohne Modell auskommt, steht (siehe *Erledigt*). Was fehlt, ist
-der Teil, der **ins Bild schaut**.
+Beide Hälften laufen und sind gemessen (siehe *Erledigt*). Was fehlt, ist der
+Weg von dort in die Datenbank und in die Oberflächen.
 
-- [ ] **`wolkenernte/daten/begriffe.npz` erzeugen.** Einmalig mit
-  `werkzeuge/begriffe_einbetten.py`; braucht `onnxruntime`, `tokenizers` und
-  den 242-MB-Textteil des Modells. Das Ergebnis sind rund 300 KB, die ins
-  Repository gehören. Ohne diese Datei tut die Bilderkennung nichts.
-- [ ] **Am echten Bestand messen:** Wie viele der 14.767 Bilder bekommen ein
-  Schlagwort aus dem Bild, welche Wörter greifen zu oft, und wie lange dauert
-  ein Durchlauf? Die Schwellen in `begriffe.py` sind bisher **geschätzt**, nicht
-  gemessen – so wie »Kamera« mit 58 % geschätzt war, bevor es auffiel.
-- [ ] **Die Begriffsliste danach nachziehen.** Wörter, die nie greifen, gehören
-  heraus; Wörter, die alles greifen, sind zu breit gefasst.
+- [ ] **Die Begriffsliste weiter nachziehen.** Gemessen an 400 Bildern:
+  »Ostern« liegt bei 7 % und meint dabei meist nur Frühlingsblumen, »Schaf« bei
+  5 % ist verdächtig. Wörter, die nie greifen, gehören ebenso heraus.
+- [ ] **»Schwarzweiß« gehört nicht zum Modell.** Die Farbsättigung sagt es
+  genau, das Modell rät. Dasselbe gilt womöglich für »Bildschirmfoto«, das
+  schon aus dem Dateinamen kommt.
+- [ ] **»Sonnenuntergang« nach der Uhr benennen.** Das Modell kann Auf- und
+  Untergang nicht unterscheiden (0,975), die Aufnahmezeit kann es. Die beiden
+  Hälften müssen sich dafür treffen – bisher tun sie das nirgends.
 - [ ] **In beide Oberflächen einbauen:** Schlagwörter anzeigen, danach filtern,
   danach suchen. Der Unterbau in `bestandsliste.py`, nicht zweimal.
 - [ ] **Ein Durchlauf über den Bestand**, der die Schlagwörter in die Datenbank
@@ -140,7 +139,7 @@ Paketverwalter mitbringen. Niemand soll rclone von Hand herunterladen.
 
 ## Erledigt
 
-### Schlagwörter, die kein Modell brauchen (2026-09-07)
+### Schlagwörter (2026-09-07)
 
 - [x] **Jahreszeit, Tageszeit, Bildformat und Herkunft** aus dem ableiten, was
   ohnehin bekannt ist. Am echten Bestand: 14.767 Bilder, nur 31 ohne jedes
@@ -159,6 +158,18 @@ Paketverwalter mitbringen. Niemand soll rclone von Hand herunterladen.
   statt einer langen Liste, Schwelle je Gruppe, kein Fremdpaket nötig.
 - [x] **Das Modell holen, prüfen, wiederfinden** – mit SHA-256, ohne zweiten
   Griff ins Netz, unter `user_data_dir`.
+- [x] **Den CLIP-Zerleger selbst gebaut** statt `tokenizers` (Rust, unter Arch
+  nicht paketiert) zu verlangen. Gegen den echten gehalten: 455 Sätze, null
+  Abweichungen.
+- [x] **`wolkenernte/daten/begriffe.npz` erzeugt** – 280 KB, liegt im
+  Repository. Zum Laufen fehlt nur noch `onnxruntime`.
+- [x] **An 400 echten Bildern gemessen, und der erste Lauf war unbrauchbar:**
+  »Regen« an 60 % aller Bilder, 147 von 200 Bildern mit den vollen fünf
+  Wörtern. Zwei Ursachen behoben – die stumme Antwort »irgendein Foto«, die
+  eine Gruppe schweigen lässt, und die **gerechnete** statt gesetzte Schwelle.
+  Danach: 2,6 Wörter je Bild, 1,8 % ohne, häufigstes Wort 13,5 %.
+- [x] **6,4 Bilder je Sekunde** auf der Hauptrecheneinheit – 39 Minuten für
+  14.767 Bilder.
 
 ### Die Fensteranwendung (2026-09-07)
 

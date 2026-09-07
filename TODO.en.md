@@ -33,19 +33,18 @@ sign-in flow; finally iCloud Photos, where only half of it works anyway.
 
 ### Keywords
 
-The half that needs no model is in place (see *Done*). What is missing is the
-part that **looks at the image**.
+Both halves run and are measured (see *Done*). What is missing is the route
+from there into the database and the interfaces.
 
-- [ ] **Generate `wolkenernte/daten/begriffe.npz`.** One-off, using
-  `werkzeuge/begriffe_einbetten.py`; needs `onnxruntime`, `tokenizers` and the
-  242 MB text half of the model. The result is roughly 300 KB and belongs in the
-  repository. Without that file, image recognition does nothing.
-- [ ] **Measure against the real collection:** how many of the 14,767 images get
-  a keyword from the image, which words fire too often, and how long does a run
-  take? The thresholds in `begriffe.py` are **guessed** so far, not measured –
-  just as "Kamera" was guessed at before it turned out to hit 58 %.
-- [ ] **Adjust the term list afterwards.** Words that never fire should go;
-  words that fire on everything are drawn too wide.
+- [ ] **Keep adjusting the term list.** Measured across 400 images: "Ostern"
+  (Easter) sits at 7 % and mostly means spring flowers, "Schaf" (sheep) at 5 %
+  looks suspicious. Words that never fire should go too.
+- [ ] **"Schwarzweiß" does not belong to the model.** Colour saturation says it
+  exactly, the model guesses. The same may hold for "Bildschirmfoto", which
+  already comes from the filename.
+- [ ] **Name "Sonnenuntergang" by the clock.** The model cannot tell sunrise
+  from sunset (0.975), the capture time can. The two halves have to meet for
+  that – so far they meet nowhere.
 - [ ] **Wire it into both interfaces:** show keywords, filter by them, search by
   them. The groundwork goes into `bestandsliste.py`, not twice.
 - [ ] **A pass over the collection** that writes the keywords into the database –
@@ -131,7 +130,7 @@ package manager bring along. Nobody should download rclone by hand.
 
 ## Done
 
-### Keywords that need no model (2026-09-07)
+### Keywords (2026-09-07)
 
 - [x] **Season, time of day, aspect ratio and origin** derived from what is
   known anyway. Against the real collection: 14,767 images, only 31 without any
@@ -149,6 +148,17 @@ package manager bring along. Nobody should download rclone by hand.
   of one long list, a threshold per group, no third-party package needed.
 - [x] **Fetching, verifying and locating the model** – with SHA-256, without a
   second reach for the network, under `user_data_dir`.
+- [x] **Built the CLIP tokenizer ourselves** instead of requiring `tokenizers`
+  (Rust, not packaged on Arch). Checked against the real one: 455 sentences,
+  zero deviations.
+- [x] **Generated `wolkenernte/daten/begriffe.npz`** – 280 KB, in the
+  repository. All that is missing to run it is `onnxruntime`.
+- [x] **Measured across 400 real images, and the first run was useless:**
+  "Regen" on 60 % of all images, 147 of 200 images carrying the full five
+  words. Two causes fixed – the silent answer "just a photograph" that lets a
+  group stay quiet, and a **computed** rather than hand-set threshold.
+  Afterwards: 2.6 words per image, 1.8 % with none, most frequent word 13.5 %.
+- [x] **6.4 images per second** on the CPU – 39 minutes for 14,767 images.
 
 ### The desktop application (2026-09-07)
 

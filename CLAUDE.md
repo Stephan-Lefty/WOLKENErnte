@@ -5,33 +5,55 @@ Landkarte des Repositorys. Ergänzt [README.md](README.md) und
 
 ## Hier war Schluss (Stand 2026-09-07, Montagmittag)
 
-**359 Tests grün.** Seit heute Mittag gibt es **Schlagwörter**. Die
-Hälfte, die kein Modell braucht – Jahreszeit, Tageszeit, Bildformat,
-Herkunft – läuft und trifft: 14.767 Bilder, nur 31 ohne jedes
-Schlagwort. Die andere Hälfte, die ins Bild schaut, ist gebaut, aber
-**noch nie gelaufen**.
+**378 Tests grün.** Seit heute gibt es **Schlagwörter**, beide Hälften,
+und beide sind am echten Bestand gemessen.
 
-**Genau ein Schritt fehlt**, und ohne ihn tut die Bilderkennung
-nichts:
+Die Hälfte ohne Modell – Jahreszeit, Tageszeit, Bildformat, Herkunft –
+trifft 14.767 Bilder, nur 31 gehen leer aus. Die Hälfte, die ins Bild
+schaut, läuft mit **6,4 Bildern je Sekunde** (39 Minuten für den ganzen
+Bestand), vergibt 2,6 Wörter je Bild, und 1,8 % bekommen nichts.
 
-```
-python3 werkzeuge/begriffe_einbetten.py
-```
+`wolkenernte/daten/begriffe.npz` liegt im Repository. Zum Laufen fehlt
+auf einem fremden Rechner nur `onnxruntime` (unter Manjaro:
+`python-onnxruntime-cpu` aus `extra`) und beim ersten Aufruf das
+335-MB-Modell, das sich selbst holt.
 
-Das rechnet die 150 englischen Fragen einmal in Zahlenreihen um und
-schreibt `wolkenernte/daten/begriffe.npz` (rund 300 KB, gehört ins
-Repository). Es braucht `onnxruntime` und `tokenizers`; unter Manjaro
-liegt ersteres als `python-onnxruntime-cpu` in `extra`. Die beiden
-Modellhälften liegen bereits unter
-`~/.local/share/WOLKENErnte/modelle/`, ebenso `tokenizer.json`.
+**Was als Nächstes ansteht**, in dieser Reihenfolge:
 
-Danach ist die erste Frage: **Was kommt am echten Bestand heraus?** Die
-Schwellen in `begriffe.py` sind geschätzt, nicht gemessen – dieselbe
-Lage wie bei »Kamera«, bevor auffiel, dass es 58 % traf.
+1. **Ein Durchlauf, der die Schlagwörter in die Datenbank schreibt.**
+   Die Tabellen stehen (`bestand.py`), der Durchlauf nicht.
+2. **In beide Oberflächen einbauen** – anzeigen, filtern, suchen. Der
+   Unterbau gehört in `bestandsliste.py`, nicht zweimal.
+3. **Die Begriffsliste nachziehen.** »Ostern« liegt bei 7 % und meint
+   dabei meist nur Frühlingsblumen; »Schaf« bei 5 % ist verdächtig.
 
 **Der eigentliche Zweck bleibt offen:** aus einer Wolke ernten. Der
 Weg dorthin steht in `wolke.py`, erprobt ist er nur gegen rclones
 `local`-Backend.
+
+### Was die Messung gelehrt hat
+
+Der erste Lauf war **unbrauchbar**, und zwar sichtbar: »Regen« hing an
+60 % aller Bilder, »Zeichnung« an 37 %, und 147 von 200 Bildern trugen
+die vollen fünf Wörter. Zwei Ursachen, beide grundsätzlich:
+
+**Jede Gruppe musste einen Sieger küren.** Der Vergleich fragt nicht
+*ob*, sondern *welches* – bei sechs Antworten hat die beste immer
+einen ordentlichen Anteil, auch wenn keine passt. Dagegen hilft
+`NICHTS`: »irgendein Foto« läuft in jeder Gruppe mit, taucht nie als
+Schlagwort auf, und wenn es gewinnt, schweigt die Gruppe. »Regen« fiel
+von 60 auf 20 %.
+
+**Die Schwellen waren von Hand gesetzt.** Derselbe Anteil bedeutet in
+einer Gruppe aus sechs Antworten etwas anderes als in einer aus
+fünfundzwanzig. Jetzt wird gerechnet: `STRENGE / (n + 1)`, also
+fast fünfmal so wahrscheinlich wie reines Raten. Eine Zahl statt fünf,
+und sie wächst von selbst mit, wenn eine Gruppe kleiner wird.
+
+Und zwei Begriffe hat die Messung **widerlegt**: »Sonnenaufgang« lag
+bei 0,975 an »Sonnenuntergang« – das Modell kann sie nicht
+unterscheiden, die Uhr könnte es; »Innenraum« lag bei 0,969 an
+»Zuhause« und sagte weniger.
 
 ## Wie die Schlagwörter deutsch werden, ohne Übersetzung
 
