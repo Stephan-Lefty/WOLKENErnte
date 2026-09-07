@@ -4,6 +4,73 @@
 
 Alle nennenswerten Änderungen an WOLKENErnte. Neueste zuerst.
 
+## 0.4.0 – 2026-09-07
+
+**Schlagwörter.** Jedes Bild bekommt höchstens fünf, und sie kommen aus
+zwei Quellen. Die eine kostet nichts: Jahreszeit, Tageszeit, Bildformat
+und Herkunft lassen sich aus Datum, Dateiname und Bildmaßen ableiten –
+14.767 Bilder, nur 31 gehen leer aus. Die andere schaut ins Bild, mit
+einem CLIP-Modell über ONNX Runtime, und läuft mit 4,5 Bildern je
+Sekunde offline auf der Hauptrecheneinheit.
+
+**Die Frage ist englisch, die Antwort deutsch.** Das Modell versteht nur
+Englisch, aber unsere Fragen stehen fest – also wird der Textteil
+**einmal beim Bauen** gerechnet und liegt als 268 KB bei. Auf dem
+Rechner des Anwenders läuft nur der Bildteil. Kein mehrsprachiges
+Modell (die kosten 250 MB bis 1,6 GB extra), keine Übersetzung, kein
+Übersetzungsfehler.
+
+Der erste Lauf über 400 echte Bilder war unbrauchbar: »Regen« hing an
+60 % aller Bilder. Zwei Ursachen, beide grundsätzlich – jede Gruppe
+musste einen Sieger küren (jetzt läuft eine stumme Antwort mit, und
+gewinnt sie, schweigt die Gruppe), und die Schwellen waren von Hand
+gesetzt (jetzt gerechnet, relativ zum Zufall). Danach: 2,6 Wörter je
+Bild, häufigstes 13,5 %.
+
+Drei Wörter hat die Messung **widerlegt** und sie sind heraus:
+»Schwarzweiß« (die Farbsättigung sagt es exakt), »Luftaufnahme« (bei
+480 Drohnenbildern keinerlei Trennung vom Rest) und »Zeichnung« (traf
+auch bei 0,90 gewöhnliche Handyfotos).
+
+**Aus der Cloud ernten – im Fenster.** Ein Menü »Cloudspeicher«:
+anmelden, Ordnerbaum durchsehen, holen, aufräumen. Die Anbieterliste
+zeigt vorher, was jeder kann – sehen, holen, löschen – und nennt bei
+Google Fotos und Proton Fotos den Grund, warum es dort nicht geht,
+statt den Eintrag wegzulassen. Die Rückfragen kommen von rclone selbst,
+also gibt es nichts, was je Anbieter nachzupflegen wäre.
+
+**Aufräumen mit den Bildern vor Augen.** Vier Bedingungen, alle vier
+müssen gelten: Der Anbieter erlaubt es, die Datei liegt mit gleicher
+Größe **und** Prüfsumme im Archiv, die Prüfsumme wurde für *diesen*
+Lauf gerechnet, und der Anwender hat bestätigt. Was nicht nachgewiesen
+ist, lässt sich gar nicht erst ankreuzen. Ein leeres Archiv bricht ab –
+wer zuerst aufräumt und dann erntet, hätte sonst alles verloren.
+
+**An einer echten Nextcloud erprobt**, und das war der Punkt: Fünf
+Fehler fielen erst dort auf, obwohl alles gegen rclones `local`-Backend
+grün war. Sie haben eine gemeinsame Form – *etwas war angelegt,
+beschrieben und kam nirgends an*: der Haken »Unterordner mitnehmen«,
+der Schalter `--ohne-unterordner`, die Doppelgängerprüfung über mehrere
+Läufe hinweg, die Herkunft bei Cloudquellen. Dazu fünf Minuten
+Stillstand, weil zum Suchen von 17 Bildern das ganze Archiv gerechnet
+wurde – jetzt nur die passenden Größen, 296 Sekunden gegen weniger als
+eine.
+
+**Ein .deb für Debian und Ubuntu**, gebaut aus dem Wheel mit
+`dpkg-deb`. Nach `dist-packages`, mit Debians eigenen Paketnamen, und
+rclone ohne Versionsangabe unter *Empfohlen*, weil Debian stable eine
+zu alte Fassung liefert.
+
+**Und das Symbol kommt endlich mit.** Es lag unter `assets/` und gehört
+damit nicht zum Python-Paket; wer über pip installierte, bekam ein
+Fenster ohne Symbol – ohne Fehlermeldung.
+
+Rechte Maustaste im Raster: Bilder an GIMP, darktable oder ein anderes
+Programm weiterreichen. Angeboten wird nur, was wirklich installiert
+ist.
+
+561 Tests.
+
 ## 0.3.0 – 2026-09-07
 
 **Die Fensteranwendung.** `wolkenernte fenster <Archiv>` öffnet ein
