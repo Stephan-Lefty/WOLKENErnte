@@ -10,6 +10,7 @@ from __future__ import annotations
 import unittest
 
 from wolkenernte.begriffe import (
+    DECKEL,
     GRUPPEN,
     NICHTS,
     ORT,
@@ -108,17 +109,44 @@ class DieGerechneteSchwelle(unittest.TestCase):
         nach_groesse = sorted(GRUPPEN, key=lambda g: len(g.begriffe))
         self.assertGreater(nach_groesse[0].schwelle, nach_groesse[-1].schwelle)
 
-    def test_immer_deutlich_ueber_dem_zufall(self) -> None:
+    def test_immer_ueber_dem_zufall(self) -> None:
+        """Sonst käme ein geratenes Wort durch.
+
+        **Nicht »doppelt so hoch wie der Zufall«.** So stand es hier
+        zuerst, und für die Machart-Gruppe ist das unerfüllbar: Bei
+        einer einzigen Antwort liegt der Zufall bei 0,5, das Doppelte
+        wäre Gewissheit. Eine Ja-Nein-Frage hat eben eine andere
+        Obergrenze als eine mit fünfundzwanzig Antworten.
+        """
         for gruppe in GRUPPEN:
             with self.subTest(gruppe.titel):
                 zufall = 1 / (len(gruppe.begriffe) + 1)
-                self.assertGreater(gruppe.schwelle, zufall * 2)
+                self.assertGreater(gruppe.schwelle, zufall)
 
     def test_gedeckelt(self) -> None:
         """Eine Schwelle, die niemand je erreichen kann, wäre dasselbe
         wie die Gruppe zu löschen – nur unauffälliger."""
         winzig = Gruppe("Winzig", (Begriff("Eins", ("one",)),), strenge=99.0)
-        self.assertLessEqual(winzig.schwelle, 0.9)
+        self.assertLessEqual(winzig.schwelle, DECKEL)
+
+    def test_keine_gruppe_liegt_am_deckel(self) -> None:
+        """Der Deckel ist eine Notbremse, kein Einstellwert.
+
+        **Genau das ist einmal unbemerkt passiert.** Als »Schwarzweiß«
+        aus der Machart-Gruppe flog, schrumpfte sie von fünf Antworten
+        auf vier, und die gerechnete Schwelle sprang von 0,80 auf 0,90.
+        Die Gruppe vergab danach an 1 % der Bilder noch ein Wort – sie
+        war praktisch gelöscht, ohne dass irgendwo etwas fehlschlug.
+        Aufgefallen ist es erst beim Zählen am fertigen Bestand.
+        """
+        for gruppe in GRUPPEN:
+            with self.subTest(gruppe.titel):
+                self.assertLess(
+                    gruppe.schwelle, DECKEL,
+                    f"»{gruppe.titel}« hat {len(gruppe.begriffe)} Antworten "
+                    f"und liegt damit am Deckel – die Gruppe vergibt so gut "
+                    f"wie nichts mehr. Entweder Antworten ergänzen oder eine "
+                    f"eigene, gemessene strenge setzen.")
 
 
 class DieStummeAntwort(unittest.TestCase):

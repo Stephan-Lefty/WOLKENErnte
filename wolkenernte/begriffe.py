@@ -80,6 +80,12 @@ class Begriff:
 #: 2 % ganz ohne – gemessen, nicht geschätzt.
 STRENGE = 4.8
 
+#: Höher als das darf keine Schwelle werden.
+#:
+#: Eine Notbremse, kein Einstellwert: Wer hier ankommt, hat eine Gruppe
+#: gebaut, die nichts mehr vergibt.
+DECKEL = 0.9
+
 
 @dataclass(frozen=True)
 class Gruppe:
@@ -104,11 +110,14 @@ class Gruppe:
         :data:`NICHTS`. Die Schwelle ist ein Vielfaches davon und
         wächst darum von selbst, wenn eine Gruppe kleiner wird.
 
-        Bei 0,9 gedeckelt: Eine Schwelle, die niemand je erreichen
-        kann, wäre dasselbe wie die Gruppe zu löschen – nur
-        unauffälliger.
+        Bei :data:`DECKEL` gekappt – aber **dort anzukommen ist ein
+        Warnzeichen**, kein Normalfall: Eine Gruppe, die den Deckel
+        berührt, ist praktisch gelöscht, nur unauffälliger. Genau das
+        ist der Machart-Gruppe passiert, als sie von fünf Antworten auf
+        vier schrumpfte; sie vergab danach an 1 % der Bilder noch ein
+        Wort. ``tests/test_bilderkennung.py`` nagelt das seither fest.
         """
-        return min(0.9, self.strenge / (len(self.begriffe) + 1))
+        return min(DECKEL, self.strenge / (len(self.begriffe) + 1))
 
 
 def _b(name: str, *fragen: str) -> Begriff:
@@ -206,6 +215,7 @@ MOTIV = Gruppe("Motiv", (
     _b("Buch", "a book", "an open book"),
     _b("Dokument", "a document or letter", "a printed page of text"),
     _b("Bildschirm", "a computer screen", "a screen showing an application"),
+    _b("Karte", "a map", "a printed map or plan"),
 ), hoechstens=2)
 
 #: Wozu das Bild entstanden ist.
@@ -252,23 +262,53 @@ WETTER = Gruppe("Wetter", (
 
 #: Wie aufgenommen wurde.
 #:
-#: Beschreibt nicht den Inhalt, sondern die Machart – und trennt damit
-#: Bilder, die inhaltlich gleich aussehen: die Luftaufnahme vom Dorf,
-#: die Nahaufnahme der Blume.
+#: **Von dieser Gruppe ist eine Frage übrig geblieben**, und das ist
+#: eine Geschichte über Messen statt Meinen. Sie hatte fünf Antworten;
+#: drei davon konnte das Modell nachweislich nicht:
+#:
+#: * »Schwarzweiß« hing an 11 % aller Bilder, darunter lauter farbige –
+#:   die Farbsättigung sagt es exakt, siehe
+#:   :func:`wolkenernte.verschlagworten._bildangaben`.
+#: * »Luftaufnahme« landete an 36 von 480 Drohnenbildern; gegen die
+#:   Dateinamen gemessen tragen Drohnenbilder einen Anteil von 0,04,
+#:   alle anderen 0,03. Keine Trennung, bei keiner Schwelle.
+#: * »Zeichnung« traf auch bei einem Anteil von 0,90 gewöhnliche
+#:   Handyfotos.
+#:
+#: »Karte« ist zu den Motiven gewandert, wo es hingehört – eine Karte
+#: ist ein Gegenstand, den man fotografiert, keine Machart.
+#:
+#: Damit ist es eine reine Ja-Nein-Frage, und dafür passt die
+#: allgemeine :data:`STRENGE` nicht: Bei einer einzigen Antwort wäre
+#: die Schwelle 2,4 und liefe in den :data:`DECKEL`. **1,5 ist
+#: gemessen**, gegen die 786 Bilder, die ``PORTRAIT`` oder ``Bokeh`` im
+#: Namen tragen – das Handy sagt dort selbst, dass es eine Nahaufnahme
+#: ist. Bei der sich daraus ergebenden Schwelle von 0,75 erkennt das
+#: Modell 52 % davon wieder und vergibt das Wort an 8 % der übrigen
+#: Bilder; darunter sind echte Nahaufnahmen, die nur nicht im
+#: Porträtmodus entstanden.
 MACHART = Gruppe("Machart", (
     _b("Nahaufnahme", "an extreme close-up photograph",
        "a macro photograph of a small subject"),
-    _b("Luftaufnahme", "an aerial photograph from above",
-       "a bird's eye view from a drone"),
+    # »Luftaufnahme« stand hier und ist heraus. Der Bestand enthält
+    # 480 Drohnenbilder, das Wort landete an 36. Gegen die Dateinamen
+    # gemessen, die unabhängig sagen welche es sind: Drohnenbilder
+    # tragen einen Anteil von 0,04, alle anderen 0,03 – das Modell
+    # unterscheidet sie überhaupt nicht. Eine niedrigere Schwelle
+    # brächte darum keine Treffer, nur Fehlalarme.
+    #
+    # Dieselbe Lehre wie bei »Schwarzweiß«: Wo ein exaktes Zeichen da
+    # ist – hier der Dateiname, dort die Farbsättigung –, braucht es
+    # kein Modell. »Drohne« steht ohnehin schon an jedem dieser Bilder.
     # »Schwarzweiß« stand hier und ist heraus: Die Farbsättigung sagt
     # es genau, das Modell riet – und hängte das Wort an 11 % aller
     # Bilder, darunter lauter farbige. Jetzt rechnet es
     # :func:`wolkenernte.verschlagworten._bildangaben` aus, und die
     # schwarzweißen tragen dort eine Sättigung von exakt null.
-    _b("Zeichnung", "a drawing or illustration",
-       "a hand-drawn picture, not a photograph"),
-    _b("Karte", "a map", "a printed map or plan"),
-))
+    # »Zeichnung« stand hier und ist heraus. Auch bei einem Anteil von
+    # 0,90 waren die Treffer gewöhnliche Handyfotos – das Wort erzeugt
+    # auf Fotomaterial nur Fehlalarme, bei jeder Schwelle.
+), strenge=1.5)
 
 #: Alle Gruppen in der Reihenfolge, in der sie gefragt werden.
 GRUPPEN = (ORT, MOTIV, ANLASS, WETTER, MACHART)
