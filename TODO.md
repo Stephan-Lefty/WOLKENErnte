@@ -127,7 +127,11 @@ Paketverwalter mitbringen. Niemand soll rclone von Hand herunterladen.
   aber als **Ordner** (`--onedir`), nicht als einzelne Datei. PySide6 steht
   unter LGPLv3, und die verlangt, dass der Anwender die Bibliothek austauschen
   kann.
-- [ ] **Debian: `.deb`.** Gibt es in keinem der Repositorys bisher.
+- [ ] **Das .deb auf einem echten Debian ausprobieren.** Gebaut und aus dem
+  ausgepackten Paket gestartet ist es; installiert wurde es noch nie – hier
+  steht kein Debian.
+- [ ] **rclone in Debian stable ist zu alt** (unter 1.75.0). Entweder rclone
+  ins .deb legen oder auf trixie-backports verweisen.
 
 ### Später
 
@@ -139,6 +143,20 @@ Paketverwalter mitbringen. Niemand soll rclone von Hand herunterladen.
   vielleicht auch der erste Zugang zu Proton Fotos.
 
 ## Erledigt
+
+### Ein .deb für Debian (2026-09-07)
+
+- [x] **`verpacken/debian/deb-bauen.py`** baut aus dem Wheel ein Paket mit
+  `dpkg-deb` – ohne debhelper, ohne Debian-Rechner.
+- [x] **Nach `dist-packages`**, nicht `site-packages`; sonst findet das
+  System-Python nichts.
+- [x] **Debian-Paketnamen**: `python3-pil`, `python3-pyside6.qtwidgets`.
+- [x] **Pflicht ist nur `python3`** – PySide6 zöge auf einem Server hundert
+  Megabyte Qt nach sich.
+- [x] **copyright, changelog.Debian.gz und md5sums**, wie die Policy es
+  verlangt; **kein `postinst`**, weil sie das verbietet.
+- [x] **Ausgepackt und daraus gestartet** – Symbole, Begriffsdatei und
+  Menüeintrag geprüft.
 
 ### An einer echten Nextcloud erprobt (2026-09-07)
 

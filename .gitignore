@@ -39,6 +39,8 @@ dist/
 verpacken/**/*.pkg.tar.zst
 verpacken/**/src/
 verpacken/**/pkg/
+# Der Bauordner des .deb - er entsteht bei jedem Lauf neu.
+verpacken/debian/bau/
 
 # Sicherung der Historie, die werkzeuge/historie-bereinigen.sh anlegt.
 # Nach einem geglückten Lauf von Hand löschen.

@@ -118,7 +118,10 @@ package manager bring along. Nobody should download rclone by hand.
 - [ ] **Windows: `.exe`** following `MailBurg/werkzeuge/mailburg.spec`, but as a
   **folder** (`--onedir`), not a single file. PySide6 is LGPLv3, which requires
   the user to be able to replace the library.
-- [ ] **Debian: `.deb`.** Does not exist in any of the repositories yet.
+- [ ] **Try the .deb on a real Debian.** It is built and has been started from
+  the unpacked package; it has never been installed – there is no Debian here.
+- [ ] **rclone in Debian stable is too old** (below 1.75.0). Either ship rclone
+  inside the .deb or point at trixie-backports.
 
 ### Later
 
