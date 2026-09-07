@@ -13,14 +13,17 @@ The program can now set up accounts, list and delete – but it **cannot yet
 fetch anything from a cloud into the archive.** The piece between
 `rclone.auflisten()` and `archiv.uebernehmen()` is missing.
 
-- [ ] **A source modelled on `lokal.py`** that reads via rclone. The usual
-  sequence then applies: harvest → record → verify.
-- [ ] **Delete exclusively through `anbieter.darf_loeschen()`.** No second path,
-  no exception.
-- [ ] **Verify the copy arrived before deleting.** Compare checksums first, then
-  remove at the source – never the other way round.
+Harvesting, signing in and cleaning up are in place (see *Done*) – **but have
+never run against a real Nextcloud.** Everything has only been tried against
+rclone's `local` and `alias` backends.
+
+- [ ] **Try it against Stephan's Nextcloud.** Sign in, pick a folder, harvest,
+  then `aufraeumen` as a dry run first and with `--wirklich` afterwards.
+- [ ] **Bring the cleanup into the window.** It only works from the command line
+  so far, and it is precisely the step someone wants to watch: a list of what
+  would disappear, with the pictures next to it.
 - [ ] Progress via `core/stats`, long jobs asynchronously with `_async: true`
-  and `job/status`.
+  and `job/status`. The harvester currently shows a file count, not a rate.
 
 **Order of providers:** Nextcloud, Proton Drive and Google Photos are available
 for testing. Those three first – everything else would be code that only works
@@ -125,6 +128,22 @@ package manager bring along. Nobody should download rclone by hand.
   clean route – and perhaps the first way into Proton Photos.
 
 ## Done
+
+### Harvesting from a cloud, in the window (2026-09-07)
+
+- [x] **A source modelled on `lokal.py`** reading via rclone – `wolke.py`, with
+  the same sequence as before.
+- [x] **A "Wolke" menu**: sign in to Nextcloud, browse the folder tree, harvest.
+  The tree loads on expansion and shows the image count per folder.
+- [x] **Nothing is stored until the connection is proven.** An account that
+  exists only on paper would otherwise surface much later.
+- [x] **The harvest runs in a background thread**, with progress and cancel.
+- [x] **`wolkenernte aufraeumen`** – delete, but only what is provably in the
+  archive: same size, same checksum, computed for this run, and only with
+  `--wirklich`.
+- [x] **`Dienst.art()`**, because `darf_loeschen()` was being handed the account
+  *name* rather than its type. Anyone calling their Nextcloud "meinewolke"
+  could never have cleaned up anywhere.
 
 ### Keywords (2026-09-07)
 

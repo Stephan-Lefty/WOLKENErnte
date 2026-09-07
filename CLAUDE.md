@@ -63,9 +63,28 @@ für das Modell und für einen Menschen, der nur das Bild sieht. Die Uhr
 kann es. Das Modell fragt darum nur nach dem Phänomen, die Aufnahmezeit
 vergibt den Namen.
 
-**Der eigentliche Zweck bleibt offen:** aus einer Wolke ernten. Der
-Weg dorthin steht in `wolke.py`, erprobt ist er nur gegen rclones
-`local`-Backend.
+### Aus der Wolke ernten – jetzt im Fenster
+
+Menü **Wolke**: anmelden, Ordnerbaum durchsehen, holen. Dazu
+`wolkenernte aufraeumen` auf der Kommandozeile, das löscht – aber nur,
+was nachweislich im Archiv liegt.
+
+**Erprobt ist das alles nur gegen rclones `local`- und
+`alias`-Backend.** Gegen eine echte Nextcloud ist noch nichts
+gelaufen; das ist der nächste Schritt und braucht Stephans Zugangsdaten.
+
+Vier Bedingungen fürs Löschen, alle vier müssen gelten: der Anbieter
+erlaubt es; gleiche Größe **und** Prüfsumme im Archiv; die Prüfsumme
+für *diesen* Lauf gerechnet, nicht aus der Datenbank geglaubt; und
+`--wirklich`. Ein leeres Archiv bricht ab – wer zuerst aufräumt und
+dann erntet, hätte sonst alles verloren.
+
+**`darf_loeschen()` bekam bisher den Namen des Zugangs, nicht seine
+Art.** Wer seine Nextcloud »meinewolke« nennt, fand damit keinen
+Anbieter, und die Antwort war »nein«: sicher, aber unbrauchbar – es
+hätte sich nie irgendwo etwas aufräumen lassen. `Dienst.art()` fragt
+jetzt rclone, und rclone kennt auch nur `webdav`; erst das Feld
+`vendor` macht daraus eine Nextcloud.
 
 ### Was die Messung gelehrt hat
 
@@ -175,7 +194,11 @@ wolkenernte/
 ├── modelle.py      das Modell holen, prüfen, wiederfinden
 ├── bestandsliste.py  was im Archiv liegt - für beide Oberflächen
 ├── ernten.py / erfassung.py / nachweis.py   die drei Abläufe
+├── aufraeumen.py   in der Wolke löschen - der Schritt ohne Rückweg
+├── bearbeiten.py   ein Bild an GIMP & Co. weiterreichen
+├── symbole.py      das Programmsymbol, jetzt im Paket
 ├── fenster/        die Fensteranwendung (braucht PySide6)
+│   └── wolken.py   anmelden, durchsehen, holen
 └── web/            die Weboberfläche
 ```
 

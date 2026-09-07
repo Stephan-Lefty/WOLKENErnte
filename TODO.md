@@ -14,14 +14,18 @@ Das Programm kann inzwischen Zugänge einrichten, auflisten und löschen – abe
 **noch nichts aus einer Wolke ins Archiv holen.** Es fehlt das Stück zwischen
 `rclone.auflisten()` und `archiv.uebernehmen()`.
 
-- [ ] **Eine Quelle nach dem Muster von `lokal.py`**, die über rclone liest.
-  Dann gilt derselbe Ablauf wie bisher: ernten → erfassen → pruefen.
-- [ ] **Löschen ausschließlich über `anbieter.darf_loeschen()`.** Kein zweiter
-  Pfad, keine Ausnahme.
-- [ ] **Vor dem Löschen prüfen, dass die Kopie angekommen ist.** Erst Prüfsumme
-  vergleichen, dann drüben entfernen – nie umgekehrt.
+Ernten, anmelden und aufräumen stehen (siehe *Erledigt*) – **aber noch nie
+gegen eine echte Nextcloud gelaufen.** Erprobt ist alles nur gegen rclones
+`local`- und `alias`-Backend.
+
+- [ ] **Gegen Stephans Nextcloud erproben.** Anmelden, Ordner aussuchen, holen,
+  dann `aufraeumen` erst als Probelauf und danach mit `--wirklich`.
+- [ ] **Das Aufräumen ins Fenster holen.** Bisher geht es nur auf der
+  Kommandozeile, und das ist genau der Schritt, bei dem jemand zusehen will:
+  eine Liste dessen, was verschwinden würde, mit den Bildern daneben.
 - [ ] Fortschritt über `core/stats`, lange Aufträge asynchron mit
-  `_async: true` und `job/status`.
+  `_async: true` und `job/status`. Der Ernter zeigt bisher die Zahl der
+  Dateien, nicht die Übertragungsrate.
 
 **Die Reihenfolge der Anbieter:** Zum Erproben stehen Nextcloud, Proton Drive
 und Google Fotos bereit. Diese drei zuerst – alles andere wäre Code, der nur
@@ -133,6 +137,23 @@ Paketverwalter mitbringen. Niemand soll rclone von Hand herunterladen.
   vielleicht auch der erste Zugang zu Proton Fotos.
 
 ## Erledigt
+
+### Aus der Wolke ernten, im Fenster (2026-09-07)
+
+- [x] **Eine Quelle nach dem Muster von `lokal.py`**, die über rclone liest –
+  `wolke.py`, mit demselben Ablauf wie bisher.
+- [x] **Ein Menü »Wolke«**: Nextcloud anmelden, Ordnerbaum durchsehen, holen.
+  Der Baum lädt erst beim Aufklappen nach und zeigt die Zahl der Bilder je
+  Ordner.
+- [x] **Gespeichert wird erst, wenn die Verbindung steht.** Ein Zugang, der nur
+  auf dem Papier existiert, fällt sonst viel später auf.
+- [x] **Der Erntelauf im Hintergrundfaden**, mit Fortschritt und Abbruch.
+- [x] **`wolkenernte aufraeumen`** – löschen, aber nur was nachweislich im
+  Archiv liegt: gleiche Größe, gleiche Prüfsumme, für diesen Lauf gerechnet,
+  und nur mit `--wirklich`.
+- [x] **`Dienst.art()`**, weil `darf_loeschen()` bisher den *Namen* des Zugangs
+  bekam statt seiner Art. Wer seine Nextcloud »meinewolke« nennt, hätte nie
+  irgendwo aufräumen können.
 
 ### Schlagwörter (2026-09-07)
 
