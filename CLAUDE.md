@@ -3,42 +3,31 @@
 Landkarte des Repositorys. Ergänzt [README.md](README.md) und
 [TODO.md](TODO.md), wiederholt sie nicht.
 
-## Hier war Schluss (Stand 2026-09-06, Sonntagabend)
+## Hier war Schluss (Stand 2026-09-07, Montagvormittag)
 
-**239 Tests grün, öffentlich.** Der rclone-Anschluss steht jetzt: Das
-Programm findet rclone, prüft die Fassung, startet es als abgesicherten
-Dienst, richtet Zugänge ein, listet auf und löscht. **Vier Tests laufen
-gegen das echte rclone** – mit dem `local`-Backend, das keine
-Zugangsdaten braucht, sich für die Schnittstelle aber wie jede Wolke
-verhält.
+**0.3.0, 272 Tests grün, öffentlich.** Seit heute gibt es die
+**Fensteranwendung**: `wolkenernte fenster <Archiv>` öffnet ein Raster
+mit Filtern, Suche und Einzelansicht, Videos laufen über
+`QMediaPlayer`. Bei 14.767 Bildern steht das Fenster in einer halben
+Sekunde.
 
-Was damit noch nicht geht: **aus einer echten Wolke ernten.** Der Weg
-von `rclone.auflisten()` zu `archiv.uebernehmen()` fehlt – bisher kann
-nur ein Takeout-Archiv oder ein Ordner als Quelle dienen.
+**Was weiterhin fehlt, ist der eigentliche Zweck:** aus einer Wolke
+ernten. Zugänge einrichten, auflisten und löschen geht – aber das Stück
+zwischen `rclone.auflisten()` und `archiv.uebernehmen()` ist nicht
+gebaut. Das ist der nächste Schritt, und er fängt bei **Nextcloud** an,
+weil Stephan das erproben kann.
 
-Am echten Bestand erprobt: 14.770 Bilder aus 47 GB Quellen, 29 GB im
+Am echten Bestand erprobt: 14.767 Bilder aus 47 GB Quellen, 29 GB im
 Archiv, 13.605 bytegleiche Kopien übergangen, 1.332 Gruppen mit
 derselben Aufnahme in mehreren Fassungen.
 
-**Die Videofrage ist geklärt** (2026-09-06): `QMediaPlayer` spielt H.264,
-HEVC und VP9 aus diesem Bestand ab – geprüft mit
-`werkzeuge/videoprobe.py`, das auf ein tatsächlich ankommendes Einzelbild
-wartet und nicht bloß darauf, dass kein Fehler kommt. libmpv wird nicht
-gebraucht. Nebenbei kam heraus: Der Bestand enthält **kein**
-iPhone-Material – 239 VP9, 140 H.264 und nur 5 HEVC.
+### Zwei Oberflächen, ein Fundament
 
-### Die beiden nächsten Schritte
-
-**Nextcloud wirklich ernten.** `wolkenernte zugang nextcloud` legt einen
-Zugang an; was fehlt, ist eine Quelle nach dem Muster von `lokal.py`,
-die über rclone liest. Dann gilt derselbe Ablauf wie bisher: ernten,
-erfassen, pruefen – und erst danach löschen, **ausschließlich über
-`anbieter.darf_loeschen()`**.
-
-**Eine Fensteranwendung ohne Browser**, gewünscht als übernächster
-Schritt. Zuschnitt in der TODO. Wichtig: Was in `web/bestandsliste.py`
-an Auswertung steckt, muss vorher eine Ebene tiefer – sonst wird es für
-zwei Oberflächen doppelt gepflegt.
+`wolkenernte/bestandsliste.py` kennt weder Browser noch Fenster. Wer
+etwas an Jahren, Alben, Suche oder Filtern ändert, ändert es **dort** –
+sonst laufen die beiden Oberflächen auseinander. Was wirklich
+oberflächenabhängig ist, steht in `web/seiten.py` (welche Formate ein
+Browser darstellt) beziehungsweise `fenster/ansicht.py` (was Qt kann).
 
 ## Der Aufbau
 
@@ -56,8 +45,10 @@ wolkenernte/
 ├── rclone.py       rclone finden, starten, ansprechen
 ├── einrichten.py   Zugänge anlegen (das Frage-Antwort-Spiel)
 ├── zugang.py       dasselbe von der Kommandozeile
+├── bestandsliste.py  was im Archiv liegt - für beide Oberflächen
 ├── ernten.py / erfassung.py / nachweis.py   die drei Abläufe
-└── web/            die Oberfläche - das Einzige, was den Browser kennt
+├── fenster/        die Fensteranwendung (braucht PySide6)
+└── web/            die Weboberfläche
 ```
 
 ## Fünf Entscheidungen, die man ohne den Grund umdreht
@@ -121,6 +112,14 @@ gehabt, alles wäre »dieselbe Aufnahme« gewesen.
 Anlauf trennte am Doppelpunkt und übergab den Rest als `remote`; rclone
 antwortete »directory not found«, obwohl der Ordner existierte.
 
+**Qt beachtet die EXIF-Aufnahmerichtung nicht von allein.**
+`QPixmap.load()` zeigt hochkant gehaltene Bilder auf der Seite; im
+Raster fiel es nicht auf, weil die Vorschaubilder von Pillow kommen.
+`QImageReader.setAutoTransform(True)` kann es.
+
+**`KeepAspectRatioByExpanding` schneidet nicht zu.** Das Raster riss
+deshalb Lücken, obwohl `setUniformItemSizes` gesetzt war.
+
 **Und die eigenen Testbilder taugten nicht:** Synthetische Sägezahn-
 muster werden beim Verkleinern zu gleichmäßigem Grau; beide Testbilder
 bekamen denselben Fingerabdruck. Testmuster müssen **relativ zur
@@ -151,6 +150,15 @@ python3 -m unittest discover -s tests -t .
 `tests/__init__.py` muss existieren, sonst findet `discover` nichts.
 Der Testlauf ist auch mit `-W error::DeprecationWarning` grün – Warnungen
 gelten als Fehler.
+
+Die Fenstertests laufen über `QT_QPA_PLATFORM=offscreen`, brauchen also
+keine Anzeige. Ohne PySide6 werden sie übersprungen, ohne rclone die
+vier gegen das echte rclone.
+
+**Zwei Fallen beim Schreiben von Tests**, beide schon zugeschnappt:
+Testdateien entstehen im selben Augenblick, die Sortierung nach Zeit ist
+dann beliebig – nie auf Stelle 0 festnageln. Und ein Testarchiv sollte
+die Dateizeit setzen, weil das echte Archiv das Aufnahmedatum trägt.
 
 **Gegenproben gehören dazu.** Grüne Tests sind verdächtig: Bei der
 Zuordnung fielen vier Tests um, als die Klammer-Verschiebung

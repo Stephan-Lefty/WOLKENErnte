@@ -14,9 +14,10 @@ your choosing, orders them by capture date, finds duplicates – and is meant to
 delete at the source, on your word, whatever you no longer need.
 
 **What already works:** reading Google Takeout archives, importing images from
-folders, finding duplicates, browsing everything in the browser.
-**What does not work yet:** fetching from the clouds and deleting there. The
-rclone part is still missing – see [TODO.en.md](TODO.en.md).
+folders, finding duplicates, browsing everything – either in the browser or as a
+desktop application. Cloud accounts can be set up.
+**What does not work yet:** harvesting from a cloud and deleting there. The
+piece between listing and importing is missing – see [TODO.en.md](TODO.en.md).
 
 ## What works with which provider
 
@@ -55,10 +56,10 @@ a date. This situation changes quickly.
 ## Getting started
 
 ```
-wolkenernte ernten      ~/Pictures/Archive  ~/Downloads/takeout-folder
-wolkenernte erfassen    ~/Pictures/Archive  ~/Downloads/takeout-folder
-wolkenernte pruefen     ~/Pictures/Archive  ~/Downloads/takeout-folder
-wolkenernte oberflaeche ~/Pictures/Archive
+wolkenernte ernten   ~/Pictures/Archive  ~/Downloads/takeout-folder
+wolkenernte erfassen ~/Pictures/Archive  ~/Downloads/takeout-folder
+wolkenernte pruefen  ~/Pictures/Archive  ~/Downloads/takeout-folder
+wolkenernte fenster  ~/Pictures/Archive
 ```
 
 **The order is not a matter of taste.** First *ernten* (harvest) – images into
@@ -69,7 +70,8 @@ may a source be deleted.
 
 Further commands: `wolkenernte anbieter` prints the table above,
 `wolkenernte bestand` the figures from the database, `wolkenernte doppelt`
-searches for similar images.
+searches for similar images, `wolkenernte rclone` checks whether cloud access is
+ready, and `wolkenernte zugang` manages accounts.
 
 ## The archive
 
@@ -89,19 +91,22 @@ place on disk. Album membership lives in the database.
 directory service. Anyone who no longer has WOLKENErnte in ten years opens the
 folder with any program they like.
 
-## The interface
+## Two interfaces
 
-`wolkenernte oberflaeche` starts a service and opens the browser: images as
-tiles, filters by year and album, search across filenames, titles and albums,
-single view with location and capture date, video playback.
+Both show the same thing: images as tiles, filters by year and album, search
+across filenames, titles and albums, single view with location and capture date,
+video playback. They sit on the same foundation; neither replaces the other.
 
-**The service listens on 127.0.0.1 only** and cannot be reached from outside. It
-shows private photos and has no authentication.
+**`wolkenernte fenster`** opens a real window. Arrow keys to browse, Escape to
+go back. Requires **PySide6** – around a hundred megabytes.
 
-Why the browser and not a window: it can already display images and videos, in
-every format the system supports. A desktop application is planned – see
-[TODO.en.md](TODO.en.md) – but it costs over a hundred megabytes extra, and
-nobody should have to pay that just to look at their photos.
+**`wolkenernte oberflaeche`** starts a service and opens the browser, which can
+display images and videos anyway, so nothing is added. **The service listens on
+127.0.0.1 only** and cannot be reached from outside – it shows private photos
+and has no authentication.
+
+With 14,767 images the window is up in half a second: thumbnails load only when
+visible, and both interfaces share the cache.
 
 ## Installing
 
@@ -117,8 +122,16 @@ cd verpacken/arch && makepkg -si
 python3 -m wolkenernte oberflaeche ~/Pictures/Archive
 ```
 
-Recommended but not required: **Pillow** for thumbnails and duplicate detection.
-Without it the interface serves the originals – slower, but still usable.
+Recommended but not required:
+
+| Package | for |
+|---|---|
+| `python-pillow` | thumbnails and duplicate detection |
+| `pyside6` | the desktop application (`wolkenernte fenster`) |
+| `rclone` 1.75.0+ | access to cloud storage |
+
+Without Pillow the web interface serves the originals – slower, but usable.
+Without PySide6 only the web interface is available.
 
 ## How it is built
 

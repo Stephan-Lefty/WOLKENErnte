@@ -14,9 +14,10 @@ sie an einen Ort Ihrer Wahl, ordnet sie nach Aufnahmedatum, findet Doppelgänger
 – und soll später auf Ihr Wort hin drüben löschen, was Sie nicht mehr brauchen.
 
 **Was heute schon geht:** Google-Takeout-Archive einlesen, Bilder aus Ordnern
-übernehmen, Doppelgänger finden, alles im Browser durchsehen.
-**Was noch nicht geht:** der Abruf aus den Wolken und das Löschen dort. Dafür
-fehlt der rclone-Teil – siehe [TODO.md](TODO.md).
+übernehmen, Doppelgänger finden, alles durchsehen – wahlweise im Browser oder
+als Fensteranwendung. Zugänge zu Wolkenspeichern lassen sich einrichten.
+**Was noch nicht geht:** aus einer Wolke ernten und dort löschen. Das Stück
+zwischen Auflisten und Übernehmen fehlt – siehe [TODO.md](TODO.md).
 
 ## Was bei welchem Anbieter geht
 
@@ -55,10 +56,10 @@ Datum. Diese Lage ändert sich schnell.
 ## Loslegen
 
 ```
-wolkenernte ernten      ~/Bilder/Archiv  ~/Downloads/takeout-Ordner
-wolkenernte erfassen    ~/Bilder/Archiv  ~/Downloads/takeout-Ordner
-wolkenernte pruefen     ~/Bilder/Archiv  ~/Downloads/takeout-Ordner
-wolkenernte oberflaeche ~/Bilder/Archiv
+wolkenernte ernten   ~/Bilder/Archiv  ~/Downloads/takeout-Ordner
+wolkenernte erfassen ~/Bilder/Archiv  ~/Downloads/takeout-Ordner
+wolkenernte pruefen  ~/Bilder/Archiv  ~/Downloads/takeout-Ordner
+wolkenernte fenster  ~/Bilder/Archiv
 ```
 
 **Die Reihenfolge ist keine Geschmackssache.** Erst *ernten* – die Bilder ins
@@ -69,7 +70,8 @@ Quelle gelöscht werden.
 
 Weitere Befehle: `wolkenernte anbieter` zeigt die Tabelle von oben,
 `wolkenernte bestand` die Zahlen aus der Datenbank, `wolkenernte doppelt` sucht
-ähnliche Bilder.
+ähnliche Bilder, `wolkenernte rclone` prüft, ob der Zugang zu den Wolken bereit
+ist, und `wolkenernte zugang` verwaltet die Zugänge.
 
 ## Das Archiv
 
@@ -90,19 +92,24 @@ Datenbank.
 Verschlüsselung, kein Verzeichnisdienst. Wer WOLKENErnte in zehn Jahren nicht
 mehr hat, öffnet den Ordner mit jedem beliebigen Programm.
 
-## Die Oberfläche
+## Zwei Oberflächen
 
-`wolkenernte oberflaeche` startet einen Dienst und öffnet den Browser: Bilder in
-Kacheln, Filter nach Jahr und Album, Suche über Dateinamen, Titel und Alben,
-Einzelansicht mit Ort und Aufnahmedatum, Videowiedergabe.
+Beide zeigen dasselbe: Bilder in Kacheln, Filter nach Jahr und Album, Suche über
+Dateinamen, Titel und Alben, Einzelansicht mit Ort und Aufnahmedatum,
+Videowiedergabe. Sie sitzen auf demselben Fundament; keine ist ein Ersatz für
+die andere.
 
-**Der Dienst hört ausschließlich auf 127.0.0.1** und ist von außen nicht
-erreichbar. Er zeigt private Fotos und hat keine Anmeldung.
+**`wolkenernte fenster`** öffnet ein richtiges Fenster. Blättern mit den
+Pfeiltasten, zurück mit Escape. Braucht **PySide6** – rund hundert Megabyte.
 
-Warum der Browser und kein Fenster: Er kann Bilder und Videos bereits anzeigen,
-in jedem Format, das das System beherrscht. Eine Fensteranwendung ist geplant –
-siehe [TODO.md](TODO.md) – aber sie kostet über hundert Megabyte zusätzlich, und
-das soll man nicht zahlen müssen, nur um seine Fotos anzusehen.
+**`wolkenernte oberflaeche`** startet einen Dienst und öffnet den Browser. Der
+kann Bilder und Videos ohnehin anzeigen, es kommt also nichts dazu. **Der Dienst
+hört ausschließlich auf 127.0.0.1** und ist von außen nicht erreichbar – er
+zeigt private Fotos und hat keine Anmeldung.
+
+Bei 14.767 Bildern steht das Fenster in einer halben Sekunde: Vorschaubilder
+werden erst geladen, wenn sie zu sehen sind, und beide Oberflächen teilen sich
+den Zwischenspeicher.
 
 ## Einrichten
 
@@ -118,9 +125,16 @@ cd verpacken/arch && makepkg -si
 python3 -m wolkenernte oberflaeche ~/Bilder/Archiv
 ```
 
-Empfohlen, aber nicht nötig: **Pillow** für Vorschaubilder und die
-Doppelgängersuche (`pacman -S python-pillow`). Ohne Pillow zeigt die Oberfläche
-die Originale – das ist langsamer, aber sie bleibt benutzbar.
+Empfohlen, aber nicht nötig:
+
+| Paket | wofür |
+|---|---|
+| `python-pillow` | Vorschaubilder und Doppelgängersuche |
+| `pyside6` | die Fensteranwendung (`wolkenernte fenster`) |
+| `rclone` ab 1.75.0 | Zugang zu den Wolkenspeichern |
+
+Ohne Pillow zeigt die Weboberfläche die Originale – langsamer, aber benutzbar.
+Ohne PySide6 gibt es nur die Weboberfläche.
 
 ## Wie es gebaut ist
 

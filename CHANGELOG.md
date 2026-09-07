@@ -4,6 +4,55 @@
 
 Alle nennenswerten Änderungen an WOLKENErnte. Neueste zuerst.
 
+## 0.3.0 – 2026-09-07
+
+**Die Fensteranwendung.** `wolkenernte fenster <Archiv>` öffnet ein
+richtiges Fenster statt des Browsers: Raster, Filter nach Jahr und
+Album, Suche, Einzelansicht mit Bild und Video, Blättern mit den
+Pfeiltasten. Sie steht **neben** der Weboberfläche, nicht an ihrer
+Stelle – wer keine hundert Megabyte PySide6 nachinstallieren will,
+behält den Browserweg. Beide sitzen auf demselben Fundament.
+
+Bei 14.767 Bildern steht das Fenster in einer halben Sekunde. Der Kniff:
+nichts im Voraus tun. Qt fragt eine Listenansicht nur nach dem, was
+gerade zu sehen ist; das Modell antwortet sofort mit einem Platzhalter
+und lädt im Hintergrund nach.
+
+**Der Anschluss an rclone**, das Fundament für den Abruf aus den Wolken.
+Finden, Fassung prüfen, als Dienst starten, Zugänge einrichten,
+auflisten, löschen. Abgesichert, denn wer diese Schnittstelle erreicht,
+hat Shell-Zugriff: nur `127.0.0.1`, Zugangsdaten je Start neu gewürfelt
+und über die Prozessumgebung übergeben, `--rc-no-auth` niemals.
+
+`wolkenernte zugang nextcloud` legt einen Zugang an und macht gleich die
+Probe. Vier Tests laufen gegen das **echte** rclone.
+
+**Geprüft statt angenommen:** `werkzeuge/videoprobe.py` weist nach, dass
+Qt H.264, HEVC und VP9 abspielt – mit tatsächlich ankommenden
+Einzelbildern, nicht bloß ohne Fehlermeldung. libmpv wird nicht
+gebraucht. Nebenbei kam heraus, dass dieser Bestand kein iPhone-Material
+enthält: 239 VP9, 181 H.264, 5 HEVC.
+
+**Die Bestandsliste liegt jetzt außerhalb des Browserteils.** Jahre
+zählen, Alben sammeln, suchen, filtern – das braucht jede Oberfläche.
+
+### Fehler, die erst der Blick auf den Bildschirm zeigte
+
+Das Raster riss Lücken: `KeepAspectRatioByExpanding` bringt das Bild auf
+Kachelgröße, schneidet aber nichts ab – Hochformate blieben hochkant.
+
+Die Einzelansicht zeigte Bilder um 90 Grad gekippt. `QPixmap.load()`
+ignoriert die EXIF-Aufnahmerichtung; im Raster fiel es nicht auf, weil
+die Vorschaubilder von Pillow kommen, das von sich aus dreht.
+
+Beim Umzug der Bestandsliste fiel eine Eigenschaft weg, die die
+Weboberfläche noch benutzte – und **alle 239 Tests blieben grün**, weil
+die Einzelansicht in keinem Test vorkam. Seither ruft
+`tests/test_seiten.py` jede Seite einmal auf.
+
+Und der Paketbau brach ab, weil sich in `dist/` die Pakete mehrerer
+Fassungen sammelten und der Installer sie nacheinander auspackte.
+
 ## 0.2.0 – 2026-09-05
 
 **Eine Oberfläche im Browser.** `wolkenernte oberflaeche` startet einen

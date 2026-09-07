@@ -7,180 +7,145 @@ not deleted but moved down – with the date they were finished.
 
 ## Open
 
-### The order: whatever can be tested comes first
+### The actual purpose: harvesting from a cloud
 
-Available for testing: **Nextcloud, Proton Drive and Google Photos**.
-These three come first – not because they are the easiest, but because
-everything else would be code that only works on paper. Same rule as
-MailBurg and macOS: what has not run is not declared finished.
+The program can now set up accounts, list and delete – but it **cannot yet
+fetch anything from a cloud into the archive.** The piece between
+`rclone.auflisten()` and `archiv.uebernehmen()` is missing.
 
-1. **Nextcloud.** The whole path once, end to end – list, fetch, compare
-   checksum, delete – without a third-party provider interfering. No
-   browser sign-in, just address, username and app password.
-2. **Proton Drive.** The most valuable test of all: the access is
-   reverse-engineered, classed as beta, and tends to break after Proton
-   updates. This is where it shows how well WOLKENErnte copes with a
-   provider that suddenly stops answering. Setup pitfall: the 2FA code
-   expires while you are still configuring.
-3. **Google Takeout.** Technically unrelated to the rest – not a fetch
-   but an archive reader. **Request the archive in good time:** Google
-   takes hours to days to produce it.
-
-Only then OneDrive, Dropbox and pCloud (they share the same browser
-sign-in flow), and finally iCloud Photos, where only half of it works
-anyway.
-
-- [ ] Start using the `erprobt` (tested) field in `anbieter.py` once a
-  provider has actually run – and make visible in the interface what is
-  merely implemented versus genuinely tested.
-
-### Next up: talking to rclone
-
-- [ ] **Find rclone or bundle it.** Look on the machine first
-  (`shutil.which`), otherwise use the bundled binary. Check the version – the
-  iCloud backend only exists from 1.69, Photos within it only from 1.74.
-- [ ] **Start `rclone rcd` as a child process**, bound to `127.0.0.1`, with
-  user and password. **Both are mandatory, not optional:** anyone who reaches
-  that interface can run arbitrary commands on the machine via `core/command`
-  and read every credential via `config/dump`. A test must pin down that
-  nothing works without authentication.
-- [ ] List via `operations/list`, progress via `core/stats`, jobs asynchronously
-  with `_async: true` and `job/status`.
+- [ ] **A source modelled on `lokal.py`** that reads via rclone. The usual
+  sequence then applies: harvest → record → verify.
 - [ ] **Delete exclusively through `anbieter.darf_loeschen()`.** No second path,
   no exception.
+- [ ] **Verify the copy arrived before deleting.** Compare checksums first, then
+  remove at the source – never the other way round.
+- [ ] Progress via `core/stats`, long jobs asynchronously with `_async: true`
+  and `job/status`.
 
-### Viewing images
+**Order of providers:** Nextcloud, Proton Drive and Google Photos are available
+for testing. Those three first – everything else would be code that only works
+on paper. Then OneDrive, Dropbox and pCloud, which share the same browser
+sign-in flow; finally iCloud Photos, where only half of it works anyway.
+
+- [ ] Start using the `erprobt` (tested) field in `anbieter.py` once a provider
+  has actually run – and show in both interfaces what is merely implemented
+  versus genuinely tested.
+
+### Desktop application – what is still missing
+
+- [ ] **Fullscreen** with the space bar, without the header.
+- [ ] **Removal basket**: multiple selection in the grid, Delete collects, a
+  second step carries it out. The delete button only appears where
+  `anbieter.darf_loeschen()` permits it – elsewhere the reason is shown, not a
+  greyed-out button.
+- [ ] **Duplicate view** as in the web interface, with the distinction between
+  "same shot" and "similar".
+- [ ] **HEIC via pi-heif** as a Pillow plugin; outside macOS, Qt ships no HEIF
+  module. For now the single view falls back to the thumbnail there.
+
+### Images and videos
 
 - [ ] Thumbnails: try the **embedded preview** first, which HEIC and JPEG carry
   anyway – roughly ten times faster than decoding the full image.
 - [ ] Cache following the freedesktop convention (`$XDG_CACHE_HOME/thumbnails/`)
-  so that the user's file manager and WOLKENErnte share the same one.
-- [ ] HEIC via **pi-heif**, not pillow-heif – the latter's binary wheels contain
-  x265 under GPL, which would not sit well with MIT.
-- [ ] iPhone images usually carry **Display P3**. Without conversion to sRGB
-  they look oversaturated in the interface.
+  so the user's file manager and WOLKENErnte share the same one.
+- [ ] **Video thumbnails** with ffmpeg as a separate process, `-ss` **before**
+  `-i` (seek before decoding). A corrupt video then cannot take the program down
+  with it. Currently the 424 videos show only a play symbol.
+- [ ] **HDR material needs tone mapping.** Not critical for this archive – it
+  holds only five HEVC files – but anyone receiving HDR footage will see grey
+  thumbnails. Check `color_transfer` with `ffprobe` first; on SDR material the
+  same chain makes the picture worse.
 
-### Videos
-
-- [ ] Thumbnails with **ffmpeg as a separate process**, `-ss` **before** `-i`
-  (seek before decoding, orders of magnitude faster on long files). A corrupt
-  video then cannot take the program down with it.
-- [ ] **HDR material needs tone mapping.** iPhone videos from the 12 onwards are
-  HLG/BT.2020; without conversion every thumbnail turns grey and washed out.
-  Check `color_transfer` with `ffprobe` first – on SDR material the same chain
-  makes the picture worse.
-- [ ] Try playback with `QMediaPlayer` first. Only add libmpv if that fails on
-  real iPhone material. **Not** python-vlc: it still has no Wayland embedding.
-
-### Finding duplicates
+### Duplicates
 
 - [ ] **Hash the providers' thumbnails, not the originals.** Drive, OneDrive and
   Dropbox serve previews through their APIs; a perceptual hash over a 256-pixel
   image detects "same photo, different compression" just as well. This saves
   downloading tens of thousands of files before the user has decided anything.
-- [ ] Search via **banding** (split the hash into blocks, exact lookup table per
-  block), **not** a BK-tree. It is the textbook answer but collapses at exactly
-  the thresholds perceptual hashes need – at threshold 8 one measurement had it
-  slower than brute-force comparison of all pairs.
 - [ ] **Live Photos are a HEIC and MOV pair.** Failing to recognise them as one
   reports a flood of duplicates that are not duplicates. Detect via the
   `ContentIdentifier`, not the filename.
 
 ### Google Takeout
 
-- [ ] Read the archive, match metadata from the accompanying JSON files to the
-  images (Takeout separates the two).
 - [ ] Be honest about deletion: show instructions for clearing out in the
   browser. **No browser automation.** It rides on undocumented internal
   interfaces, breaks without warning, and with Apple it explicitly violates the
   terms of service.
 
-### Interface
-
-- [ ] Grid view with thumbnails, multiple selection, delete basket.
-- [ ] **Verify the copy actually arrived before deleting.** Compare checksums
-  first, then remove at the source – never the other way round.
-- [ ] The delete button only appears where `anbieter.darf_loeschen()` permits
-  it. Elsewhere the reason is shown, not a greyed-out button.
-
-### A desktop application instead of the browser
-
-Requested as the next major step. The core already supports it: only
-`wolkenernte/web/` depends on the browser; everything below knows nothing about
-any interface. A Qt version would sit **alongside**, not replace it – anyone
-unwilling to install a hundred megabytes keeps the browser route.
-
-- [ ] **PySide6** as an optional dependency (`oberflaeche` extra), invoked via
-  `wolkenernte fenster <archive>`.
-- [ ] **Virtualised grid view**, not a list of all images. With 15,000 pictures
-  this decides between smooth and unusable – `QListView` in icon mode with a
-  custom model that loads thumbnails only as they become visible.
-- [ ] Generate thumbnails in the background (`QThreadPool`), otherwise the
-  interface freezes for minutes on first open.
-- [x] **Videos via `QMediaPlayer`** – verified on 2026-09-06 with
-  `werkzeuge/videoprobe.py`: H.264, HEVC and VP9 all play, with frames actually
-  arriving rather than merely no error being raised. libmpv is not needed;
-  **python-vlc** would have been ruled out anyway for lacking Wayland
-  embedding.
-- [ ] **HEIC via pi-heif** as a Pillow plugin; outside macOS, Qt ships no HEIF
-  module.
-- [ ] Keyboard control: arrow keys, space for fullscreen, Delete for the
-  removal basket. That is the actual gain over the browser.
-- [ ] **Both interfaces share the core.** The evaluation logic now sitting in
-  `web/bestandsliste.py` must move one layer down first – otherwise it gets
-  maintained twice and drifts apart.
-
-### Shipping – the user must not have to install anything
+### Shipping
 
 **Principle:** whatever WOLKENErnte needs, it either brings along or has the
 package manager bring along. Nobody should download rclone by hand.
 
-- [ ] **rclone as a package dependency on Linux**, not bundled. The package
-  manager then installs it alongside, and the user gets security updates
-  through their system.
-  **Check first:** we need **at least 1.75.0** – only there do
-  `config/oauthstatus` (the sign-in URL for the browser) and the iCloud 2FA fix
-  exist. Arch and Manjaro are current enough; **for Debian stable this is
-  open**. If an older version ships there, rclone must be bundled in the .deb
-  as well.
+- [ ] **rclone as a Linux package dependency** once fetching is implemented –
+  before that it would be a promise the program does not keep. **At least
+  1.75.0.** Arch and Manjaro are current enough; **for Debian stable this is
+  open.** If an older version ships there, rclone must go into the .deb.
 - [ ] **Bundle rclone on Windows.** No package manager, so `rclone.exe` sits in
-  the program folder. Around 70 MB – the build will be noticeably larger than
-  MailBurg.
-- [ ] **ffmpeg via `imageio-ffmpeg`.** Ships the binary, BSD licensed, no
-  system installation on any of the three platforms.
+  the program folder. Around 70 MB.
+- [ ] **ffmpeg via `imageio-ffmpeg`.** Ships the binary, BSD licensed, no system
+  installation on any platform.
 - [ ] **Check at startup what is present** and state plainly what is missing –
   rather than aborting mid-transfer with a message that reads like a broken
-  machine. Check the version, not just presence.
-- [ ] **Windows: `.exe` following `MailBurg/werkzeuge/mailburg.spec`** – but as
-  a **folder** (`--onedir`), not a single file. PySide6 is LGPLv3, which
-  requires the user to be able to replace the library; with everything baked
-  into one executable that is impossible.
-- [ ] **Debian: `.deb`.** Does not exist in any of the repositories yet – this
-  would be the first. Dependencies: python3, rclone (version see above).
-- [ ] **Arch/Manjaro: `PKGBUILD`** – also new; none of the repositories has
-  one yet.
-- [ ] `.desktop` file and icons in the expected places
-  (`/usr/share/applications`, `/usr/share/icons/hicolor/<size>/apps/`) –
-  patterns in `Denkzettel/desktop/` and `SilentInstaller/data/`.
+  machine.
+- [ ] **Windows: `.exe`** following `MailBurg/werkzeuge/mailburg.spec`, but as a
+  **folder** (`--onedir`), not a single file. PySide6 is LGPLv3, which requires
+  the user to be able to replace the library.
+- [ ] **Debian: `.deb`.** Does not exist in any of the repositories yet.
 
 ### Later
 
 - [ ] Actually try Windows and macOS at all. Nothing has run there yet; the
-  entries in `pyproject.toml` say as much.
+  entries in `pyproject.toml` say as much. `werkzeuge/videoprobe.py` answers the
+  video question there in a minute.
 - [ ] Keep an eye on Proton Drive: the official SDK has existed since January
   2026, but without an authentication module. Once that arrives it becomes the
   clean route – and perhaps the first way into Proton Photos.
 
 ## Done
 
-- [x] **Have the name checked.** (2026-09-05) Four candidates examined:
-  *CloudFlow* fails on discoverability – "Cloudflow" is a running shoe by On,
-  and PyPI, the Play Store and every domain are taken. *MediaDock* has an active
-  German word mark against it and a German software product of the same name
-  carrying title protection. *MediaMover* would be legally harmless but is a
-  generic term with 49 identically named GitHub repositories. *Heimholer* was
-  ruled out for its connotations – funerals and National Socialist vocabulary.
-  **WOLKENErnte** returns no hits in either trade mark register, and domains and
-  package names are free.
-- [x] **Establish what is actually possible with each provider.** (2026-09-05)
-  Result in `wolkenernte/anbieter.py` and `docs/anbieter.md`.
+### The desktop application (2026-09-07)
+
+- [x] **PySide6** as an optional dependency, invoked via `wolkenernte fenster`.
+- [x] **Virtualised grid view** – the model returns a placeholder immediately
+  and loads in the background. With 14,767 images the window is up in half a
+  second.
+- [x] Thumbnails in the background via `QThreadPool`, sharing the cache with the
+  web interface.
+- [x] **Videos via `QMediaPlayer`** – verified with `werkzeuge/videoprobe.py`:
+  H.264, HEVC and VP9 all play, with frames actually arriving. libmpv is not
+  needed; python-vlc would have been ruled out anyway for lacking Wayland
+  embedding.
+- [x] Keyboard control: arrow keys to browse, Escape to go back.
+- [x] Filters by year and album, search across names, titles, albums and dates.
+
+### The rclone connection (2026-09-06)
+
+- [x] Find rclone, check the version, start it as a service.
+- [x] **Secured**: `127.0.0.1` only, credentials freshly generated per start and
+  passed through the process environment – on Linux anyone can read the command
+  line in `/proc`. Never `--rc-no-auth`. Three tests pin this down.
+- [x] Set up accounts through rclone's question-and-answer flow, including the
+  third state that rclone's own example program forgets.
+- [x] `wolkenernte zugang nextcloud` with address normalisation and a live check.
+- [x] Four tests against the real rclone using the `local` backend.
+
+### Foundation (2026-09-05 and 2026-09-06)
+
+- [x] **Both interfaces share the core.** The evaluation logic lives in
+  `wolkenernte/bestandsliste.py` and knows about no interface.
+- [x] Read Takeout archives without unpacking, across all parts.
+- [x] Match image to metadata file, with a confidence flag.
+- [x] Import into the archive, ordered by capture date, duplicates only once.
+- [x] The database alongside: places, titles, albums, favourites.
+- [x] Prove every image arrived – before any deletion.
+- [x] Duplicates via a home-grown perceptual fingerprint, classified as "same
+  shot" versus "similar".
+- [x] Web interface with grid, search and duplicate view.
+- [x] **Have the name checked.** Four candidates rejected: *CloudFlow* (the
+  running shoe makes it undiscoverable), *MediaDock* (active German word mark),
+  *MediaMover* (generic term), *Heimholer* (National Socialist connotation).
+- [x] **Establish what is actually possible with each provider** – result in
+  `wolkenernte/anbieter.py` and `docs/anbieter.md`.

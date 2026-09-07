@@ -15,7 +15,7 @@
 # etwas zu veröffentlichen.
 
 pkgname=wolkenernte
-pkgver=0.2.0
+pkgver=0.3.0
 pkgrel=1
 pkgdesc="Bilder und Videos aus den Wolken holen und dort aufräumen"
 arch=('any')
