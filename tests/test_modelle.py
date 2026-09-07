@@ -1,19 +1,25 @@
 """Das Modell holen, prüfen und wiederfinden.
 
 Kein Test hier lädt 335 MB. Geprüft wird die Mechanik – Ablageort,
-Prüfsumme, Abbruchverhalten – an winzigen Dateien über einen eigenen
-kleinen Webdienst.
+Prüfsumme, Abbruchverhalten – an winzigen Dateien über ``file://``.
+
+**Warum kein eigener Webdienst?** Ein erster Anlauf startete einen
+kleinen HTTP-Server im selben Prozess. Er lief für sich allein
+tadellos und riss den **gesamten Testlauf** mit einem Speicherauszug
+ab, sobald zuvor die Fenstertests gelaufen waren – Qt und ein
+Serverfaden im selben Prozess vertragen sich nicht. ``urllib`` behandelt
+``file://`` über denselben Weg wie ``http://``: dieselbe Antwort,
+dieselbe ``Content-Length``, dieselben Fehler. Es wird also nichts
+weniger geprüft, nur ohne Faden und ohne Netzanschluss.
 """
 
 from __future__ import annotations
 
 import hashlib
-import http.server
 import os
 import shutil
 import sys
 import tempfile
-import threading
 import unittest
 from pathlib import Path
 
@@ -31,11 +37,6 @@ from wolkenernte.modelle import (
 
 INHALT = b"nicht wirklich ein Modell, aber gross genug" * 40
 SUMME = hashlib.sha256(INHALT).hexdigest()
-
-
-class _Stille(http.server.SimpleHTTPRequestHandler):
-    def log_message(self, *_: object) -> None:
-        pass
 
 
 class DerAblageort(unittest.TestCase):
@@ -92,27 +93,18 @@ class DieAngabenZuDenModellen(unittest.TestCase):
 class DasHolen(unittest.TestCase):
     def setUp(self) -> None:
         self.tmp = Path(tempfile.mkdtemp())
-        (self.tmp / "netz").mkdir()
-        (self.tmp / "netz" / "modell.bin").write_bytes(INHALT)
-
-        self.dienst = http.server.ThreadingHTTPServer(
-            ("127.0.0.1", 0),
-            lambda *a, **k: _Stille(*a, directory=str(self.tmp / "netz"), **k))
-        self.faden = threading.Thread(target=self.dienst.serve_forever,
-                                      daemon=True)
-        self.faden.start()
-        hafen = self.dienst.server_address[1]
+        self.ferne = self.tmp / "ferne" / "modell.bin"
+        self.ferne.parent.mkdir()
+        self.ferne.write_bytes(INHALT)
 
         self.vorher = os.environ.get("WOLKENERNTE_MODELLE")
         os.environ["WOLKENERNTE_MODELLE"] = str(self.tmp / "ablage")
         self.modell = Modell(
             name="Probe", datei="modell.bin",
-            quelle=f"http://127.0.0.1:{hafen}/modell.bin",
+            quelle=self.ferne.as_uri(),
             pruefsumme=SUMME, groesse=len(INHALT))
 
     def tearDown(self) -> None:
-        self.dienst.shutdown()
-        self.dienst.server_close()
         if self.vorher is None:
             os.environ.pop("WOLKENERNTE_MODELLE", None)
         else:
@@ -130,8 +122,11 @@ class DasHolen(unittest.TestCase):
         self.assertEqual(gesehen[-1][0], len(INHALT))
 
     def test_zweimal_holen_geht_nicht_ins_netz(self) -> None:
+        """Kein zweiter Griff, auch nicht die Frage nach einer neueren
+        Fassung – für ein Programm, das offline arbeitet, ist das der
+        Knackpunkt. Nachgewiesen, indem die Quelle verschwindet."""
         holen(self.modell)
-        self.dienst.shutdown()
+        self.ferne.unlink()
         self.assertEqual(holen(self.modell).read_bytes(), INHALT)
 
     def test_falsche_pruefsumme_wird_bemerkt(self) -> None:
@@ -157,8 +152,7 @@ class DasHolen(unittest.TestCase):
         self.assertFalse(list((self.tmp / "ablage").glob("*.teil")))
 
     def test_ohne_netz_eine_verstaendliche_meldung(self) -> None:
-        self.dienst.shutdown()
-        self.dienst.server_close()
+        self.ferne.unlink()
         with self.assertRaises(ModellFehler) as fehler:
             holen(self.modell)
         # Der Nutzer soll sich selbst helfen können.

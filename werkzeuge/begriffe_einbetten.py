@@ -2,9 +2,9 @@
 """Die englischen Fragen einmal in Zahlenreihen umrechnen.
 
 **Läuft beim Bauen, nicht beim Nutzer.** Dieses Werkzeug braucht den
-Textteil des Modells (242 MB) und ``tokenizers``; das Ergebnis ist eine
-Datei von etwa dreihundert Kilobyte, die dem Programm beiliegt. Auf dem
-Rechner des Nutzers läuft davon nichts.
+Textteil des Modells (242 MB) und ``onnxruntime``; das Ergebnis ist
+eine Datei von etwa dreihundert Kilobyte, die dem Programm beiliegt.
+Auf dem Rechner des Nutzers läuft davon nichts.
 
 Genau darin liegt der Kniff: Weil unsere Fragen feststehen, muss der
 Textteil nur einmal laufen – hier. Das spart dem Nutzer 242 MB und
@@ -32,8 +32,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import numpy as np  # noqa: E402
 import onnxruntime as ort  # noqa: E402
-from tokenizers import Tokenizer  # noqa: E402
 
+from werkzeuge.clip_zerleger import Zerleger  # noqa: E402
 from wolkenernte.begriffe import VORLAGEN, alle_begriffe  # noqa: E402
 from wolkenernte.modelle import TEXTTEIL, holen, ordner, vorhanden  # noqa: E402
 
@@ -43,13 +43,14 @@ LAENGE = 77
 ZIEL = Path(__file__).resolve().parent.parent / "wolkenernte/daten/begriffe.npz"
 
 
-def zerlegen(zerleger: Tokenizer, satz: str) -> np.ndarray:
+def zerlegen(zerleger: Zerleger, satz: str) -> np.ndarray:
     """Einen Satz in die 77 Zahlen wandeln, die das Modell erwartet.
 
     Kürzere Sätze werden mit Nullen aufgefüllt, längere abgeschnitten –
-    unsere Sätze sind alle kurz, das Abschneiden ist reine Vorsorge.
+    unsere längste Zerlegung hat 19 Stücke, das Abschneiden ist reine
+    Vorsorge.
     """
-    stuecke = zerleger.encode(satz).ids[:LAENGE]
+    stuecke = zerleger.zahlen(satz)[:LAENGE]
     gefuellt = stuecke + [0] * (LAENGE - len(stuecke))
     return np.array([gefuellt], dtype=np.int32)
 
@@ -67,7 +68,7 @@ def hauptteil() -> int:
               file=sys.stderr)
         return 1
 
-    zerleger = Tokenizer.from_file(str(zerlegerdatei))
+    zerleger = Zerleger.aus_datei(zerlegerdatei)
     sitzung = ort.InferenceSession(
         str(datei), providers=["CPUExecutionProvider"])
 
