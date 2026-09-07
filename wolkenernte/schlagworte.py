@@ -202,6 +202,34 @@ def aus_angaben(
     return gefunden
 
 
+#: Was das Modell nicht unterscheiden kann, die Uhr aber schon.
+#:
+#: Auf- und Untergang sehen auf dem Bild gleich aus – gemessen liegen
+#: die beiden Begriffe bei 0,975 auseinander, also praktisch
+#: aufeinander. Ein Mensch könnte es am Bild allein auch nicht sagen.
+#: Deshalb fragt das Modell nur nach dem *Phänomen*, und die
+#: Aufnahmezeit entscheidet über den Namen.
+VOR = 11  # bis dahin morgens
+
+
+def nach_der_uhr(woerter: list[Schlagwort], zeit: datetime | None,
+                 datum_bekannt: bool = True) -> list[Schlagwort]:
+    """Schlagwörter, die erst mit der Uhrzeit vollständig werden.
+
+    Hier treffen sich die beiden Hälften: Was aus dem Bild kommt, wird
+    von dem berichtigt, was ohnehin bekannt ist. Ohne verlässliche
+    Uhrzeit bleibt alles, wie es war – lieber das häufigere Wort als
+    ein geratenes.
+    """
+    if zeit is None or not datum_bekannt or uhrzeit_ist_geraten(zeit):
+        return woerter
+    if zeit.hour >= VOR:
+        return woerter
+    return [Schlagwort("Sonnenaufgang", w.quelle, w.sicherheit)
+            if w.name == "Sonnenuntergang" else w
+            for w in woerter]
+
+
 def begrenzen(woerter: list[Schlagwort],
               hoechstens: int = HOECHSTENS) -> list[Schlagwort]:
     """Auf die aussagekräftigsten Schlagwörter eindampfen.

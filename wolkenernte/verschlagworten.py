@@ -26,7 +26,7 @@ from pathlib import Path
 
 from .bestand import Bestand
 from .bestandsliste import Bestandsliste, Bild
-from .schlagworte import Schlagwort, aus_angaben, begrenzen
+from .schlagworte import Schlagwort, aus_angaben, begrenzen, nach_der_uhr
 
 #: Welche Herkünfte dieser Durchlauf schreibt.
 #:
@@ -62,21 +62,65 @@ class Bilanz:
         return ", ".join(teile)
 
 
-def _bildmasse(pfad: Path) -> tuple[int, int] | None:
-    """Breite und Höhe, ohne das Bild zu dekodieren.
+#: Ab wann ein Bild als farblos gilt, auf einer Skala bis 255.
+#:
+#: **Das echte Zeichen ist die Null.** An 400 Bildern gemessen tragen
+#: die schwarzweißen nicht *wenig* Farbe, sondern **gar keine** – 28
+#: Bilder mit einer Sättigung von exakt 0, und ihre Dateinamen sagen
+#: unabhängig davon dasselbe: ``bw``, ``SW``, ``schwarzweiss``.
+#:
+#: Die acht Stufen Spielraum sind nur für Material, das umkodiert
+#: wurde: JPEG speichert Farbe grob und in einem anderen Farbraum, und
+#: beim Zurückrechnen entstehen ein paar Stufen, die nie da waren. Über
+#: 8 zu gehen bringt nichts mehr, es fängt nur noch nebelgraue
+#: Farbbilder ein.
+FARBLOS = 8
 
-    Pillow liest dafür nur den Dateikopf. Ohne Pillow entfällt das
-    Schlagwort für die Bildform – kein Grund, den Lauf abzubrechen.
+#: Welcher Anteil der Pixel unter der Grenze liegen muss.
+#:
+#: **Nicht alle.** Ein einziges farbiges Pixel entschiede sonst über
+#: das ganze Bild – ein eingestempeltes Datum in Rot, ein Rest vom Rand
+#: des Scanners, ein Artefakt der Kompression.
+ANTEIL = 0.95
+
+
+def _bildangaben(pfad: Path) -> tuple[tuple[int, int] | None, bool]:
+    """Maße und Farbigkeit in einem Aufgang.
+
+    **»Schwarzweiß« gehört nicht zum Modell.** Die Farbsättigung sagt
+    es genau, das Modell rät – und riet in der Messung an 11 % aller
+    Bilder falsch, darunter lauter farbige. Gerechnet wird auf einem
+    Miniaturbild: Für die Frage, ob überhaupt Farbe im Spiel ist,
+    genügen 64 Pixel Kantenlänge.
+
+    Ohne Pillow entfällt beides – kein Grund, den Lauf abzubrechen.
     """
     try:
-        from PIL import Image
+        from PIL import Image, ImageChops
     except ImportError:
-        return None
+        return None, False
     try:
         with Image.open(pfad) as offen:
-            return offen.size
+            masse = offen.size
+            klein = offen.convert("RGB")
+            klein.thumbnail((64, 64))
+            # Der Abstand zwischen größtem und kleinstem Farbkanal ist
+            # die Sättigung, wie sie auch HSV rechnet.
+            rot, gruen, blau = klein.split()
+            hoch = ImageChops.lighter(ImageChops.lighter(rot, gruen), blau)
+            tief = ImageChops.darker(ImageChops.darker(rot, gruen), blau)
+            # Über das Histogramm, nicht über die Pixelliste: 256
+            # Zahlen statt viertausend, und ``getdata()`` fällt in
+            # Pillow 14 ohnehin weg.
+            verteilung = ImageChops.difference(hoch, tief).histogram()
     except (OSError, ValueError):
-        return None
+        return None, False
+
+    pixel = sum(verteilung)
+    if not pixel:
+        return masse, False
+    farblos = sum(verteilung[:FARBLOS + 1])
+    return masse, farblos >= pixel * ANTEIL
 
 
 def fuer_ein_bild(bild: Bild, archiv: Path, modell: object | None = None
@@ -89,15 +133,24 @@ def fuer_ein_bild(bild: Bild, archiv: Path, modell: object | None = None
     noch aus.
     """
     voll = archiv / bild.pfad
+    masse, schwarzweiss = ((None, False) if bild.ist_video
+                           else _bildangaben(voll))
+
     gefunden = list(aus_angaben(
         name=bild.name,
         zeit=bild.zeit,
         datum_bekannt=bild.datum_bekannt,
-        groesse_bild=None if bild.ist_video else _bildmasse(voll),
+        groesse_bild=masse,
         ist_video=bild.ist_video,
     ))
+    if schwarzweiss:
+        gefunden.append(Schlagwort("Schwarzweiß", "form"))
     if modell is not None and not bild.ist_video:
         gefunden.extend(modell.schlagworte(voll))  # type: ignore[attr-defined]
+
+    # Hier treffen sich die beiden Hälften: Was das Modell nicht
+    # unterscheiden kann, berichtigt die Uhr.
+    gefunden = nach_der_uhr(gefunden, bild.zeit, bild.datum_bekannt)
     return begrenzen(gefunden)
 
 

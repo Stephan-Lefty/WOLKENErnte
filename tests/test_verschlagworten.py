@@ -16,7 +16,12 @@ from pathlib import Path
 
 from wolkenernte.bestand import STUFEN, Bestand
 from wolkenernte.schlagworte import HOECHSTENS, Schlagwort
-from wolkenernte.verschlagworten import QUELLEN, fuer_ein_bild, verschlagworten
+from wolkenernte.verschlagworten import (
+    QUELLEN,
+    _bildangaben,
+    fuer_ein_bild,
+    verschlagworten,
+)
 
 try:
     from PIL import Image
@@ -175,6 +180,77 @@ class EinArchivMitDatenbank(unittest.TestCase):
         # Fehler, das Bild bekommt nur kein Formwort.
         self.assertEqual(bilanz.gescheitert, 0)
         self.assertEqual(bilanz.gesehen, len(self.namen) + 1)
+
+
+@unittest.skipUnless(PILLOW, "Pillow nicht vorhanden")
+class SchwarzweissWirdGerechnet(unittest.TestCase):
+    """Die Farbsättigung sagt es genau, das Modell riet.
+
+    An 400 echten Bildern gemessen tragen die schwarzweißen nicht
+    *wenig* Farbe, sondern **gar keine** – 28 Bilder mit einer
+    Sättigung von exakt 0, und ihre Dateinamen sagen unabhängig davon
+    dasselbe: ``bw``, ``SW``, ``schwarzweiss``. Das Modell hängte
+    »Schwarzweiß« dagegen an 11 % aller Bilder, darunter lauter
+    farbige.
+    """
+
+    def setUp(self) -> None:
+        self.tmp = Path(tempfile.mkdtemp())
+
+    def tearDown(self) -> None:
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _pruefen(self, bild: "Image.Image") -> bool:
+        ziel = self.tmp / "probe.png"      # PNG: keine Kompressionsartefakte
+        bild.save(ziel)
+        return _bildangaben(ziel)[1]
+
+    def test_grau_ist_farblos(self) -> None:
+        grau = Image.new("RGB", (80, 80))
+        for x in range(80):
+            for y in range(80):
+                wert = (x + y) * 255 // 158
+                grau.putpixel((x, y), (wert, wert, wert))
+        self.assertTrue(self._pruefen(grau))
+
+    def test_farbe_ist_farbe(self) -> None:
+        self.assertFalse(self._pruefen(Image.new("RGB", (80, 80), (200, 60, 40))))
+
+    def test_ein_einzelnes_buntes_pixel_entscheidet_nicht(self) -> None:
+        """Ein eingestempeltes Datum in Rot, ein Rest vom Rand des
+        Scanners, ein Artefakt der Kompression – das darf ein
+        Schwarzweißbild nicht farbig machen."""
+        fast = Image.new("RGB", (80, 80), (128, 128, 128))
+        fast.putpixel((0, 0), (255, 0, 0))
+        self.assertTrue(self._pruefen(fast))
+
+    def test_ein_ganzer_farbiger_streifen_entscheidet_doch(self) -> None:
+        """Mehr als jedes zwanzigste Pixel – dann ist es kein
+        Ausreißer mehr."""
+        gemischt = Image.new("RGB", (80, 80), (128, 128, 128))
+        for x in range(80):
+            for y in range(10):
+                gemischt.putpixel((x, y), (255, 0, 0))
+        self.assertFalse(self._pruefen(gemischt))
+
+    def test_das_wort_landet_am_bild(self) -> None:
+        from wolkenernte.bestandsliste import Bild
+
+        grau = Image.new("RGB", (60, 40), (100, 100, 100))
+        (self.tmp / "a").mkdir()
+        grau.save(self.tmp / "a/grau.png")
+        eintrag = Bild(pfad="a/grau.png", groesse=10,
+                       zeit=datetime(2021, 7, 1, 14))
+        namen = {w.name for w in fuer_ein_bild(eintrag, self.tmp)}
+        self.assertIn("Schwarzweiß", namen)
+
+    def test_ein_video_wird_gar_nicht_erst_geoeffnet(self) -> None:
+        from wolkenernte.bestandsliste import Bild
+
+        video = Bild(pfad="gibtsnicht.mp4", groesse=10,
+                     zeit=datetime(2021, 7, 1, 14), ist_video=True)
+        namen = {w.name for w in fuer_ein_bild(video, self.tmp)}
+        self.assertNotIn("Schwarzweiß", namen)
 
 
 class DieStufen(unittest.TestCase):

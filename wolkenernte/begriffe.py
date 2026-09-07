@@ -260,8 +260,11 @@ MACHART = Gruppe("Machart", (
        "a macro photograph of a small subject"),
     _b("Luftaufnahme", "an aerial photograph from above",
        "a bird's eye view from a drone"),
-    _b("Schwarzweiß", "a black and white photograph",
-       "a monochrome photograph"),
+    # »Schwarzweiß« stand hier und ist heraus: Die Farbsättigung sagt
+    # es genau, das Modell riet – und hängte das Wort an 11 % aller
+    # Bilder, darunter lauter farbige. Jetzt rechnet es
+    # :func:`wolkenernte.verschlagworten._bildangaben` aus, und die
+    # schwarzweißen tragen dort eine Sättigung von exakt null.
     _b("Zeichnung", "a drawing or illustration",
        "a hand-drawn picture, not a photograph"),
     _b("Karte", "a map", "a printed map or plan"),

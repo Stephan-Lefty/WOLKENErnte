@@ -13,6 +13,7 @@ from wolkenernte.schlagworte import (
     form,
     herkunft,
     jahreszeit,
+    nach_der_uhr,
     tageszeit,
     uhrzeit_ist_geraten,
 )
@@ -164,6 +165,54 @@ class AusDenAngaben(unittest.TestCase):
     def test_panorama_aus_den_massen(self) -> None:
         woerter = aus_angaben(name="x.jpg", groesse_bild=(8000, 2000))
         self.assertIn("Panorama", {w.name for w in woerter})
+
+
+class WasDieUhrBesserWeiss(unittest.TestCase):
+    """Auf- und Untergang sehen auf dem Bild gleich aus.
+
+    Gemessen liegen die beiden Begriffe bei 0,975 auseinander – das
+    Modell kann sie nicht unterscheiden, und ein Mensch könnte es am
+    Bild allein auch nicht. Die Aufnahmezeit kann es.
+    """
+
+    def _wort(self, stunde: int, **rest) -> str:
+        gefunden = nach_der_uhr(
+            [Schlagwort("Sonnenuntergang", "bild", 0.8)],
+            datetime(2024, 6, 1, stunde), **rest)
+        return gefunden[0].name
+
+    def test_morgens_wird_es_zum_aufgang(self) -> None:
+        self.assertEqual(self._wort(6), "Sonnenaufgang")
+
+    def test_abends_bleibt_es_der_untergang(self) -> None:
+        self.assertEqual(self._wort(20), "Sonnenuntergang")
+
+    def test_ohne_datum_bleibt_alles(self) -> None:
+        """Lieber das häufigere Wort als ein geratenes."""
+        self.assertEqual(self._wort(6, datum_bekannt=False),
+                         "Sonnenuntergang")
+
+    def test_ohne_uhrzeit_bleibt_alles(self) -> None:
+        gefunden = nach_der_uhr(
+            [Schlagwort("Sonnenuntergang", "bild", 0.8)],
+            datetime(2024, 6, 1, tzinfo=timezone.utc))
+        self.assertEqual(gefunden[0].name, "Sonnenuntergang")
+
+    def test_die_sicherheit_bleibt_erhalten(self) -> None:
+        gefunden = nach_der_uhr(
+            [Schlagwort("Sonnenuntergang", "bild", 0.83)],
+            datetime(2024, 6, 1, 6))
+        self.assertAlmostEqual(gefunden[0].sicherheit, 0.83)
+        self.assertEqual(gefunden[0].quelle, "bild")
+
+    def test_andere_woerter_bleiben_unberuehrt(self) -> None:
+        gefunden = nach_der_uhr(
+            [Schlagwort("Berge", "bild", 0.9), Schlagwort("Winter", "zeit")],
+            datetime(2024, 6, 1, 6))
+        self.assertEqual([w.name for w in gefunden], ["Berge", "Winter"])
+
+    def test_ohne_zeit_kein_absturz(self) -> None:
+        self.assertEqual(nach_der_uhr([], None), [])
 
 
 class DieBegrenzung(unittest.TestCase):
