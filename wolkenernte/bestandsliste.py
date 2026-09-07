@@ -55,6 +55,12 @@ class Bild:
     favorit: bool = False
     alben: list[str] = field(default_factory=list)
 
+    schlagworte: list[str] = field(default_factory=list)
+    """Höchstens fünf, die aussagekräftigsten zuerst.
+
+    Kommen aus `wolkenernte verschlagworten`; ohne diesen Durchlauf
+    bleibt die Liste leer."""
+
     @property
     def name(self) -> str:
         return self.pfad.rsplit("/", 1)[-1]
@@ -62,6 +68,32 @@ class Bild:
     @property
     def endung(self) -> str:
         return "." + self.name.rsplit(".", 1)[-1].lower() if "." in self.name else ""
+
+    @property
+    def uhrzeit_bekannt(self) -> bool:
+        """Ob hinter dem Zeitstempel wirklich eine Uhrzeit steckt.
+
+        Bei 1.465 von 14.476 Bildern nicht: Sie tragen nur ein Datum,
+        und daraus wurde Mitternacht UTC. Wer das nicht prüft, schreibt
+        »10.01.2021 um 01:00« unter ein Bild und behauptet damit etwas,
+        das nirgends steht.
+        """
+        from .schlagworte import uhrzeit_ist_geraten
+
+        return not uhrzeit_ist_geraten(self.zeit)
+
+
+def wann(bild: Bild) -> str:
+    """Wann ein Bild entstand, in Worten – für beide Oberflächen.
+
+    Drei Fälle, drei Antworten: kein Datum, nur ein Datum, Datum mit
+    Uhrzeit. Alles andere wäre eine Behauptung.
+    """
+    if not bild.datum_bekannt:
+        return "ohne Datum"
+    if not bild.uhrzeit_bekannt:
+        return bild.zeit.strftime("%d.%m.%Y")
+    return bild.zeit.strftime("%d.%m.%Y um %H:%M")
 
 
 class Bestandsliste:
@@ -143,6 +175,25 @@ class Bestandsliste:
                 bild = nach_pfad.get(pfad)
                 if bild is not None:
                     bild.alben.append(name)
+
+            # Die Reihenfolge stammt aus der Datenbank: erst die
+            # Herkunft nach ihrem Vorrang, dann die Sicherheit. Was aus
+            # dem Bild erkannt wurde, steht damit vorn.
+            for pfad, name in db.execute(
+                "SELECT bild.pfad, schlagwort.name FROM bild "
+                "JOIN bild_schlagwort ON bild.id = bild_schlagwort.bild_id "
+                "JOIN schlagwort ON schlagwort.id = "
+                "     bild_schlagwort.schlagwort_id "
+                "WHERE bild.pfad IS NOT NULL "
+                "ORDER BY bild.pfad, "
+                "  CASE bild_schlagwort.quelle WHEN 'bild' THEN 0 "
+                "    WHEN 'herkunft' THEN 1 WHEN 'ort' THEN 2 "
+                "    WHEN 'form' THEN 3 ELSE 4 END, "
+                "  bild_schlagwort.sicherheit DESC, schlagwort.name"
+            ):
+                bild = nach_pfad.get(pfad)
+                if bild is not None:
+                    bild.schlagworte.append(name)
         except sqlite3.Error:
             pass
         finally:
@@ -174,11 +225,23 @@ class Bestandsliste:
                 zaehler[name] = zaehler.get(name, 0) + 1
         return sorted(zaehler.items(), key=lambda p: -p[1])
 
+    def schlagworte(self) -> list[tuple[str, int]]:
+        """Alle vergebenen Schlagwörter mit ihrer Häufigkeit.
+
+        Häufigste zuerst – so steht oben, wonach sich zu filtern lohnt.
+        """
+        zaehler: dict[str, int] = {}
+        for bild in self.bilder:
+            for name in bild.schlagworte:
+                zaehler[name] = zaehler.get(name, 0) + 1
+        return sorted(zaehler.items(), key=lambda p: (-p[1], p[0]))
+
     def auswahl(
         self,
         *,
         jahr: int | None = None,
         album: str | None = None,
+        schlagwort: str | None = None,
         nur_mit_ort: bool = False,
         nur_favoriten: bool = False,
         nur_videos: bool = False,
@@ -190,6 +253,8 @@ class Bestandsliste:
                        if b.datum_bekannt and b.zeit.year == jahr]
         if album is not None:
             treffer = [b for b in treffer if album in b.alben]
+        if schlagwort is not None:
+            treffer = [b for b in treffer if schlagwort in b.schlagworte]
         if nur_mit_ort:
             treffer = [b for b in treffer if b.ort]
         if nur_favoriten:
@@ -201,7 +266,7 @@ class Bestandsliste:
         return treffer
 
     def suchen(self, text: str) -> list[Bild]:
-        """Bilder nach Dateiname, Titel, Album oder Ordner suchen.
+        """Bilder nach Dateiname, Titel, Album, Schlagwort oder Ordner suchen.
 
         Ohne Groß- und Kleinschreibung und ohne Volltextindex: Bei
         fünfzehntausend Einträgen ist ein Durchlauf durch die Liste
@@ -209,7 +274,8 @@ class Bestandsliste:
         aktuell.
 
         Mehrere Wörter müssen **alle** vorkommen, aber nicht
-        nebeneinander: »berlin 2023« findet Berliner Bilder aus 2023.
+        nebeneinander: »berlin 2023« findet Berliner Bilder aus 2023,
+        »schnee berge« die verschneiten Bergbilder.
         """
         woerter = [w.lower() for w in text.split() if w]
         if not woerter:
@@ -219,6 +285,7 @@ class Bestandsliste:
         for bild in self.bilder:
             heuhaufen = " ".join((
                 bild.pfad, bild.titel, " ".join(bild.alben),
+                " ".join(bild.schlagworte),
                 bild.zeit.strftime("%d.%m.%Y %B %Y"),
             )).lower()
             if all(wort in heuhaufen for wort in woerter):

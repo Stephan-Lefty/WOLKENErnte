@@ -25,7 +25,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from ..bestandsliste import Bild
+from ..bestandsliste import Bild, wann
 from ..farben import BLAU_LEUCHT, GRAU_MITTE, GRAU_NACHT, WEISS
 from ..web import vorschau
 
@@ -108,10 +108,9 @@ class Einzelansicht(QWidget):
         self._aktuell = bild
         self._beenden()
 
-        teile = [bild.name]
-        teile.append(bild.zeit.strftime("%d.%m.%Y um %H:%M")
-                     if bild.datum_bekannt else "ohne Datum")
-        teile.append(f"{bild.groesse / 1e6:.1f} MB")
+        teile = [bild.name, wann(bild), f"{bild.groesse / 1e6:.1f} MB"]
+        if bild.schlagworte:
+            teile.append("· " + ", ".join(bild.schlagworte))
         if bild.alben:
             teile.append("· " + ", ".join(bild.alben))
         if bild.ort:

@@ -14,7 +14,7 @@ from html import escape
 from urllib.parse import quote
 
 from .. import __version__, farben
-from ..bestandsliste import Bestandsliste, Bild
+from ..bestandsliste import Bestandsliste, Bild, wann
 
 STIL = f"""
 :root {{
@@ -141,9 +141,11 @@ def _fuss() -> str:
             f'</footer></body></html>')
 
 
-def _navigation(liste: Bestandsliste, jahr: int | None, album: str | None) -> str:
+def _navigation(liste: Bestandsliste, jahr: int | None, album: str | None,
+                schlagwort: str | None = None) -> str:
     teile = ['<nav>']
-    teile.append(f'<a href="/raster"{"" if jahr or album else " class=aktiv"}>Alle</a>')
+    alles = "" if jahr or album or schlagwort else " class=aktiv"
+    teile.append(f'<a href="/raster"{alles}>Alle</a>')
     for j, anzahl in liste.jahre():
         aktiv = " class=aktiv" if j == jahr else ""
         teile.append(f'<a href="/raster?jahr={j}"{aktiv}>{j} <span>({anzahl})</span></a>')
@@ -159,6 +161,17 @@ def _navigation(liste: Bestandsliste, jahr: int | None, album: str | None) -> st
         for name, anzahl in alben[:20]:
             aktiv = " class=aktiv" if name == album else ""
             teile.append(f'<a href="/raster?album={quote(name)}"{aktiv}>'
+                         f'{escape(name)} <span>({anzahl})</span></a>')
+        teile.append('</nav>')
+
+    # Die häufigsten zwanzig. Wer nach etwas Seltenerem sucht, tippt es
+    # ins Suchfeld – eine Leiste mit siebzig Wörtern liest niemand.
+    woerter = liste.schlagworte()
+    if woerter:
+        teile.append('<nav>')
+        for name, anzahl in woerter[:20]:
+            aktiv = " class=aktiv" if name == schlagwort else ""
+            teile.append(f'<a href="/raster?schlagwort={quote(name)}"{aktiv}>'
                          f'{escape(name)} <span>({anzahl})</span></a>')
         teile.append('</nav>')
     return "".join(teile)
@@ -217,17 +230,20 @@ def raster_kacheln(bilder: list[Bild]) -> str:
 def raster(
     liste: Bestandsliste, bilder: list[Bild], *, seite: int, je_seite: int,
     jahr: int | None, album: str | None, zusatz: str,
+    schlagwort: str | None = None,
 ) -> str:
     seiten = max(1, -(-len(bilder) // je_seite))
     seite = max(1, min(seite, seiten))
     ausschnitt = bilder[(seite - 1) * je_seite: seite * je_seite]
 
-    was = f"{jahr}" if jahr else (album or "Alle Bilder")
+    was = f"{jahr}" if jahr else (album or schlagwort or "Alle Bilder")
     inhalt = [f"<main><h2>{escape(str(was))} – {zahl(len(bilder))} Dateien</h2>"]
     inhalt.append(raster_kacheln(ausschnitt))
 
     if seiten > 1:
-        grund = f"jahr={jahr}&" if jahr else (f"album={quote(album)}&" if album else "")
+        grund = (f"jahr={jahr}&" if jahr else
+                 f"album={quote(album)}&" if album else
+                 f"schlagwort={quote(schlagwort)}&" if schlagwort else "")
         grund += zusatz
         inhalt.append('<div class="blaetter">')
         if seite > 1:
@@ -238,7 +254,7 @@ def raster(
         inhalt.append("</div>")
     inhalt.append("</main>")
 
-    return (_kopf(str(was), liste) + _navigation(liste, jahr, album)
+    return (_kopf(str(was), liste) + _navigation(liste, jahr, album, schlagwort)
             + "".join(inhalt) + _fuss())
 
 
@@ -256,8 +272,7 @@ def einzeln(liste: Bestandsliste, bild: Bild) -> str:
 
     zeilen = [
         ("Datei", escape(bild.name)),
-        ("Aufgenommen", bild.zeit.strftime("%d.%m.%Y um %H:%M")
-         if bild.datum_bekannt else
+        ("Aufgenommen", escape(wann(bild)) if bild.datum_bekannt else
          "<i>unbekannt</i> – weder Metadaten noch EXIF gaben etwas her"),
         ("Größe", f"{bild.groesse/1e6:.1f} MB"),
         ("Liegt in", escape(bild.pfad.rsplit("/", 1)[0])),
@@ -270,6 +285,10 @@ def einzeln(liste: Bestandsliste, bild: Bild) -> str:
                               f'?mlat={breite}&mlon={laenge}#map=15/{breite}/{laenge}"'
                               f' target="_blank" rel="noreferrer">'
                               f'{breite:.5f}, {laenge:.5f}</a>'))
+    if bild.schlagworte:
+        zeilen.append(("Schlagwörter", ", ".join(
+            f'<a href="/raster?schlagwort={quote(s)}">{escape(s)}</a>'
+            for s in bild.schlagworte)))
     if bild.alben:
         zeilen.append(("Alben", ", ".join(
             f'<a href="/raster?album={quote(a)}">{escape(a)}</a>' for a in bild.alben)))

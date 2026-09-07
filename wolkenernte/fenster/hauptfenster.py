@@ -127,9 +127,23 @@ class Hauptfenster(QMainWindow):
         leiste.addWidget(QLabel("  Album "))
         leiste.addWidget(self.albumwahl)
 
+        # Der Kasten erscheint nur, wenn es Schlagwörter gibt. Eine
+        # immer leere Auswahlliste sähe nach einem Defekt aus – dabei
+        # fehlt nur ein Durchlauf, den niemand angestoßen hat.
+        self.schlagwortwahl = QComboBox()
+        self.schlagwortwahl.addItem("Alle Schlagwörter", None)
+        vergebene = self.liste.schlagworte()
+        for name, anzahl in vergebene:
+            self.schlagwortwahl.addItem(f"{name}  ({anzahl})", name)
+        self.schlagwortwahl.currentIndexChanged.connect(self._auswahl_anwenden)
+        if vergebene:
+            leiste.addWidget(QLabel("  Schlagwort "))
+            leiste.addWidget(self.schlagwortwahl)
+
         self.suchfeld = QLineEdit()
         self.suchfeld.setPlaceholderText(
-            "Suchen in Namen, Titeln, Alben und Datum …  (Strg+F)")
+            "Suchen in Namen, Titeln, Alben, Schlagwörtern und Datum …  "
+            "(Strg+F)")
         self.suchfeld.setClearButtonEnabled(True)
         # Erst beim Eingabeende suchen, nicht bei jedem Tastendruck:
         # Ein Durchlauf über 14.770 Einträge bei jedem Buchstaben
@@ -155,6 +169,7 @@ class Hauptfenster(QMainWindow):
             bilder = self.liste.auswahl(
                 jahr=jahr if isinstance(jahr, int) else None,
                 album=self.albumwahl.currentData(),
+                schlagwort=self.schlagwortwahl.currentData(),
                 nur_ohne_datum=(jahr == "ohne"),
             )
 

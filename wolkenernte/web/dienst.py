@@ -158,10 +158,11 @@ class Behandler(http.server.BaseHTTPRequestHandler):
         if eins("jahr") and eins("jahr").isdigit():
             jahr = int(eins("jahr"))
         album = eins("album")
+        schlagwort = eins("schlagwort")
         seite = int(eins("seite")) if (eins("seite") or "").isdigit() else 1
 
         bilder = liste.auswahl(
-            jahr=jahr, album=album,
+            jahr=jahr, album=album, schlagwort=schlagwort,
             nur_mit_ort=bool(eins("ort")),
             nur_favoriten=bool(eins("favoriten")),
             nur_videos=bool(eins("videos")),
@@ -170,7 +171,8 @@ class Behandler(http.server.BaseHTTPRequestHandler):
         zusatz = "".join(f"{n}=1&" for n in
                          ("ort", "favoriten", "videos", "ohnedatum") if eins(n))
         self._seite(seiten.raster(liste, bilder, seite=seite, je_seite=JE_SEITE,
-                                  jahr=jahr, album=album, zusatz=zusatz))
+                                  jahr=jahr, album=album, zusatz=zusatz,
+                                  schlagwort=schlagwort))
 
     def _einzeln(self, liste, pfad) -> None:
         bild = liste.bei(pfad) if pfad else None

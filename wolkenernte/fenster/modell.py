@@ -35,7 +35,7 @@ from PySide6.QtCore import (
 )
 from PySide6.QtGui import QColor, QIcon, QPainter, QPixmap
 
-from ..bestandsliste import Bild
+from ..bestandsliste import Bild, wann
 from ..farben import BLAU, GRAU_KOHLE, GRAU_MITTE
 from ..web import vorschau
 
@@ -151,9 +151,9 @@ class Bildmodell(QAbstractListModel):
         if rolle == Qt.ItemDataRole.DecorationRole:
             return QIcon(self._bild_holen(index.row(), bild))
         if rolle == Qt.ItemDataRole.ToolTipRole:
-            zeit = (bild.zeit.strftime("%d.%m.%Y um %H:%M")
-                    if bild.datum_bekannt else "ohne Datum")
-            teile = [bild.name, zeit, f"{bild.groesse / 1e6:.1f} MB"]
+            teile = [bild.name, wann(bild), f"{bild.groesse / 1e6:.1f} MB"]
+            if bild.schlagworte:
+                teile.append("Schlagwörter: " + ", ".join(bild.schlagworte))
             if bild.alben:
                 teile.append("Alben: " + ", ".join(bild.alben))
             if bild.ort:
