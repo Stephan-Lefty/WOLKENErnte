@@ -41,17 +41,12 @@ Weg von dort in die Datenbank und in die Oberflächen.
 - [ ] **Die Begriffsliste weiter nachziehen.** Gemessen an 400 Bildern:
   »Ostern« liegt bei 7 % und meint dabei meist nur Frühlingsblumen, »Schaf« bei
   5 % ist verdächtig. Wörter, die nie greifen, gehören ebenso heraus.
-- [ ] **»Schwarzweiß« gehört nicht zum Modell.** Die Farbsättigung sagt es
-  genau, das Modell rät. Dasselbe gilt womöglich für »Bildschirmfoto«, das
-  schon aus dem Dateinamen kommt.
-- [ ] **»Sonnenuntergang« nach der Uhr benennen.** Das Modell kann Auf- und
-  Untergang nicht unterscheiden (0,975), die Aufnahmezeit kann es. Die beiden
-  Hälften müssen sich dafür treffen – bisher tun sie das nirgends.
-- [ ] **In beide Oberflächen einbauen:** Schlagwörter anzeigen, danach filtern,
-  danach suchen. Der Unterbau in `bestandsliste.py`, nicht zweimal.
-- [ ] **Ein Durchlauf über den Bestand**, der die Schlagwörter in die Datenbank
-  schreibt – mit Fortschritt, abbrechbar, und beim zweiten Mal nur für das, was
-  noch keine hat.
+- [ ] **Schlagwörter von Hand ergänzen und wegnehmen.** Bisher kommen sie
+  ausschließlich aus dem Durchlauf; wer eines falsch findet, kann nichts tun.
+  Eine eigene Herkunft (`"hand"`) dafür, die kein Durchlauf je überschreibt.
+- [ ] **Videos bekommen keine Schlagwörter aus dem Bild.** Sobald ffmpeg ein
+  Einzelbild liefert, ändert sich das – die Buchführung ist schon darauf
+  eingerichtet und lässt Videos auf der Stufe »abgeleitet« stehen.
 - [ ] Modell erst holen, wenn der Anwender die Bilderkennung wirklich will. Ein
   Programm, das beim ersten Start ungefragt 335 MB zieht, ist unhöflich.
 - [ ] Prüfen, ob die INT8-Fassung reicht: viermal kleiner (85 statt 335 MB),
@@ -168,8 +163,19 @@ Paketverwalter mitbringen. Niemand soll rclone von Hand herunterladen.
   Wörtern. Zwei Ursachen behoben – die stumme Antwort »irgendein Foto«, die
   eine Gruppe schweigen lässt, und die **gerechnete** statt gesetzte Schwelle.
   Danach: 2,6 Wörter je Bild, 1,8 % ohne, häufigstes Wort 13,5 %.
-- [x] **6,4 Bilder je Sekunde** auf der Hauptrecheneinheit – 39 Minuten für
-  14.767 Bilder.
+- [x] **6,4 Bilder je Sekunde** auf der Hauptrecheneinheit, solange die Bilder
+  im Zwischenspeicher liegen; über den ganzen Bestand hinweg ist die Platte der
+  Engpass, nicht die Rechnung.
+- [x] **Der Durchlauf** `wolkenernte verschlagworten`, der beides zusammenführt
+  und in die Datenbank schreibt – mit Fortschritt und einem Merker, damit der
+  zweite Lauf nur das Fehlende anfasst.
+- [x] **In beiden Oberflächen**: anzeigen, filtern, suchen. Der Unterbau steht
+  einmal in `bestandsliste.py`.
+- [x] **Ohne Uhrzeit keine Tageszeit.** 1.465 von 14.476 Bildern tragen nur ein
+  Datum; »Nachtaufnahme« fiel damit von 2.004 auf 539.
+- [x] **»Schwarzweiß« wird gerechnet, nicht geraten** – aus der Farbsättigung.
+- [x] **»Sonnenaufgang« nach der Uhr**, weil das Modell ihn vom Untergang nicht
+  unterscheiden kann (0,975).
 
 ### Die Fensteranwendung (2026-09-07)
 

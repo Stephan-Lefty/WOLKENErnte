@@ -39,16 +39,12 @@ from there into the database and the interfaces.
 - [ ] **Keep adjusting the term list.** Measured across 400 images: "Ostern"
   (Easter) sits at 7 % and mostly means spring flowers, "Schaf" (sheep) at 5 %
   looks suspicious. Words that never fire should go too.
-- [ ] **"Schwarzweiß" does not belong to the model.** Colour saturation says it
-  exactly, the model guesses. The same may hold for "Bildschirmfoto", which
-  already comes from the filename.
-- [ ] **Name "Sonnenuntergang" by the clock.** The model cannot tell sunrise
-  from sunset (0.975), the capture time can. The two halves have to meet for
-  that – so far they meet nowhere.
-- [ ] **Wire it into both interfaces:** show keywords, filter by them, search by
-  them. The groundwork goes into `bestandsliste.py`, not twice.
-- [ ] **A pass over the collection** that writes the keywords into the database –
-  with progress, interruptible, and on a second run only for what has none yet.
+- [ ] **Add and remove keywords by hand.** They currently come only from the
+  pass; anyone who finds one wrong can do nothing about it. A separate origin
+  (`"hand"`) for those, which no pass ever overwrites.
+- [ ] **Videos get no keywords from the image.** That changes once ffmpeg can
+  supply a still – the bookkeeping already allows for it and leaves videos at
+  the "abgeleitet" level.
 - [ ] Only fetch the model once the user actually wants image recognition. A
   program that pulls 335 MB unasked on first start is rude.
 - [ ] Check whether the INT8 version is good enough: four times smaller (85
@@ -158,7 +154,18 @@ package manager bring along. Nobody should download rclone by hand.
   words. Two causes fixed – the silent answer "just a photograph" that lets a
   group stay quiet, and a **computed** rather than hand-set threshold.
   Afterwards: 2.6 words per image, 1.8 % with none, most frequent word 13.5 %.
-- [x] **6.4 images per second** on the CPU – 39 minutes for 14,767 images.
+- [x] **6.4 images per second** on the CPU while the files are in the page
+  cache; across the whole collection the disk is the bottleneck, not the maths.
+- [x] **The pass** `wolkenernte verschlagworten`, which brings both halves
+  together and writes to the database – with progress and a marker so the
+  second run only touches what is missing.
+- [x] **In both interfaces**: display, filter, search. The groundwork sits once
+  in `bestandsliste.py`.
+- [x] **No time of day without a time.** 1,465 of 14,476 images carry only a
+  date; "Nachtaufnahme" dropped from 2,004 to 539.
+- [x] **"Schwarzweiß" is computed, not guessed** – from colour saturation.
+- [x] **"Sonnenaufgang" by the clock**, because the model cannot tell it from
+  sunset (0.975).
 
 ### The desktop application (2026-09-07)
 

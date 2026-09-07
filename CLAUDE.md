@@ -18,14 +18,31 @@ auf einem fremden Rechner nur `onnxruntime` (unter Manjaro:
 `python-onnxruntime-cpu` aus `extra`) und beim ersten Aufruf das
 335-MB-Modell, das sich selbst holt.
 
-**Was als Nächstes ansteht**, in dieser Reihenfolge:
+`wolkenernte verschlagworten <Archiv>` führt beides zusammen und
+schreibt es in die Datenbank; beide Oberflächen zeigen, filtern und
+suchen danach.
 
-1. **Ein Durchlauf, der die Schlagwörter in die Datenbank schreibt.**
-   Die Tabellen stehen (`bestand.py`), der Durchlauf nicht.
-2. **In beide Oberflächen einbauen** – anzeigen, filtern, suchen. Der
-   Unterbau gehört in `bestandsliste.py`, nicht zweimal.
-3. **Die Begriffsliste nachziehen.** »Ostern« liegt bei 7 % und meint
-   dabei meist nur Frühlingsblumen; »Schaf« bei 5 % ist verdächtig.
+**Was als Nächstes ansteht:** die Begriffsliste weiter nachziehen –
+»Ostern« liegt bei 7 % und meint dabei meist nur Frühlingsblumen,
+»Schaf« bei 5 % ist verdächtig –, und Schlagwörter von Hand ergänzen
+können.
+
+### Wo die beiden Hälften sich treffen
+
+In `verschlagworten.fuer_ein_bild()`, und das ist mehr als Buchhaltung:
+**Zwei Dinge kann das Modell schlechter als Rechnen.**
+
+»Schwarzweiß« hing an 11 % aller Bilder, darunter lauter farbige. Die
+Farbsättigung sagt es dagegen genau – die schwarzweißen Bilder tragen
+nicht *wenig* Farbe, sondern **gar keine**, und ihre Dateinamen sagen
+unabhängig davon dasselbe (`bw`, `SW`, `schwarzweiss`). Entschieden
+wird nach 95 % der Pixel, nicht nach dem höchsten Wert: Ein einziges
+rotes Pixel entschiede sonst über das ganze Bild.
+
+»Sonnenaufgang« und »Sonnenuntergang« liegen bei 0,975 – ununterscheidbar
+für das Modell und für einen Menschen, der nur das Bild sieht. Die Uhr
+kann es. Das Modell fragt darum nur nach dem Phänomen, die Aufnahmezeit
+vergibt den Namen.
 
 **Der eigentliche Zweck bleibt offen:** aus einer Wolke ernten. Der
 Weg dorthin steht in `wolke.py`, erprobt ist er nur gegen rclones
@@ -132,6 +149,7 @@ wolkenernte/
 ├── einrichten.py   Zugänge anlegen (das Frage-Antwort-Spiel)
 ├── zugang.py       dasselbe von der Kommandozeile
 ├── schlagworte.py  Schlagwörter ohne Modell (Datum, Name, Maße)
+├── verschlagworten.py  der Durchlauf - hier treffen sich beide Hälften
 ├── begriffe.py     die 75 deutschen Wörter, nach denen gesucht wird
 ├── bilderkennung.py  aus Ähnlichkeiten werden Wörter - ohne Fremdpakete
 ├── bildmodell.py   der Bildteil des Modells (braucht onnxruntime)
@@ -210,6 +228,14 @@ Raster fiel es nicht auf, weil die Vorschaubilder von Pillow kommen.
 
 **`KeepAspectRatioByExpanding` schneidet nicht zu.** Das Raster riss
 deshalb Lücken, obwohl `setUniformItemSizes` gesetzt war.
+
+**Ein Zeitstempel ohne Uhrzeit ist trotzdem einer.** Fast jedes Bild
+bekam »Nachtaufnahme«. Die Verteilung der Aufnahmezeiten sagt warum:
+Die Stunde 1 trägt 1.488 Aufnahmen, die Stunden 2 bis 5 zusammen 39.
+Das ist Mitternacht UTC in mitteleuropäischer Zeit – 1.465 von 14.476
+Bildern tragen gar keine Uhrzeit, nur ein Datum. Sichtbar wurde das
+erst, als der Durchlauf über den ganzen Bestand lief; an einer
+Stichprobe wäre es nicht aufgefallen.
 
 **Ein Muster ohne Ziffern trifft menschliche Dateinamen.** `"20"` in
 der Handyliste steht in jeder Jahreszahl und in fast jeder UUID: 1.587
