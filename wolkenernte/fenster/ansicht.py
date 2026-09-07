@@ -194,6 +194,18 @@ class Einzelansicht(QWidget):
 
     # -- Bedienung ---------------------------------------------------------
 
+    def menue_gewuenscht(self, stelle, bild: Bild) -> None:
+        """Wird vom Hauptfenster überschrieben."""
+
+    def contextMenuEvent(self, ereignis) -> None:  # noqa: N802
+        """Rechte Maustaste – dieselben Einträge wie im Raster.
+
+        Wer ein Bild groß ansieht und dann merkt, dass es schief steht,
+        soll es nicht erst wieder im Raster suchen müssen.
+        """
+        if self._aktuell is not None:
+            self.menue_gewuenscht(ereignis.globalPos(), self._aktuell)
+
     def zurueck_gewuenscht(self) -> None:
         """Wird vom Hauptfenster überschrieben."""
 

@@ -12,20 +12,22 @@ from __future__ import annotations
 from pathlib import Path
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QAction, QIcon, QKeySequence
+from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import (
     QComboBox,
     QLabel,
     QLineEdit,
     QListView,
     QMainWindow,
+    QMenu,
+    QMessageBox,
     QStackedWidget,
     QStatusBar,
     QToolBar,
     QWidget,
 )
 
-from .. import __version__
+from .. import __version__, symbole
 from ..bestandsliste import Bestandsliste
 from ..farben import (
     BLAU,
@@ -62,9 +64,7 @@ class Hauptfenster(QMainWindow):
         self.resize(1200, 800)
         self.setStyleSheet(STIL)
 
-        symbol = Path(__file__).resolve().parent.parent.parent / "assets/icon-256.png"
-        if symbol.exists():
-            self.setWindowIcon(QIcon(str(symbol)))
+        self.setWindowIcon(symbole.qt_symbol())
 
         self._raster_bauen()
         self._leiste_bauen()
@@ -72,6 +72,7 @@ class Hauptfenster(QMainWindow):
         self.ansicht = Einzelansicht(archiv)
         self.ansicht.zurueck_gewuenscht = self._zum_raster
         self.ansicht.weiter_gewuenscht = self._blaettern
+        self.ansicht.menue_gewuenscht = self._menue_einzeln
 
         self.ebenen = QStackedWidget()
         self.ebenen.addWidget(self.raster)
@@ -102,6 +103,9 @@ class Hauptfenster(QMainWindow):
             QListView.ScrollMode.ScrollPerPixel)
         self.raster.doubleClicked.connect(self._oeffnen)
         self.raster.activated.connect(self._oeffnen)
+        self.raster.setContextMenuPolicy(
+            Qt.ContextMenuPolicy.CustomContextMenu)
+        self.raster.customContextMenuRequested.connect(self._menue_zeigen)
 
     def _leiste_bauen(self) -> None:
         leiste = QToolBar()
@@ -180,6 +184,89 @@ class Hauptfenster(QMainWindow):
             f"   ·   {gb:.1f} GB"
         )
 
+    # -- Weiterreichen -----------------------------------------------------
+
+    def _menue_zeigen(self, stelle) -> None:
+        """Das Menü zur rechten Maustaste.
+
+        **Es gilt für die ganze Auswahl, nicht nur für das Bild unter
+        dem Zeiger.** Wer zwanzig Bilder markiert und dann rechts
+        klickt, meint die zwanzig. Angeklickt wird aber trotzdem
+        vorgewählt – sonst öffnete ein Rechtsklick ins Leere die zuletzt
+        markierten Bilder, und das überrascht.
+        """
+        unter_dem_zeiger = self.raster.indexAt(stelle)
+        if not unter_dem_zeiger.isValid():
+            return
+        if unter_dem_zeiger not in self.raster.selectedIndexes():
+            self.raster.setCurrentIndex(unter_dem_zeiger)
+
+        bilder = [self.modell.bild_bei(i)
+                  for i in self.raster.selectedIndexes()]
+        bilder = [b for b in bilder if b is not None]
+        if not bilder:
+            return
+
+        menue = QMenu(self)
+        menue.addAction(
+            "Ansehen" if len(bilder) == 1 else f"{len(bilder)} ansehen",
+            lambda: self._oeffnen(self.raster.currentIndex()))
+        menue.addSeparator()
+        self._bearbeiten_eintragen(menue, bilder)
+        menue.exec(self.raster.viewport().mapToGlobal(stelle))
+
+    def _bearbeiten_eintragen(self, menue, bilder: list) -> None:
+        """Die Einträge zum Weiterreichen an andere Programme.
+
+        Wird auch von der Einzelansicht benutzt – dieselbe Liste, damit
+        beide Wege dasselbe anbieten.
+        """
+        from .. import bearbeiten
+
+        pfade = [self.archiv / b.pfad for b in bilder]
+        wieviele = "" if len(pfade) == 1 else f" ({len(pfade)})"
+
+        for programm in bearbeiten.vorhandene():
+            eintrag = menue.addAction(f"Mit {programm.name} bearbeiten{wieviele}")
+            if programm.wofuer:
+                eintrag.setToolTip(programm.wofuer)
+            eintrag.triggered.connect(
+                lambda _=False, p=programm: self._weiterreichen(
+                    pfade, lambda pfad: bearbeiten.oeffnen_mit(pfad, p)))
+
+        eintrag = menue.addAction(f"Mit anderem Programm öffnen …{wieviele}")
+        eintrag.triggered.connect(
+            lambda: self._weiterreichen(pfade, bearbeiten.auswahl_anbieten))
+
+        menue.addSeparator()
+        eintrag = menue.addAction("Im Dateimanager zeigen")
+        # Nur das erste: Zwanzig Dateimanagerfenster will niemand.
+        eintrag.triggered.connect(
+            lambda: self._weiterreichen(pfade[:1], bearbeiten.im_dateimanager))
+
+    def _menue_einzeln(self, stelle, bild) -> None:
+        """Dasselbe Menü in der Einzelansicht, für dieses eine Bild."""
+        menue = QMenu(self)
+        self._bearbeiten_eintragen(menue, [bild])
+        menue.exec(stelle)
+
+    def _weiterreichen(self, pfade: list[Path], was) -> None:
+        """Ein anderes Programm aufrufen und Fehler sichtbar machen.
+
+        Ohne diesen Dialog bliebe ein misslungener Start völlig stumm –
+        der Anwender klickt, und nichts geschieht.
+        """
+        from ..bearbeiten import BearbeitenFehler
+
+        for pfad in pfade:
+            try:
+                was(pfad)
+            except BearbeitenFehler as fehler:
+                QMessageBox.warning(self, "WOLKENErnte", str(fehler))
+                return
+        self.statusBar().showMessage(
+            f"{len(pfade)} an ein anderes Programm übergeben", 4000)
+
     # -- Einzelansicht -----------------------------------------------------
 
     def _oeffnen(self, index) -> None:
@@ -240,6 +327,15 @@ def starten(archiv: Path | None) -> int:
     from PySide6.QtWidgets import QApplication, QMessageBox
 
     app = QApplication.instance() or QApplication(sys.argv)
+
+    # **Vor dem ersten Fenster.** Das Symbol der Anwendung entscheidet,
+    # was in der Fensterleiste und im Umschalter steht - und wenn schon
+    # ein Dialog offen war, ändert Qt es dort nicht mehr nachträglich.
+    app.setWindowIcon(symbole.qt_symbol())
+    # Damit die Arbeitsumgebung das Fenster dem Menüeintrag zuordnet.
+    # Ohne das zeigt GNOME ein Zahnrad statt des Symbols, obwohl die
+    # .desktop-Datei richtig liegt.
+    app.setDesktopFileName("wolkenernte")
 
     if archiv is None or not archiv.is_dir():
         archiv = archiv_erfragen(app)

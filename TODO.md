@@ -38,9 +38,9 @@ ohnehin nur die Hälfte geht.
 Beide Hälften laufen und sind gemessen (siehe *Erledigt*). Was fehlt, ist der
 Weg von dort in die Datenbank und in die Oberflächen.
 
-- [ ] **Die Begriffsliste weiter nachziehen.** Gemessen an 400 Bildern:
-  »Ostern« liegt bei 7 % und meint dabei meist nur Frühlingsblumen, »Schaf« bei
-  5 % ist verdächtig. Wörter, die nie greifen, gehören ebenso heraus.
+- [ ] **»Ostern« nachprüfen.** Es liegt bei 5,8 % und meint dabei meist nur
+  Frühlingsblumen. Wie bei »Zeichnung« und »Luftaufnahme« gilt: erst messen,
+  dann entscheiden – ein Wort, das die Hälfte danebenliegt, gehört heraus.
 - [ ] **Schlagwörter von Hand ergänzen und wegnehmen.** Bisher kommen sie
   ausschließlich aus dem Durchlauf; wer eines falsch findet, kann nichts tun.
   Eine eigene Herkunft (`"hand"`) dafür, die kein Durchlauf je überschreibt.

@@ -27,6 +27,25 @@ suchen danach.
 »Schaf« bei 5 % ist verdächtig –, und Schlagwörter von Hand ergänzen
 können.
 
+### Drei Wörter, die das Modell nicht kann
+
+Alle drei sahen im Kleinen brauchbar aus und fielen erst am **ganzen
+Bestand** durch. Das Muster ist jedes Mal dasselbe: Wo ein exaktes
+Zeichen existiert, ist es besser als jedes Modell.
+
+| Wort | Was das Modell tat | Was es stattdessen sagt |
+|---|---|---|
+| Schwarzweiß | an 11 % aller Bilder, meist farbige | Farbsättigung – die echten liegen bei exakt 0 |
+| Luftaufnahme | 36 von 480 Drohnenbildern; Anteil 0,04 gegen 0,03 bei allen anderen, also **keine** Trennung | der Dateiname (`dji_`) |
+| Zeichnung | auch bei 0,90 gewöhnliche Handyfotos | nichts – das Wort ist ersatzlos weg |
+
+**Und der Deckel ist eine Notbremse, kein Einstellwert.** Als
+»Schwarzweiß« aus der Machart-Gruppe flog, schrumpfte die von fünf
+Antworten auf vier, und die gerechnete Schwelle sprang auf 0,90 – die
+Gruppe vergab danach an 1 % der Bilder noch ein Wort. Praktisch
+gelöscht, ohne dass irgendwo etwas fehlschlug. Ein Test nagelt das
+seither fest: **keine Gruppe darf am Deckel liegen.**
+
 ### Wo die beiden Hälften sich treffen
 
 In `verschlagworten.fuer_ein_bild()`, und das ist mehr als Buchhaltung:

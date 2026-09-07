@@ -90,4 +90,4 @@ include = ["wolkenernte*"]
 # tut die Bilderkennung nichts, und nachladen lassen sich Begriffe
 # nicht sinnvoll: Sie gehören zum Programmstand, nicht zum Rechner.
 [tool.setuptools.package-data]
-wolkenernte = ["daten/*.npz"]
+wolkenernte = ["daten/*.npz", "daten/symbole/*.png", "daten/symbole/*.ico"]

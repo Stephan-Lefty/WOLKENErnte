@@ -36,9 +36,9 @@ sign-in flow; finally iCloud Photos, where only half of it works anyway.
 Both halves run and are measured (see *Done*). What is missing is the route
 from there into the database and the interfaces.
 
-- [ ] **Keep adjusting the term list.** Measured across 400 images: "Ostern"
-  (Easter) sits at 7 % and mostly means spring flowers, "Schaf" (sheep) at 5 %
-  looks suspicious. Words that never fire should go too.
+- [ ] **Check "Ostern".** It sits at 5.8 % and mostly means spring flowers.
+  The same rule as for "Zeichnung" and "Luftaufnahme" applies: measure first,
+  then decide – a word that is wrong half the time should go.
 - [ ] **Add and remove keywords by hand.** They currently come only from the
   pass; anyone who finds one wrong can do nothing about it. A separate origin
   (`"hand"`) for those, which no pass ever overwrites.

@@ -24,6 +24,21 @@ from pathlib import Path
 
 ASSETS = Path(__file__).resolve().parent.parent / "assets"
 
+#: Wohin die Fassungen kopiert werden, die das Programm selbst braucht.
+#:
+#: **Zwei Orte, ein Ursprung.** ``assets/`` bleibt die Vorlage für alles
+#: außerhalb des Programms - Menüeintrag, Windows-Symboldatei, Bilder im
+#: README. Aber ``assets/`` gehört nicht zum Python-Paket, und deshalb
+#: stand ein installiertes WOLKENErnte ohne Symbol da, ohne dass
+#: irgendwo etwas fehlschlug. Was das Fenster braucht, muss ins Paket.
+IM_PAKET = Path(__file__).resolve().parent.parent / "wolkenernte/daten/symbole"
+
+#: Welche Größen das Programm selbst braucht.
+#:
+#: Nicht alle: 512 und 1024 sind für Paketbauer und Bildschirmfotos da,
+#: nicht für die Fensterleiste. Sie würden das Wheel nur aufblähen.
+FUERS_PROGRAMM = (16, 24, 32, 48, 64, 128, 256)
+
 #: Welche Quelle für welche Größe gilt.
 #:
 #: Die Grenzen sind erprobt, nicht geraten: Bei 48 Pixeln trägt das
@@ -120,6 +135,26 @@ def ico_bauen() -> Path:
     return ziel
 
 
+def ins_paket_kopieren() -> list[Path]:
+    """Die Fassungen, die das Programm braucht, ins Paket legen.
+
+    Kopieren statt verweisen: Ein Symlink überlebt weder das Bauen
+    eines Wheels noch Windows.
+    """
+    IM_PAKET.mkdir(parents=True, exist_ok=True)
+    kopiert: list[Path] = []
+    for name in [f"icon-{g}.png" for g in FUERS_PROGRAMM] + ["wolkenernte.ico"]:
+        quelle = ASSETS / name
+        if not quelle.exists():
+            sys.exit(f"{quelle} fehlt - erst erzeugen().")
+        ziel = IM_PAKET / name
+        shutil.copyfile(quelle, ziel)
+        kopiert.append(ziel)
+    print(f"{len(kopiert)} Dateien nach {IM_PAKET.name}/ kopiert")
+    return kopiert
+
+
 if __name__ == "__main__":
     erzeugen()
     ico_bauen()
+    ins_paket_kopieren()
