@@ -159,10 +159,6 @@ class DieBegrenzung(unittest.TestCase):
         self.assertEqual(begrenzen([]), [])
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class KameraUndHandyBleibenGetrennt(unittest.TestCase):
     """Ein Schlagwort, das die Hälfte des Bestands trifft, hilft nicht.
 
@@ -173,12 +169,47 @@ class KameraUndHandyBleibenGetrennt(unittest.TestCase):
 
     def test_kameranamen(self) -> None:
         for name in ("DSCF5198.JPG", "DSC02566.JPG", "_MG_0624.JPG",
-                     "STR06530.JPG"):
+                     "STR06530.JPG", "P1010101.JPG"):
             with self.subTest(name):
                 self.assertEqual(herkunft(name), "Kamera")
 
+    def test_umbenanntes_kamerabild(self) -> None:
+        """Wer ein Bild umbenennt, hängt meist vorn etwas an – der
+        Gerätename bleibt darin stehen."""
+        self.assertEqual(herkunft("Urlaub-2023-DSCF5186 1.jpg"), "Kamera")
+
     def test_handynamen(self) -> None:
         for name in ("IMG_20240816_172342.jpg", "VID_20241201_121937.mp4",
-                     "PXL_20230405_090123740.jpg"):
+                     "PXL_20230405_090123740.jpg", "MOV_20191208_1511234.mp4",
+                     "1000016856.jpg"):
             with self.subTest(name):
                 self.assertEqual(herkunft(name), "Handy")
+
+
+class DieZiffernGehoerenZumMuster(unittest.TestCase):
+    """Ein Muster ohne Ziffern trifft menschliche Dateinamen.
+
+    Ein erster Anlauf suchte in der Handyliste bloß nach ``"20"`` – das
+    steht in jeder Jahreszahl und in fast jeder UUID. 1.587 Bilder
+    bekamen »Handy«, die keins waren.
+    """
+
+    def test_jahreszahl_im_namen_ist_kein_handy(self) -> None:
+        for name in ("Kürbistag 2020  346.jpg", "Beanie_Shooting_2020 286.jpg",
+                     "c282061f-76cd-40b3-8bf6-d17e16072fdd.jpg",
+                     "komoot_1342055587.mp4"):
+            with self.subTest(name):
+                self.assertIsNone(herkunft(name))
+
+    def test_die_drohne_behaelt_ihr_wort(self) -> None:
+        """``dji_fly_20241227_…`` trägt selbst eine Zeitangabe im Namen.
+
+        Verlangt das Drohnenmuster eine Ziffer direkt nach ``dji_``,
+        greift es nicht – und das Handymuster erbt 479 Drohnenfotos.
+        """
+        self.assertEqual(
+            herkunft("dji_fly_20241227_165330_photo.jpg"), "Drohne")
+
+
+if __name__ == "__main__":
+    unittest.main()

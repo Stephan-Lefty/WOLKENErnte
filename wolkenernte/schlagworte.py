@@ -18,6 +18,7 @@ trifft :func:`begrenzen` – dort steht auch, was Vorrang hat.
 
 from __future__ import annotations
 
+import re as _re
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -97,20 +98,35 @@ def form(breite: int, hoehe: int) -> str | None:
 #:
 #: Nach dem ersten Treffer wird abgebrochen: Ein Bildschirmfoto, das
 #: über WhatsApp kam, ist zuerst ein Bildschirmfoto.
-HERKUNFT = (
-    ("Bildschirmfoto", ("screenshot", "bildschirmfoto", "screen_")),
-    ("Messenger", ("-wa0", "whatsapp", "telegram", "signal-", "img-2")),
-    ("Bearbeitet", ("-bearbeitet", "-edited", "-effects", "-collage",
-                    "~2", "-01.", "-02.")),
-    ("Bildschirmaufnahme", ("screenrecord", "bildschirmaufnahme")),
-    ("Drohne", ("dji_", "mavic", "drone")),
-    # **Kamera und Handy getrennt.** Ein erster Anlauf warf beides in
-    # einen Topf und hängte "Kamera" an 8.589 von 14.767 Bildern - ein
-    # Schlagwort, das mehr als die Hälfte des Bestands trifft, hilft
-    # beim Suchen nicht. Wer seine Kamerabilder sucht, meint gerade
-    # nicht die Handyfotos.
-    ("Kamera", ("dsc", "dscf", "_mg_", "str0", "p10")),
-    ("Handy", ("img_2", "img_1", "vid_", "pxl_", "20", "1000")),
+#:
+#: **Die Muster verlangen die Ziffern mit.** Geräte benennen ihre
+#: Dateien nach festen Schemata – ``IMG_20240816_172342``,
+#: ``DSCF5198``, ``1000016856`` –, und gerade die Zifferngruppe macht
+#: den Unterschied zu einem Namen, den ein Mensch vergeben hat. Ein
+#: erster Anlauf suchte bloß nach ``"20"`` und hängte »Handy« an
+#: *Kids Kürbis Day 2020* und an jede zweite UUID: 1.587 Fehlgriffe.
+#:
+#: **Kamera und Handy bleiben getrennt.** Ein noch früherer Anlauf warf
+#: beides in einen Topf und traf damit 8.589 von 14.767 Bildern. Ein
+#: Schlagwort, das mehr als die Hälfte des Bestands trägt, hilft beim
+#: Suchen nicht – und wer seine Kamerabilder sucht, meint gerade nicht
+#: die Handyfotos.
+HERKUNFT = tuple(
+    (schlagwort, _re.compile(muster, _re.IGNORECASE))
+    for schlagwort, muster in (
+        ("Bildschirmfoto", r"screenshot|bildschirmfoto|screen[_-]\d{4}"),
+        ("Bildschirmaufnahme", r"screenrecord|bildschirmaufnahme"),
+        ("Messenger", r"-wa\d{4}|whatsapp|telegram|signal-\d|img-\d{8}"),
+        ("Bearbeitet",
+         r"-bearbeitet|-edited|-effects|-collage|photocollage|~\d\."),
+        # Kein ``dji_\d``: die Bilder heißen ``dji_fly_20241227_…``, und
+        # das Handymuster weiter unten hätte sie sonst alle geerbt.
+        ("Drohne", r"\bdji[_-]|mavic|drone"),
+        ("Kamera", r"dscf\d|_?dsc\d{4}|_mg_\d{4}|str\d{5}|\bp\d{7}"),
+        ("Handy",
+         r"\b(img|vid|mov|pxl|burst|panorama)[_-]\d"
+         r"|\b1000\d{6}|\b\d{8}_\d{6}"),
+    )
 )
 
 
@@ -121,9 +137,8 @@ def herkunft(name: str) -> str | None:
     zuverlässig, weil Geräte und Programme ihre Dateien nach festen
     Mustern benennen.
     """
-    klein = name.lower()
     for schlagwort, muster in HERKUNFT:
-        if any(teil in klein for teil in muster):
+        if muster.search(name):
             return schlagwort
     return None
 
