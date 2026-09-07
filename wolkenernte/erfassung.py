@@ -104,7 +104,7 @@ def quellenname(angabe: str | Path) -> str:
     """Wie eine Quelle in der Datenbank heißt.
 
     Bei einem Ordner sein Name, bei einer Cloud der Zugang samt Pfad –
-    ``GuideOS:Photos``. **Das muss unterscheidbar bleiben**: Wer aus
+    ``meinewolke:Fotos``. **Das muss unterscheidbar bleiben**: Wer aus
     zwei Clouds erntet, soll später noch sehen können, woher ein Bild
     kam. Nach dem Aufräumen ist die Cloud leer, und dann ist dieser
     Eintrag das Einzige, was davon übrig ist.

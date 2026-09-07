@@ -52,30 +52,30 @@ class DerNameEinerQuelle(unittest.TestCase):
     def test_eine_cloud_traegt_den_pfad_mit(self) -> None:
         """Wer aus zwei Ordnern derselben Cloud erntet, soll später
         noch sehen, aus welchem."""
-        self.assertEqual(quellenname("GuideOS:Photos"), "GuideOS:Photos")
-        self.assertNotEqual(quellenname("GuideOS:Photos"),
-                            quellenname("GuideOS:Wallpaper"))
+        self.assertEqual(quellenname("meinewolke:Fotos"), "meinewolke:Fotos")
+        self.assertNotEqual(quellenname("meinewolke:Fotos"),
+                            quellenname("meinewolke:Bilder"))
 
     def test_der_zugangsname_darf_nicht_wegfallen(self) -> None:
         """**Der Fall, der eine erste Gegenprobe durchrutschen ließ.**
 
-        ``Path("GuideOS:Photos").name`` ergibt zufällig dasselbe wie
+        ``Path("meinewolke:Fotos").name`` ergibt zufällig dasselbe wie
         die richtige Antwort – es steckt kein Schrägstrich darin. Erst
         bei einem Unterordner zeigt sich der Unterschied: Dort bliebe
         nur »2024« übrig, und aus welcher Cloud es kam, wäre für immer
         verloren.
         """
-        self.assertEqual(quellenname("GuideOS:Fotos/2024"),
-                         "GuideOS:Fotos/2024")
+        self.assertEqual(quellenname("meinewolke:Fotos/2024"),
+                         "meinewolke:Fotos/2024")
 
     def test_zwei_clouds_mit_gleichem_unterordner(self) -> None:
         """Zwei Anbieter, beide mit einem Ordner »Fotos/2024« – ohne
         den Zugangsnamen wären sie nicht auseinanderzuhalten."""
-        self.assertNotEqual(quellenname("GuideOS:Fotos/2024"),
+        self.assertNotEqual(quellenname("meinewolke:Fotos/2024"),
                             quellenname("Dropbox:Fotos/2024"))
 
     def test_die_ganze_cloud_ohne_pfad(self) -> None:
-        self.assertEqual(quellenname("GuideOS:"), "GuideOS:")
+        self.assertEqual(quellenname("meinewolke:"), "meinewolke:")
 
 
 @unittest.skipUnless(PILLOW, "Pillow nicht vorhanden")

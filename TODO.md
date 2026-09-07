@@ -23,7 +23,7 @@ gegen eine echte Nextcloud gelaufen.** Erprobt ist alles nur gegen rclones
   fehlt. Dafür braucht es einen eigenen Probeordner in der Cloud, nicht einen,
   in dem gebrauchte Dateien liegen.
 - [ ] **Ein Bild von Hand aus dem Archiv nehmen.** Wer etwas geerntet hat, das
-  er dort nicht haben will – GuideOS-Grafiken zwischen Familienfotos –, kann
+  er dort nicht haben will – fremde Grafiken zwischen Familienfotos –, kann
   es bisher nur im Dateimanager löschen, und die Datenbank weiß nichts davon.
 - [ ] Fortschritt über `core/stats`, lange Aufträge asynchron mit
   `_async: true` und `job/status`. Der Ernter zeigt bisher die Zahl der
