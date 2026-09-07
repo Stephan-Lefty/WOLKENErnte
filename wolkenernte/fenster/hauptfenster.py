@@ -34,6 +34,7 @@ from ..farben import (
     GRAU_DUNKEL,
     GRAU_HELL,
     GRAU_KOHLE,
+    GRAU_MITTE,
     GRAU_NACHT,
     WEISS,
 )
@@ -51,6 +52,32 @@ QLineEdit:focus, QComboBox:focus {{ border-color: {BLAU}; }}
 QListView {{ background: {GRAU_NACHT}; border: 0; }}
 QListView::item:selected {{ background: {BLAU}; color: {WEISS}; }}
 QStatusBar {{ background: {GRAU_KOHLE}; color: {GRAU_HELL}; }}
+QMenuBar, QMenu {{ background: {GRAU_KOHLE}; color: {GRAU_HELL}; }}
+QMenuBar::item:selected, QMenu::item:selected {{
+    background: {BLAU}; color: {WEISS};
+}}
+QMenu::item:disabled {{ color: {GRAU_MITTE}; }}
+QTreeWidget {{
+    background: {GRAU_NACHT}; color: {GRAU_HELL};
+    border: 1px solid {GRAU_DUNKEL};
+}}
+QTreeWidget::item:selected {{ background: {BLAU}; color: {WEISS}; }}
+QHeaderView::section {{
+    background: {GRAU_KOHLE}; color: {GRAU_HELL};
+    border: 0; padding: 4px;
+}}
+QPushButton {{
+    background: {GRAU_KOHLE}; color: {GRAU_HELL};
+    border: 1px solid {GRAU_DUNKEL}; border-radius: 4px; padding: 5px 14px;
+}}
+QPushButton:hover {{ border-color: {BLAU}; }}
+QPushButton:default {{ background: {BLAU}; color: {WEISS}; border: 0; }}
+QPushButton:disabled {{ color: {GRAU_MITTE}; }}
+QProgressBar {{
+    background: {GRAU_KOHLE}; color: {GRAU_HELL};
+    border: 0; border-radius: 4px; text-align: center;
+}}
+QProgressBar::chunk {{ background: {BLAU}; border-radius: 4px; }}
 """
 
 
@@ -58,16 +85,17 @@ class Hauptfenster(QMainWindow):
     def __init__(self, archiv: Path) -> None:
         super().__init__()
         self.archiv = archiv
+        self._rclone = None
         self.liste = Bestandsliste(archiv)
 
         self.setWindowTitle(f"WOLKENErnte {__version__} – {archiv.name}")
         self.resize(1200, 800)
-        self.setStyleSheet(STIL)
 
         self.setWindowIcon(symbole.qt_symbol())
 
         self._raster_bauen()
         self._leiste_bauen()
+        self._menue_bauen()
 
         self.ansicht = Einzelansicht(archiv)
         self.ansicht.zurueck_gewuenscht = self._zum_raster
@@ -161,6 +189,112 @@ class Hauptfenster(QMainWindow):
         suchen.setShortcut(QKeySequence.StandardKey.Find)
         suchen.triggered.connect(self.suchfeld.setFocus)
         self.addAction(suchen)
+
+    # -- Wolken ------------------------------------------------------------
+
+    def _menue_bauen(self) -> None:
+        """Die Menüleiste – bisher gab es keine.
+
+        Das Ernten aus einer Wolke gehört nicht in die Werkzeugleiste
+        neben die Filter: Es ist kein Blick auf den Bestand, sondern
+        ein Eingriff.
+        """
+        menue = self.menuBar().addMenu("&Wolke")
+
+        eintrag = menue.addAction("Nextcloud anmelden …")
+        eintrag.triggered.connect(self._zugang_anlegen)
+
+        self.holen_menue = menue.addMenu("Bilder holen aus")
+        self.holen_menue.aboutToShow.connect(self._zugaenge_auffrischen)
+
+        menue.addSeparator()
+        eintrag = menue.addAction("Zugänge auffrischen")
+        eintrag.triggered.connect(self._zugaenge_auffrischen)
+
+    def _dienst(self):
+        """Den rclone-Dienst starten, wenn er gebraucht wird.
+
+        **Nicht beim Programmstart.** Wer nur seine Bilder durchsehen
+        will, soll rclone nicht laufen haben müssen – und wer es gar
+        nicht installiert hat, soll trotzdem ein Fenster bekommen.
+        """
+        if getattr(self, "_rclone", None) is not None:
+            return self._rclone
+        from ..rclone import Dienst, RcloneFehler
+        from ..zugang import konfiguration
+
+        pfad = konfiguration()
+        pfad.parent.mkdir(parents=True, exist_ok=True)
+        if not pfad.exists():
+            pfad.touch(mode=0o600)
+        pfad.chmod(0o600)
+        try:
+            self._rclone = Dienst.starten(pfad)
+        except RcloneFehler as fehler:
+            QMessageBox.warning(self, "WOLKENErnte", str(fehler))
+            return None
+        return self._rclone
+
+    def _zugang_anlegen(self) -> None:
+        from .wolken import ZugangAnlegen
+
+        dienst = self._dienst()
+        if dienst is None:
+            return
+        dialog = ZugangAnlegen(dienst, self)
+        if dialog.exec() and dialog.angelegt:
+            self.statusBar().showMessage(
+                f"Zugang »{dialog.angelegt}« angelegt und erprobt", 6000)
+            self._zugaenge_auffrischen()
+            self._durchsehen(dialog.angelegt)
+
+    def _zugaenge_auffrischen(self) -> None:
+        from ..anbieter import NACH_KENNUNG
+
+        self.holen_menue.clear()
+        dienst = self._dienst()
+        if dienst is None:
+            return
+        namen = dienst.remotes()
+        if not namen:
+            eintrag = self.holen_menue.addAction("Noch kein Zugang angemeldet")
+            eintrag.setEnabled(False)
+            return
+        for name in namen:
+            anbieter = NACH_KENNUNG.get(dienst.art(name))
+            beschriftung = (f"{name}  ({anbieter.name})" if anbieter
+                            else f"{name}  (unbekannte Art)")
+            eintrag = self.holen_menue.addAction(beschriftung)
+            eintrag.triggered.connect(
+                lambda _=False, n=name: self._durchsehen(n))
+
+    def _durchsehen(self, zugang: str) -> None:
+        from .wolken import Ernter, WolkeDurchsehen
+
+        dienst = self._dienst()
+        if dienst is None:
+            return
+        dialog = WolkeDurchsehen(dienst, zugang, self)
+        if not dialog.exec() or not dialog.gewaehlt:
+            return
+
+        lauf = Ernter(dienst, dialog.gewaehlt, self.archiv, self)
+        if not lauf.exec() or lauf.bilanz is None:
+            return
+
+        bilanz = lauf.bilanz
+        QMessageBox.information(
+            self, "WOLKENErnte",
+            f"Aus {dialog.gewaehlt} geholt:\n\n{bilanz}\n\n"
+            "Die Bilder liegen jetzt im Archiv. Was in der Wolke bleibt "
+            "und was weg darf, entscheidet ein eigener Schritt – dort "
+            "wird erst nachgewiesen, dass jede Datei angekommen ist.")
+        self._neu_einlesen()
+
+    def _neu_einlesen(self) -> None:
+        """Das Archiv noch einmal einlesen, nach dem Ernten."""
+        self.liste = Bestandsliste(self.archiv)
+        self._auswahl_anwenden()
 
     # -- Auswahl -----------------------------------------------------------
 
@@ -294,6 +428,11 @@ class Hauptfenster(QMainWindow):
 
     def closeEvent(self, ereignis) -> None:  # noqa: N802
         self.ansicht.aufraeumen()
+        # rclone läuft als eigener Prozess weiter, wenn niemand ihn
+        # beendet - und hält dabei die Zugangsdaten im Speicher.
+        if getattr(self, "_rclone", None) is not None:
+            self._rclone.beenden()
+            self._rclone = None
         super().closeEvent(ereignis)
 
 
@@ -345,6 +484,10 @@ def starten(archiv: Path | None) -> int:
         archiv_merken(archiv)
     app.setApplicationName("WOLKENErnte")
     app.setApplicationDisplayName("WOLKENErnte")
+    # **An die Anwendung, nicht ans Fenster.** Dialoge sind eigene
+    # Fenster; am Hauptfenster gesetzt, blieben sie im hellen
+    # Systemstil und sähen aus wie aus einem anderen Programm.
+    app.setStyleSheet(STIL)
 
     fenster = Hauptfenster(archiv)
     if not fenster.liste.bilder:
