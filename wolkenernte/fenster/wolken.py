@@ -296,7 +296,7 @@ class WolkeDurchsehen(QDialog):
         if self.mit_unterordnern.isChecked() and not pfad:
             antwort = QMessageBox.question(
                 self, "WOLKENErnte",
-                f"Die ganze Wolke »{self.zugang}:« mit allen Unterordnern?\n\n"
+                f"Die ganze Cloud »{self.zugang}:« mit allen Unterordnern?\n\n"
                 "Das kann sehr lange dauern und viel Platz brauchen. "
                 "Meistens ist ein einzelner Fotoordner gemeint.",
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
@@ -391,7 +391,7 @@ class Ernter(QDialog):
     def __init__(self, dienst, quelle: str, ziel: Path,
                  eltern: QWidget | None = None) -> None:
         super().__init__(eltern)
-        self.setWindowTitle("Aus der Wolke holen")
+        self.setWindowTitle("Aus der Cloud holen")
         self.setMinimumWidth(560)
         self.bilanz = None
 

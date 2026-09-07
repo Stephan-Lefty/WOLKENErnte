@@ -195,20 +195,26 @@ class Hauptfenster(QMainWindow):
     def _menue_bauen(self) -> None:
         """Die Menüleiste – bisher gab es keine.
 
-        Das Ernten aus einer Wolke gehört nicht in die Werkzeugleiste
-        neben die Filter: Es ist kein Blick auf den Bestand, sondern
-        ein Eingriff.
-        """
-        menue = self.menuBar().addMenu("&Wolke")
+        Das Ernten aus einem Cloudspeicher gehört nicht in die
+        Werkzeugleiste neben die Filter: Es ist kein Blick auf den
+        Bestand, sondern ein Eingriff.
 
-        eintrag = menue.addAction("In einer Wolke anmelden …")
+        **In der Oberfläche heißt es »Cloudspeicher«, im Code
+        »Wolke«.** Das ist kein Versehen: Der Quelltext ist durchgehend
+        deutsch benannt – ``wolke.py``, ``aufraeumen.py`` –, aber im
+        Menü sucht niemand nach einer Wolke. Dort steht das Wort, das
+        auf den Netzseiten der Anbieter steht.
+        """
+        menue = self.menuBar().addMenu("&Cloudspeicher")
+
+        eintrag = menue.addAction("Bei einer Cloud anmelden …")
         eintrag.triggered.connect(self._zugang_anlegen)
 
         self.holen_menue = menue.addMenu("Bilder holen aus")
         self.holen_menue.aboutToShow.connect(self._zugaenge_auffrischen)
 
         menue.addSeparator()
-        self.aufraeum_menue = menue.addMenu("In der Wolke aufräumen")
+        self.aufraeum_menue = menue.addMenu("In der Cloud aufräumen")
         self.aufraeum_menue.aboutToShow.connect(self._zugaenge_auffrischen)
 
         menue.addSeparator()
@@ -310,7 +316,7 @@ class Hauptfenster(QMainWindow):
         QMessageBox.information(
             self, "WOLKENErnte",
             f"Aus {dialog.gewaehlt} geholt:\n\n{bilanz}\n\n"
-            "Die Bilder liegen jetzt im Archiv. Was in der Wolke bleibt "
+            "Die Bilder liegen jetzt im Archiv. Was in der Cloud bleibt "
             "und was weg darf, entscheidet ein eigener Schritt – dort "
             "wird erst nachgewiesen, dass jede Datei angekommen ist.")
         self._neu_einlesen()

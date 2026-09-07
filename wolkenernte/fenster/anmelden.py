@@ -59,7 +59,7 @@ class AnbieterWaehlen(QDialog):
         super().__init__(eltern)
         self.gewaehlt: Anbieter | None = None
 
-        self.setWindowTitle("In einer Wolke anmelden")
+        self.setWindowTitle("Bei einer Cloud anmelden")
         self.resize(640, 560)
 
         self.liste = QListWidget()
@@ -97,7 +97,7 @@ class AnbieterWaehlen(QDialog):
         self.knoepfe.rejected.connect(self.reject)
 
         aufbau = QVBoxLayout(self)
-        aufbau.addWidget(QLabel("Wo liegen die Bilder?"))
+        aufbau.addWidget(QLabel("Bei welchem Anbieter liegen die Bilder?"))
         aufbau.addWidget(self.liste, 1)
         aufbau.addWidget(self.hinweis)
         aufbau.addWidget(self.knoepfe)

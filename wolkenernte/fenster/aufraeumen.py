@@ -381,7 +381,7 @@ class AufraeumenDialog(QDialog):
             f"{len(gewaehlt)} Dateien ({gb:.2f} GB) werden in "
             f"{self.wolke.wurzel} gelöscht.\n\n"
             "Das lässt sich nicht rückgängig machen – je nach Anbieter "
-            "landen sie im Papierkorb der Wolke, verlassen kann man sich "
+            "landen sie im Papierkorb der Cloud, verlassen kann man sich "
             "darauf nicht.\n\nIm Archiv bleiben sie.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
             QMessageBox.StandardButton.Cancel)
