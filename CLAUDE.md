@@ -3,7 +3,71 @@
 Landkarte des Repositorys. Ergänzt [README.md](README.md) und
 [TODO.md](TODO.md), wiederholt sie nicht.
 
-## Hier war Schluss (Stand 2026-09-07, Montagvormittag)
+## Hier war Schluss (Stand 2026-09-07, Montagmittag)
+
+**359 Tests grün.** Seit heute Mittag gibt es **Schlagwörter**. Die
+Hälfte, die kein Modell braucht – Jahreszeit, Tageszeit, Bildformat,
+Herkunft – läuft und trifft: 14.767 Bilder, nur 31 ohne jedes
+Schlagwort. Die andere Hälfte, die ins Bild schaut, ist gebaut, aber
+**noch nie gelaufen**.
+
+**Genau ein Schritt fehlt**, und ohne ihn tut die Bilderkennung
+nichts:
+
+```
+python3 werkzeuge/begriffe_einbetten.py
+```
+
+Das rechnet die 150 englischen Fragen einmal in Zahlenreihen um und
+schreibt `wolkenernte/daten/begriffe.npz` (rund 300 KB, gehört ins
+Repository). Es braucht `onnxruntime` und `tokenizers`; unter Manjaro
+liegt ersteres als `python-onnxruntime-cpu` in `extra`. Die beiden
+Modellhälften liegen bereits unter
+`~/.local/share/WOLKENErnte/modelle/`, ebenso `tokenizer.json`.
+
+Danach ist die erste Frage: **Was kommt am echten Bestand heraus?** Die
+Schwellen in `begriffe.py` sind geschätzt, nicht gemessen – dieselbe
+Lage wie bei »Kamera«, bevor auffiel, dass es 58 % traf.
+
+**Der eigentliche Zweck bleibt offen:** aus einer Wolke ernten. Der
+Weg dorthin steht in `wolke.py`, erprobt ist er nur gegen rclones
+`local`-Backend.
+
+## Wie die Schlagwörter deutsch werden, ohne Übersetzung
+
+Ein CLIP-Modell besteht aus zwei Hälften: Die eine wandelt Bilder in
+Zahlenreihen, die andere Sätze. Beide zusammen sind 582 MB.
+
+Weil unsere Fragen aber **feststehen** – sie stehen in `begriffe.py` –,
+läuft der Textteil nur einmal, beim Bauen. Sein Ergebnis sind 300 KB,
+die dem Programm beiliegen. Auf dem Rechner des Nutzers läuft nur der
+Bildteil.
+
+Daraus folgt das Deutsche fast nebenbei: Die **Frage** ist englisch,
+weil das Modell nur Englisch kann. Der **Name** daneben ist unserer –
+wir schreiben ihn hin, wie er heißen soll. Niemand übersetzt etwas, es
+gibt keinen Übersetzungsfehler und kein mehrsprachiges Modell (die
+kosten 250 MB bis 1,6 GB extra, nur für den Textteil, und antworten auf
+Deutsch schlechter als auf Englisch). digiKam löst dasselbe Problem
+mit einem Online-Übersetzer, pro Bild und pro Wort; für ein Programm,
+das offline arbeiten soll, ist das kein Weg.
+
+**Gruppen statt einer langen Liste.** Die Zahlen des Modells lassen
+sich *innerhalb* einer Auswahl vergleichen, nicht über das ganze Feld:
+»Strand« und »Küche« stehen nie zur selben Frage an. Ohne Gruppen fräßen
+außerdem fünf Verwandte alle fünf Plätze.
+
+**Und eine Schwelle je Gruppe.** Die Gegenprobe sagt, warum: Ohne sie
+bekommt ein völlig flaues Bild »Strand, Porträt, Gruppenbild, Feier,
+Sonnenuntergang«.
+
+**ViT-B/32, nicht MobileCLIP.** MobileCLIP ist auf dem Papier
+schneller, aber die Zahlen stammen vom Neuronenrechenwerk eines
+iPhones; auf einem gewöhnlichen Rechner ist MobileCLIP-S2 gemessen
+1,5-mal *langsamer*. Ein ViT ist im Kern eine Kette großer
+Matrixmultiplikationen, und darin ist die ONNX-Laufzeit stark.
+
+## Was vorher war (2026-09-07, Vormittag)
 
 **0.3.0, 272 Tests grün, öffentlich.** Seit heute gibt es die
 **Fensteranwendung**: `wolkenernte fenster <Archiv>` öffnet ein Raster
@@ -45,6 +109,11 @@ wolkenernte/
 ├── rclone.py       rclone finden, starten, ansprechen
 ├── einrichten.py   Zugänge anlegen (das Frage-Antwort-Spiel)
 ├── zugang.py       dasselbe von der Kommandozeile
+├── schlagworte.py  Schlagwörter ohne Modell (Datum, Name, Maße)
+├── begriffe.py     die 75 deutschen Wörter, nach denen gesucht wird
+├── bilderkennung.py  aus Ähnlichkeiten werden Wörter - ohne Fremdpakete
+├── bildmodell.py   der Bildteil des Modells (braucht onnxruntime)
+├── modelle.py      das Modell holen, prüfen, wiederfinden
 ├── bestandsliste.py  was im Archiv liegt - für beide Oberflächen
 ├── ernten.py / erfassung.py / nachweis.py   die drei Abläufe
 ├── fenster/        die Fensteranwendung (braucht PySide6)
@@ -120,6 +189,13 @@ Raster fiel es nicht auf, weil die Vorschaubilder von Pillow kommen.
 **`KeepAspectRatioByExpanding` schneidet nicht zu.** Das Raster riss
 deshalb Lücken, obwohl `setUniformItemSizes` gesetzt war.
 
+**Ein Muster ohne Ziffern trifft menschliche Dateinamen.** `"20"` in
+der Handyliste steht in jeder Jahreszahl und in fast jeder UUID: 1.587
+Bilder bekamen »Handy«, die keins waren. Dabei fiel ein zweiter Fehler
+auf – wer vom Drohnenmuster eine Ziffer *direkt* nach `dji_` verlangt,
+trifft `dji_fly_20241227_…` nicht, und das Handymuster erbt alle 479
+Drohnenfotos, weil deren Name selbst eine Zeitangabe trägt.
+
 **Und die eigenen Testbilder taugten nicht:** Synthetische Sägezahn-
 muster werden beim Verkleinern zu gleichmäßigem Grau; beide Testbilder
 bekamen denselben Fingerabdruck. Testmuster müssen **relativ zur
@@ -165,3 +241,12 @@ Zuordnung fielen vier Tests um, als die Klammer-Verschiebung
 herausgenommen wurde; beim Takeout-Leser fünf, als nur das erste
 Teilarchiv gelesen wurde. Solche Proben in einer **Kopie** machen, nicht
 in der Arbeitskopie.
+
+**Und Testwerte müssen so aussehen wie die echten.** Der erste Anlauf
+für die Bilderkennung war grün und wertlos: Er prüfte mit einem
+Vorsprung von 0,16, während ein solches Modell in Wirklichkeit für
+*jede* Frage etwa 0,22 zurückgibt und der Sieger um Hundertstel vorn
+liegt. Damit wäre jede Schwelle erfüllt gewesen, und die Tests hätten
+nichts nachgewiesen. Jetzt stehen 0,008 und 0,03 im Test, und drei
+Gegenproben belegen, dass er umfällt, wenn man Schwelle, Begrenzung
+oder Streckung herausnimmt.

@@ -33,6 +33,32 @@ ohnehin nur die Hälfte geht.
   tatsächlich gelaufen ist – und in beiden Oberflächen kenntlich machen, was
   bisher nur eingebaut und was wirklich erprobt ist.
 
+### Schlagwörter
+
+Die Hälfte, die ohne Modell auskommt, steht (siehe *Erledigt*). Was fehlt, ist
+der Teil, der **ins Bild schaut**.
+
+- [ ] **`wolkenernte/daten/begriffe.npz` erzeugen.** Einmalig mit
+  `werkzeuge/begriffe_einbetten.py`; braucht `onnxruntime`, `tokenizers` und
+  den 242-MB-Textteil des Modells. Das Ergebnis sind rund 300 KB, die ins
+  Repository gehören. Ohne diese Datei tut die Bilderkennung nichts.
+- [ ] **Am echten Bestand messen:** Wie viele der 14.767 Bilder bekommen ein
+  Schlagwort aus dem Bild, welche Wörter greifen zu oft, und wie lange dauert
+  ein Durchlauf? Die Schwellen in `begriffe.py` sind bisher **geschätzt**, nicht
+  gemessen – so wie »Kamera« mit 58 % geschätzt war, bevor es auffiel.
+- [ ] **Die Begriffsliste danach nachziehen.** Wörter, die nie greifen, gehören
+  heraus; Wörter, die alles greifen, sind zu breit gefasst.
+- [ ] **In beide Oberflächen einbauen:** Schlagwörter anzeigen, danach filtern,
+  danach suchen. Der Unterbau in `bestandsliste.py`, nicht zweimal.
+- [ ] **Ein Durchlauf über den Bestand**, der die Schlagwörter in die Datenbank
+  schreibt – mit Fortschritt, abbrechbar, und beim zweiten Mal nur für das, was
+  noch keine hat.
+- [ ] Modell erst holen, wenn der Anwender die Bilderkennung wirklich will. Ein
+  Programm, das beim ersten Start ungefragt 335 MB zieht, ist unhöflich.
+- [ ] Prüfen, ob die INT8-Fassung reicht: viermal kleiner (85 statt 335 MB),
+  2,4-mal schneller. Ob die Treffer darunter leiden, ist für *Suche nach
+  Ähnlichkeit* schlecht belegt – also selbst messen.
+
 ### Fensteranwendung – was noch fehlt
 
 - [ ] **Vollbild** mit der Leertaste, ohne Kopfzeile.
@@ -113,6 +139,26 @@ Paketverwalter mitbringen. Niemand soll rclone von Hand herunterladen.
   vielleicht auch der erste Zugang zu Proton Fotos.
 
 ## Erledigt
+
+### Schlagwörter, die kein Modell brauchen (2026-09-07)
+
+- [x] **Jahreszeit, Tageszeit, Bildformat und Herkunft** aus dem ableiten, was
+  ohnehin bekannt ist. Am echten Bestand: 14.767 Bilder, nur 31 ohne jedes
+  Schlagwort.
+- [x] **Höchstens fünf je Bild.** Wer zwanzig vergibt, beschreibt nichts mehr,
+  sondern verrauscht die Suche. Bei Platzmangel hat Erkanntes Vorrang vor
+  Abgeleitetem – die Jahreszeit lässt sich aus dem Datum nachrechnen, das
+  ohnehin danebensteht.
+- [x] **Kamera und Handy getrennt**, nachdem ein erster Anlauf »Kamera« an
+  8.589 von 14.767 Bildern gehängt hatte.
+- [x] **Die Ziffern gehören zum Muster.** `"20"` in der Handyliste traf jede
+  Jahreszahl und fast jede UUID: 1.587 Fehlgriffe.
+- [x] **Die Begriffsliste für die Bilderkennung** – 75 deutsche Schlagwörter in
+  fünf Gruppen, mit englischen Fragen daneben.
+- [x] **Die Auswertung**, die aus Ähnlichkeiten Schlagwörter macht – Gruppen
+  statt einer langen Liste, Schwelle je Gruppe, kein Fremdpaket nötig.
+- [x] **Das Modell holen, prüfen, wiederfinden** – mit SHA-256, ohne zweiten
+  Griff ins Netz, unter `user_data_dir`.
 
 ### Die Fensteranwendung (2026-09-07)
 

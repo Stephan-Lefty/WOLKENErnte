@@ -31,6 +31,31 @@ sign-in flow; finally iCloud Photos, where only half of it works anyway.
   has actually run – and show in both interfaces what is merely implemented
   versus genuinely tested.
 
+### Keywords
+
+The half that needs no model is in place (see *Done*). What is missing is the
+part that **looks at the image**.
+
+- [ ] **Generate `wolkenernte/daten/begriffe.npz`.** One-off, using
+  `werkzeuge/begriffe_einbetten.py`; needs `onnxruntime`, `tokenizers` and the
+  242 MB text half of the model. The result is roughly 300 KB and belongs in the
+  repository. Without that file, image recognition does nothing.
+- [ ] **Measure against the real collection:** how many of the 14,767 images get
+  a keyword from the image, which words fire too often, and how long does a run
+  take? The thresholds in `begriffe.py` are **guessed** so far, not measured –
+  just as "Kamera" was guessed at before it turned out to hit 58 %.
+- [ ] **Adjust the term list afterwards.** Words that never fire should go;
+  words that fire on everything are drawn too wide.
+- [ ] **Wire it into both interfaces:** show keywords, filter by them, search by
+  them. The groundwork goes into `bestandsliste.py`, not twice.
+- [ ] **A pass over the collection** that writes the keywords into the database –
+  with progress, interruptible, and on a second run only for what has none yet.
+- [ ] Only fetch the model once the user actually wants image recognition. A
+  program that pulls 335 MB unasked on first start is rude.
+- [ ] Check whether the INT8 version is good enough: four times smaller (85
+  instead of 335 MB), 2.4 times faster. Whether retrieval quality suffers is
+  poorly documented – so measure it.
+
 ### Desktop application – what is still missing
 
 - [ ] **Fullscreen** with the space bar, without the header.
@@ -105,6 +130,25 @@ package manager bring along. Nobody should download rclone by hand.
   clean route – and perhaps the first way into Proton Photos.
 
 ## Done
+
+### Keywords that need no model (2026-09-07)
+
+- [x] **Season, time of day, aspect ratio and origin** derived from what is
+  known anyway. Against the real collection: 14,767 images, only 31 without any
+  keyword at all.
+- [x] **At most five per image.** Assigning twenty describes nothing and only
+  adds noise to search. When space runs short, recognised beats derived – the
+  season can be recomputed from the date standing right next to it.
+- [x] **Camera and phone kept apart**, after a first attempt hung "Kamera" on
+  8,589 of 14,767 images.
+- [x] **The digits belong to the pattern.** `"20"` in the phone list matched
+  every year and nearly every UUID: 1,587 false hits.
+- [x] **The term list for image recognition** – 75 German keywords in five
+  groups, with English questions alongside.
+- [x] **The evaluation** that turns similarities into keywords – groups instead
+  of one long list, a threshold per group, no third-party package needed.
+- [x] **Fetching, verifying and locating the model** – with SHA-256, without a
+  second reach for the network, under `user_data_dir`.
 
 ### The desktop application (2026-09-07)
 
