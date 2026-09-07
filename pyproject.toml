@@ -61,14 +61,18 @@ bilder = ["Pillow>=11.1", "pi-heif>=1.4", "ImageHash>=4.3"]
 # und steht unter BSD, anders als PyAV, dessen Pakete GPL sind.
 video = ["imageio-ffmpeg>=0.6"]
 
-# Die grafische Oberfläche. Bewusst nicht im Kern: PySide6 sind über
-# hundert Megabyte, und die Kommandozeile läuft ohne.
+# Die Fensteranwendung. Bewusst nicht im Kern: PySide6 sind über hundert
+# Megabyte, und die Weboberfläche läuft ohne.
 #
 # PySide6-Essentials genügt hier *nicht*. Die Videowiedergabe steckt in
-# QtMultimedia, und das liegt in PySide6-Addons.
+# QtMultimedia, und das liegt in PySide6-Addons. Geprüft mit 6.11.1:
+# H.264, HEVC und VP9 spielen ab, siehe werkzeuge/videoprobe.py.
+fenster = ["PySide6>=6.8"]
+
+# Alter Name für dasselbe.
 oberflaeche = ["PySide6>=6.8"]
 
-alles = ["wolkenernte[bilder,video,oberflaeche]"]
+alles = ["wolkenernte[bilder,video,fenster]"]
 
 [project.scripts]
 wolkenernte = "wolkenernte.__main__:main"

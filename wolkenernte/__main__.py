@@ -3,6 +3,7 @@
     wolkenernte anbieter
     wolkenernte rclone
     wolkenernte zugang
+    wolkenernte fenster     <Archiv>
     wolkenernte ernten   <Archiv> <Quelle> [<Quelle> ...]
     wolkenernte erfassen <Archiv> <Quelle> [<Quelle> ...]
     wolkenernte pruefen  <Archiv> <Quelle> [<Quelle> ...]
@@ -149,6 +150,9 @@ def main(argv: list[str] | None = None) -> int:
     p = unter.add_parser("doppelt", help="ähnliche Bilder im Archiv finden")
     p.add_argument("archiv", type=Path)
 
+    p = unter.add_parser("fenster", help="Archiv als Fensteranwendung durchsehen")
+    p.add_argument("archiv", type=Path, nargs="?")
+
     p = unter.add_parser("oberflaeche", help="Archiv im Browser durchsehen")
     # Ohne Angabe das zuletzt benutzte Archiv: Der Menüeintrag im
     # Anwendungsmenü kann keinen Pfad kennen.
@@ -193,6 +197,13 @@ def main(argv: list[str] | None = None) -> int:
     if werte.befehl == "doppelt":
         from .doppelgaenger import bericht
         return bericht(archiv)
+
+    if werte.befehl == "fenster":
+        from .einstellungen import archiv_merken
+        from .fenster import starten
+        if archiv.is_dir():
+            archiv_merken(archiv)
+        return starten(archiv)
 
     if werte.befehl == "oberflaeche":
         from .einstellungen import archiv_merken

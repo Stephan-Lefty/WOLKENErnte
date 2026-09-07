@@ -34,7 +34,8 @@ depends=('python')
 # die das Programm nicht einlöst.
 optdepends=(
     'rclone>=1.75.0: Bilder aus Wolkenspeichern holen (noch nicht eingebaut)'
-    'python-pillow: Aufnahmedatum aus dem Bild lesen, wenn keine Metadaten dabei sind'
+    'pyside6: die Fensteranwendung (wolkenernte fenster)'
+    'python-pillow: Vorschaubilder, Doppelgängersuche und Aufnahmedatum aus dem Bild'
     'ffmpeg: Vorschaubilder aus Videos (noch nicht eingebaut)'
     'perl-image-exiftool: Metadaten von Fotos und Videos (noch nicht eingebaut)'
 )
