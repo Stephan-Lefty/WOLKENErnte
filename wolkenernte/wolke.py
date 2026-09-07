@@ -41,7 +41,7 @@ class Wolke:
                  unterordner: str = "") -> None:
         self.dienst = dienst
         self.zugang = zugang.rstrip(":")
-        self.unterordner = unterordner.strip("/")
+        self.unterordner = unterordner.rstrip("/")
         self._index: dict[str, Eintrag] = {}
         self._geholt: dict[str, Path] = {}
         self._ablage = Path(tempfile.mkdtemp(prefix="wolkenernte-"))
@@ -50,7 +50,15 @@ class Wolke:
 
     @property
     def wurzel(self) -> str:
-        """Der Pfad in rclones Schreibweise."""
+        """Der Pfad in rclones Schreibweise.
+
+        **Ein führender Schrägstrich bleibt stehen.** Bei einem
+        Wolkenzugang ist der Unterordner relativ, dort stört er nicht –
+        aber beim ``local``-Backend, mit dem sich alles ohne
+        Zugangsdaten erproben lässt, ist der Pfad absolut. Wer ihn
+        wegschneidet, sucht ``tmp/...`` statt ``/tmp/...``, und rclone
+        antwortet mit »directory not found«.
+        """
         return (f"{self.zugang}:{self.unterordner}" if self.unterordner
                 else f"{self.zugang}:")
 

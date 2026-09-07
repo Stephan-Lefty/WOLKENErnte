@@ -31,11 +31,41 @@ from .lokal import (
 )
 from .metadaten import Angaben, MetadatenFehler, aus_json
 from .takeout import Archiv as Takeout
+from .takeout import TakeoutFehler
+from .wolke import Wolke
 from .zuordnung import Zuordnung, zuordnen
 
 
-def quelle_oeffnen(pfad: Path):
-    """Ein ZIP-Bestand oder ein ausgepackter Ordner – je nachdem."""
+def ist_wolke(angabe: str) -> bool:
+    """Ob die Angabe einen Wolkenzugang meint statt eines Ordners.
+
+    rclones Schreibweise: ``meinewolke:`` oder ``meinewolke:Fotos/2024``.
+    Ein Doppelpunkt vor dem ersten Schrägstrich – so unterscheidet
+    rclone es selbst, und so ist es für jeden erkennbar, der schon
+    einmal mit rclone gearbeitet hat.
+
+    Ein Windows-Laufwerksbuchstabe fällt nicht darunter:
+    Der Name eines Zugangs ist länger als ein Zeichen.
+    """
+    vorne = angabe.split("/", 1)[0]
+    return ":" in vorne and len(vorne.split(":", 1)[0]) > 1
+
+
+def quelle_oeffnen(angabe: str | Path, dienst=None):
+    """Ein Takeout-Bestand, ein Ordner oder ein Wolkenzugang.
+
+    ``dienst`` ist ein laufender rclone-Dienst; ohne ihn lässt sich
+    keine Wolke öffnen.
+    """
+    if isinstance(angabe, str) and ist_wolke(angabe):
+        if dienst is None:
+            raise TakeoutFehler(
+                f"{angabe} ist ein Wolkenzugang, aber rclone läuft nicht."
+            )
+        zugang, _, unterordner = angabe.partition(":")
+        return Wolke(dienst, zugang, unterordner), "Wolkenzugang"
+
+    pfad = Path(angabe)
     if pfad.is_dir() and any(p.suffix.lower() == ".zip" for p in pfad.iterdir()):
         return Takeout.aus_ordner(pfad), "Takeout-Archive"
     return Ordner(pfad), "ausgepackter Ordner"
@@ -85,17 +115,39 @@ def angaben_ermitteln(quelle, zuordnung: Zuordnung) -> Angaben:
     return angaben
 
 
-def ernten(ziel: Path, quellen: list[Path]) -> int:
+def ernten(ziel: Path, quellen: list[str | Path]) -> int:
     gesehen: set[tuple[int, int]] = set()
     gesamt_uebernommen = gesamt_doppelt = gesamt_bytes = 0
     t_start = time.time()
+
+    # rclone nur starten, wenn wirklich eine Wolke dabei ist. Wer aus
+    # einem Ordner erntet, soll es nicht installiert haben müssen.
+    dienst = None
+    if any(isinstance(q, str) and ist_wolke(q) for q in quellen):
+        from .rclone import Dienst, RcloneFehler
+        from .zugang import konfiguration
+        try:
+            dienst = Dienst.starten(konfiguration())
+        except RcloneFehler as fehler:
+            print(f"{fehler}")
+            return 1
+
+    try:
+        return _ernten(ziel, quellen, dienst, gesehen, t_start)
+    finally:
+        if dienst is not None:
+            dienst.beenden()
+
+
+def _ernten(ziel: Path, quellen, dienst, gesehen, t_start) -> int:
+    gesamt_uebernommen = gesamt_doppelt = gesamt_bytes = 0
 
     # Für den Abgleich zwischen den Quellen: alle Größen, die irgendwo
     # vorkommen. Nur wo Größen zusammenfallen, muss gerechnet werden.
     alle_groessen: set[int] = set()
     geoeffnet = []
     for pfad in quellen:
-        quelle, art = quelle_oeffnen(pfad)
+        quelle, art = quelle_oeffnen(pfad, dienst)
         geoeffnet.append((pfad, quelle, art))
         for e in quelle:
             if e.quelle.suffix.lower() in MEDIEN or e.pfad.lower().endswith(
@@ -104,7 +156,10 @@ def ernten(ziel: Path, quellen: list[Path]) -> int:
                 alle_groessen.add(e.groesse)
 
     for pfad, quelle, art in geoeffnet:
-        print(f"\n=== {pfad.name}  ({art}) ===")
+        name = pfad.name if isinstance(pfad, Path) else str(pfad)
+        print(f"\n=== {name}  ({art}) ===")
+        if isinstance(quelle, Wolke):
+            print(f"  {len(quelle)} Dateien in {quelle.wurzel}")
 
         if isinstance(quelle, Ordner):
             t0 = time.time()

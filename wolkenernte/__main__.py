@@ -5,6 +5,9 @@
     wolkenernte zugang
     wolkenernte fenster     <Archiv>
     wolkenernte ernten   <Archiv> <Quelle> [<Quelle> ...]
+
+Eine Quelle ist ein Ordner, ein Ordner voller Takeout-ZIP-Dateien oder
+ein Wolkenzugang in rclones Schreibweise – ``meinewolke:Fotos/2024``.
     wolkenernte erfassen <Archiv> <Quelle> [<Quelle> ...]
     wolkenernte pruefen  <Archiv> <Quelle> [<Quelle> ...]
     wolkenernte bestand  <Archiv>
@@ -130,19 +133,22 @@ def main(argv: list[str] | None = None) -> int:
 
     p = unter.add_parser("ernten", help="Bilder aus Quellen ins Archiv holen")
     p.add_argument("archiv", type=Path)
-    p.add_argument("quelle", type=Path, nargs="+")
+    # **Nicht als Path.** Eine Quelle kann auch ein Wolkenzugang sein,
+    # etwa "meinewolke:Fotos/2024" - das ist rclones Schreibweise und
+    # kein Dateipfad.
+    p.add_argument("quelle", nargs="+")
 
     p = unter.add_parser(
         "erfassen", help="Orte, Titel und Alben in die Datenbank schreiben"
     )
     p.add_argument("archiv", type=Path)
-    p.add_argument("quelle", type=Path, nargs="+")
+    p.add_argument("quelle", nargs="+")
 
     p = unter.add_parser(
         "pruefen", help="nachweisen, dass alles im Archiv angekommen ist"
     )
     p.add_argument("archiv", type=Path)
-    p.add_argument("quelle", type=Path, nargs="+")
+    p.add_argument("quelle", nargs="+")
 
     p = unter.add_parser("bestand", help="zeigen, was in der Datenbank steht")
     p.add_argument("archiv", type=Path)
@@ -217,11 +223,19 @@ def main(argv: list[str] | None = None) -> int:
             archiv_merken(archiv)
         return starten(archiv, port=werte.port, browser=not werte.kein_browser)
 
-    quellen = [q.expanduser() for q in werte.quelle]
-    for quelle in quellen:
-        if not quelle.exists():
-            print(f"Quelle gibt es nicht: {quelle}")
+    from .ernten import ist_wolke
+
+    quellen: list = []
+    for angabe in werte.quelle:
+        if isinstance(angabe, str) and ist_wolke(angabe):
+            # Ob es den Zugang gibt, weiß erst rclone.
+            quellen.append(angabe)
+            continue
+        pfad = Path(angabe).expanduser()
+        if not pfad.exists():
+            print(f"Quelle gibt es nicht: {pfad}")
             return 1
+        quellen.append(pfad)
 
     if werte.befehl == "ernten":
         from .ernten import ernten
