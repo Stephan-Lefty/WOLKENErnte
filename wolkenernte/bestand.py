@@ -101,8 +101,25 @@ NACHRUESTEN = {
         # NULL heißt: noch nicht gerechnet. 0 heißt: gerechnet, aber
         # ohne Aussage - ein strukturloses Bild.
         "fingerabdruck": "INTEGER",
+        # Womit die Schlagwörter dieses Bildes zustande kamen: "" heißt
+        # noch nie dran gewesen, "zeit" nur das Billige, "bild" auch
+        # die Bilderkennung.
+        #
+        # **Warum eine eigene Spalte und nicht einfach nachsehen, ob
+        # Schlagwörter dranhängen?** Weil ein Bild, dem nichts
+        # zugeordnet werden konnte, sonst bei jedem Lauf wieder wie
+        # unerledigt aussähe - und die halbe Stunde Bilderkennung liefe
+        # jedes Mal von vorn. »Hat kein Wort« ist nicht dasselbe wie
+        # »war noch nie dran«.
+        "verschlagwortet": "TEXT NOT NULL DEFAULT ''",
     },
 }
+
+#: Wie weit ein Bild verschlagwortet ist – von wenig nach viel.
+#:
+#: Ein Lauf mit Bilderkennung holt auch die nach, die bisher nur die
+#: billige Hälfte haben; ein Lauf ohne lässt sie in Ruhe.
+STUFEN = ("", "abgeleitet", "bild")
 
 
 @dataclass
@@ -290,6 +307,38 @@ class Bestand:
                 (bild_id,),
             )
         ]
+
+    def kennungen_nach_pfad(self) -> dict[str, int]:
+        """Zu jedem bekannten Pfad die Kennung des Bildes.
+
+        Der Durchlauf zum Verschlagworten kennt die Bilder über ihren
+        Pfad im Archiv, die Datenbank über Größe und Prüfsumme. Diese
+        Zuordnung einmal zu holen ist billiger als vierzehntausend
+        Einzelabfragen.
+        """
+        return {
+            str(pfad): int(kennung) for kennung, pfad in self.db.execute(
+                "SELECT id, pfad FROM bild WHERE pfad IS NOT NULL"
+            )
+        }
+
+    def schon_verschlagwortet(self, stufe: str) -> set[int]:
+        """Die Kennungen der Bilder, die diese Stufe schon erreicht haben.
+
+        »Erreicht« heißt: dieselbe Stufe oder eine höhere. Wer nur die
+        abgeleiteten Schlagwörter nachträgt, lässt die Bilder in Ruhe,
+        die schon durch die Bilderkennung gelaufen sind.
+        """
+        ab = STUFEN.index(stufe) if stufe in STUFEN else 0
+        erreicht = set(STUFEN[ab:])
+        return {int(kennung) for kennung, wie in self.db.execute(
+            "SELECT id, verschlagwortet FROM bild "
+            "WHERE verschlagwortet != ''") if wie in erreicht}
+
+    def verschlagwortet_merken(self, bild_id: int, stufe: str) -> None:
+        """Festhalten, wie weit dieses Bild verschlagwortet ist."""
+        self.db.execute("UPDATE bild SET verschlagwortet = ? WHERE id = ?",
+                        (stufe, bild_id))
 
     def haeufigste_schlagwoerter(self, hoechstens: int = 40
                                  ) -> list[tuple[str, int]]:

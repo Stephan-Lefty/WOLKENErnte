@@ -150,6 +150,17 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("archiv", type=Path)
     p.add_argument("quelle", nargs="+")
 
+    p = unter.add_parser(
+        "verschlagworten", help="Schlagwörter vergeben und in die Datenbank "
+        "schreiben"
+    )
+    p.add_argument("archiv", type=Path)
+    p.add_argument("--ohne-bilderkennung", action="store_true",
+                   help="nur Datum, Dateiname und Bildmaße – geht in Sekunden")
+    p.add_argument("--alle", action="store_true",
+                   help="auch die schon verschlagworteten neu bewerten "
+                        "(nach einer Änderung an der Begriffsliste)")
+
     p = unter.add_parser("bestand", help="zeigen, was in der Datenbank steht")
     p.add_argument("archiv", type=Path)
 
@@ -201,6 +212,12 @@ def main(argv: list[str] | None = None) -> int:
             print("Danach merkt sich das Programm ihn.")
             return 1
         print(f"Zuletzt benutztes Archiv: {archiv}")
+
+    if werte.befehl == "verschlagworten":
+        from .verschlagworten import bericht
+        return bericht(archiv,
+                       mit_bilderkennung=not werte.ohne_bilderkennung,
+                       nur_fehlende=not werte.alle)
 
     if werte.befehl == "bestand":
         return bestand_zeigen(archiv)

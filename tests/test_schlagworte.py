@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import unittest
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 from wolkenernte.schlagworte import (
     HOECHSTENS,
@@ -14,6 +14,7 @@ from wolkenernte.schlagworte import (
     herkunft,
     jahreszeit,
     tageszeit,
+    uhrzeit_ist_geraten,
 )
 
 
@@ -44,6 +45,51 @@ class DieTageszeit(unittest.TestCase):
         for stunde in (9, 12, 15, 18):
             with self.subTest(stunde):
                 self.assertIsNone(tageszeit(datetime(2024, 6, 1, stunde)))
+
+
+class OhneUhrzeitKeineTageszeit(unittest.TestCase):
+    """Manche Aufnahmen tragen nur ein Datum.
+
+    Google schreibt dann Mitternacht UTC in die Metadaten, und daraus
+    wird beim Ernten der Dateizeitstempel. Am echten Bestand sind das
+    1.465 von 14.476 Bildern – die Stunde 1 trägt 1.488 Aufnahmen, die
+    Stunden 2 bis 5 zusammen nur 39. Ohne diese Prüfung bekäme jedes
+    zehnte Bild »Nachtaufnahme«, und ausgerechnet die Bilder, von denen
+    man am wenigsten weiß.
+    """
+
+    def test_mitternacht_utc_gilt_als_geraten(self) -> None:
+        self.assertTrue(uhrzeit_ist_geraten(
+            datetime(2021, 6, 1, tzinfo=timezone.utc)))
+
+    def test_daraus_folgt_keine_tageszeit(self) -> None:
+        self.assertIsNone(tageszeit(datetime(2021, 6, 1, tzinfo=timezone.utc)))
+
+    def test_das_datum_bleibt_gueltig(self) -> None:
+        """Nur die Uhrzeit fehlt – der Monat steht fest, und damit die
+        Jahreszeit."""
+        woerter = aus_angaben(name="x.jpg",
+                              zeit=datetime(2021, 6, 1, tzinfo=timezone.utc))
+        namen = {w.name for w in woerter}
+        self.assertIn("Sommer", namen)
+        self.assertNotIn("Nachtaufnahme", namen)
+
+    def test_eine_sekunde_daneben_zaehlt_als_echt(self) -> None:
+        """Ein Foto, das *wirklich* auf die Sekunde genau um
+        Mitternacht UTC entstand, verliert sein Schlagwort. Das ist
+        eines von 86.400."""
+        knapp = datetime(2021, 6, 1, 0, 0, 1, tzinfo=timezone.utc)
+        self.assertFalse(uhrzeit_ist_geraten(knapp))
+        self.assertEqual(tageszeit(knapp), "Nachtaufnahme")
+
+    def test_andere_zeitzone_bleibt_unberuehrt(self) -> None:
+        """Geprüft wird gegen UTC, nicht gegen die Ortszeit – sonst
+        träfe es je nach Zeitzone andere Bilder."""
+        mez = timezone(timedelta(hours=1))
+        self.assertFalse(uhrzeit_ist_geraten(
+            datetime(2021, 12, 1, 0, 0, tzinfo=mez)))
+        self.assertTrue(uhrzeit_ist_geraten(
+            datetime(2021, 12, 1, 1, 0, tzinfo=mez)))
 
 
 class DieForm(unittest.TestCase):

@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import re as _re
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 
 #: Wie viele Schlagwörter ein Bild höchstens trägt.
 HOECHSTENS = 5
@@ -57,13 +57,40 @@ def jahreszeit(zeit: datetime) -> str:
     return "Herbst"
 
 
+def uhrzeit_ist_geraten(zeit: datetime) -> bool:
+    """Ob hinter dem Zeitstempel gar keine Uhrzeit steckt.
+
+    **Manche Aufnahmen tragen nur ein Datum.** Google schreibt dann
+    Mitternacht UTC in die Metadaten, und daraus wird beim Ernten der
+    Dateizeitstempel. In Mitteleuropa liegt der dann auf ein oder zwei
+    Uhr nachts.
+
+    Am echten Bestand sind das **1.465 von 14.476 Bildern**: Die
+    Stunde 1 trägt 1.488 Aufnahmen, die Stunden 2 bis 5 zusammen nur
+    39. Ohne diese Prüfung bekäme jedes zehnte Bild »Nachtaufnahme« –
+    und ausgerechnet die Bilder, von denen man am wenigsten weiß.
+    »Nachtaufnahme« fiel damit von 2.004 auf 539.
+
+    Ein Foto, das *wirklich* auf die Sekunde genau um Mitternacht UTC
+    entstand, verliert dabei sein Schlagwort. Das ist eines von
+    86.400.
+    """
+    genau = zeit.astimezone(timezone.utc)
+    return (genau.hour, genau.minute, genau.second) == (0, 0, 0)
+
+
 def tageszeit(zeit: datetime) -> str | None:
     """Grobe Tageszeit, oder ``None`` für die unauffälligen Stunden.
 
     Nur Nacht und Abend werden vergeben. »Nachmittag« an ein Foto zu
     hängen, sagt nichts – »Nachtaufnahme« dagegen ist eine Eigenschaft,
     nach der man sucht.
+
+    Ohne Uhrzeit gibt es gar nichts: siehe
+    :func:`uhrzeit_ist_geraten`.
     """
+    if uhrzeit_ist_geraten(zeit):
+        return None
     stunde = zeit.hour
     if stunde < 5 or stunde >= 22:
         return "Nachtaufnahme"
