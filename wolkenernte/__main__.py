@@ -225,7 +225,8 @@ def main(argv: list[str] | None = None) -> int:
 
     if werte.befehl == "aufraeumen":
         from .aufraeumen import bericht
-        return bericht(archiv, werte.zugang, wirklich=werte.wirklich)
+        return bericht(archiv, werte.zugang, wirklich=werte.wirklich,
+                       mit_unterordnern=not werte.ohne_unterordner)
 
     if werte.befehl == "verschlagworten":
         from .verschlagworten import bericht
