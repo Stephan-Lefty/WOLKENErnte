@@ -65,9 +65,15 @@ vergibt den Namen.
 
 ### Aus der Wolke ernten – jetzt im Fenster
 
-Menü **Wolke**: anmelden, Ordnerbaum durchsehen, holen. Dazu
-`wolkenernte aufraeumen` auf der Kommandozeile, das löscht – aber nur,
-was nachweislich im Archiv liegt.
+Menü **Wolke**: anmelden, Ordnerbaum durchsehen, holen, aufräumen.
+Dasselbe gibt es als `wolkenernte aufraeumen` auf der Kommandozeile.
+
+**Der Aufräumdialog zeigt Bilder, keine Dateinamen.** Eine Liste aus
+vierhundert Zeilen `IMG_20240816_172342.jpg` liest niemand; vor Bildern
+erkennt man sofort, wenn etwas dabei ist, das man behalten wollte. Die
+Dateien liegen beim Prüfen ohnehin schon auf der Platte. Was nicht
+nachgewiesen ist, lässt sich gar nicht erst ankreuzen – kein
+abgeblendetes Häkchen, sondern gar keins.
 
 **Erprobt ist das alles nur gegen rclones `local`- und
 `alias`-Backend.** Gegen eine echte Nextcloud ist noch nichts

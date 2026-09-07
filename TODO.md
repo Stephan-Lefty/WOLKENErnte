@@ -20,9 +20,6 @@ gegen eine echte Nextcloud gelaufen.** Erprobt ist alles nur gegen rclones
 
 - [ ] **Gegen Stephans Nextcloud erproben.** Anmelden, Ordner aussuchen, holen,
   dann `aufraeumen` erst als Probelauf und danach mit `--wirklich`.
-- [ ] **Das Aufräumen ins Fenster holen.** Bisher geht es nur auf der
-  Kommandozeile, und das ist genau der Schritt, bei dem jemand zusehen will:
-  eine Liste dessen, was verschwinden würde, mit den Bildern daneben.
 - [ ] Fortschritt über `core/stats`, lange Aufträge asynchron mit
   `_async: true` und `job/status`. Der Ernter zeigt bisher die Zahl der
   Dateien, nicht die Übertragungsrate.
@@ -154,6 +151,9 @@ Paketverwalter mitbringen. Niemand soll rclone von Hand herunterladen.
 - [x] **`Dienst.art()`**, weil `darf_loeschen()` bisher den *Namen* des Zugangs
   bekam statt seiner Art. Wer seine Nextcloud »meinewolke« nennt, hätte nie
   irgendwo aufräumen können.
+- [x] **Das Aufräumen im Fenster**, mit Vorschaubildern: Was nicht
+  nachgewiesen ist, lässt sich gar nicht erst ankreuzen, und der rote
+  Löschknopf ist ausdrücklich nicht der voreingestellte.
 
 ### Schlagwörter (2026-09-07)
 

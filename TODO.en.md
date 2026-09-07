@@ -19,9 +19,6 @@ rclone's `local` and `alias` backends.
 
 - [ ] **Try it against Stephan's Nextcloud.** Sign in, pick a folder, harvest,
   then `aufraeumen` as a dry run first and with `--wirklich` afterwards.
-- [ ] **Bring the cleanup into the window.** It only works from the command line
-  so far, and it is precisely the step someone wants to watch: a list of what
-  would disappear, with the pictures next to it.
 - [ ] Progress via `core/stats`, long jobs asynchronously with `_async: true`
   and `job/status`. The harvester currently shows a file count, not a rate.
 
@@ -144,6 +141,9 @@ package manager bring along. Nobody should download rclone by hand.
 - [x] **`Dienst.art()`**, because `darf_loeschen()` was being handed the account
   *name* rather than its type. Anyone calling their Nextcloud "meinewolke"
   could never have cleaned up anywhere.
+- [x] **The cleanup in the window**, with thumbnails: what is not proven
+  cannot even be ticked, and the red delete button is deliberately not the
+  default one.
 
 ### Keywords (2026-09-07)
 
