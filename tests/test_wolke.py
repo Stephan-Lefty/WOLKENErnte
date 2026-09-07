@@ -133,6 +133,58 @@ class DieWolkeAlsQuelle(unittest.TestCase):
 
 
 @unittest.skipUnless(ECHTES_RCLONE, "rclone ab 1.75.0 nicht vorhanden")
+class NurDieserOrdner(unittest.TestCase):
+    """»Unterordner mitnehmen« muss auch etwas bewirken.
+
+    **Der Haken stand in der Oberfläche und tat nichts.** ``_auflisten``
+    hatte ``recurse`` fest auf ``True``; wer in einem Ordner aufräumen
+    wollte, bekam alles darunter mit vorgelegt. In einer Cloud liegen
+    aber nicht nur Bilder, und wer *einen* Ordner meint, meint nicht
+    die zwanzig darunter.
+    """
+
+    def setUp(self) -> None:
+        self.tmp = Path(tempfile.mkdtemp())
+        (self.tmp / "konf.conf").write_text("")
+        self.inhalt = self.tmp / "wolke"
+        (self.inhalt / "Fotos" / "2024").mkdir(parents=True)
+        (self.inhalt / "Fotos" / "oben.jpg").write_bytes(b"oben")
+        (self.inhalt / "Fotos" / "2024" / "unten.jpg").write_bytes(b"unten")
+
+        self.dienst = Dienst.starten(self.tmp / "konf.conf")
+        einrichten(self.dienst, "probe", "local")
+        self.wo = str(self.inhalt / "Fotos")
+
+    def tearDown(self) -> None:
+        self.dienst.beenden()
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_mit_unterordnern_kommt_alles(self) -> None:
+        with Wolke(self.dienst, "probe", self.wo) as wolke:
+            self.assertEqual(sorted(wolke.medien()),
+                             ["2024/unten.jpg", "oben.jpg"])
+
+    def test_ohne_unterordner_nur_diese_ebene(self) -> None:
+        with Wolke(self.dienst, "probe", self.wo,
+                   mit_unterordnern=False) as wolke:
+            self.assertEqual(wolke.medien(), ["oben.jpg"])
+
+    def test_die_angabe_steht_am_objekt(self) -> None:
+        """Die Oberfläche liest sie ab, um zu sagen, was geprüft wird."""
+        with Wolke(self.dienst, "probe", self.wo,
+                   mit_unterordnern=False) as wolke:
+            self.assertFalse(wolke.mit_unterordnern)
+
+    def test_quelle_oeffnen_reicht_sie_durch(self) -> None:
+        quelle, _ = quelle_oeffnen(f"probe:{self.wo}", self.dienst,
+                                   mit_unterordnern=False)
+        try:
+            self.assertEqual(quelle.medien(), ["oben.jpg"])
+        finally:
+            quelle.schliessen()
+
+
+@unittest.skipUnless(ECHTES_RCLONE, "rclone ab 1.75.0 nicht vorhanden")
 class DerGanzeWeg(unittest.TestCase):
     """Aus der Wolke ins Archiv – das, wofür es das Programm gibt."""
 

@@ -205,7 +205,8 @@ def durchgehen(
     return bilanz
 
 
-def bericht(archiv: Path, zugang: str, *, wirklich: bool = False) -> int:
+def bericht(archiv: Path, zugang: str, *, wirklich: bool = False,
+            mit_unterordnern: bool = True) -> int:
     """Das Aufräumen von der Kommandozeile aus."""
     from .ernten import ist_wolke
     from .rclone import Dienst
@@ -239,9 +240,14 @@ def bericht(archiv: Path, zugang: str, *, wirklich: bool = False) -> int:
         kennungen = archiv_kennungen(archiv, im_terminal)
         print(f"  {len(kennungen)} verschiedene Inhalte      ")
 
-        with Wolke(dienst, name, unterordner) as wolke:
-            print(f"\n{len(wolke)} Dateien in {wolke.wurzel}, "
-                  f"{len(wolke.medien())} davon Bilder und Videos")
+        with Wolke(dienst, name, unterordner,
+                   mit_unterordnern=mit_unterordnern) as wolke:
+            wie_weit = ("mit allen Unterordnern" if mit_unterordnern
+                        else "nur dieser Ordner, ohne Unterordner")
+            print(f"\n{len(wolke)} Dateien in {wolke.wurzel} ({wie_weit}), "
+                  f"{len(wolke.medien())} davon Bilder und Videos.")
+            print("Alles andere - Schriftstücke, Musik, Sonstiges - "
+                  "wird nicht angefasst.")
             if not wirklich:
                 print("\n**Probelauf.** Es wird nichts gelöscht – dafür "
                       "später --wirklich anhängen.\n")

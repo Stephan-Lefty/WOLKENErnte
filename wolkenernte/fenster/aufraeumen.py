@@ -247,9 +247,14 @@ class AufraeumenDialog(QDialog):
         self.setWindowTitle(f"Aufräumen in {wolke.wurzel}")
         self.resize(940, 700)
 
+        wie_weit = ("mit allen Unterordnern" if wolke.mit_unterordnern
+                    else "ohne Unterordner")
         self.kopf = QLabel(
-            f"Jede Datei aus {wolke.wurzel} wird geholt und mit dem Archiv "
-            f"verglichen.\nGelöscht wird nichts, bevor Sie es gesehen haben.")
+            f"<b>{wolke.wurzel}</b> ({wie_weit})<br>"
+            f"Jedes <b>Bild und Video</b> darin wird geholt und mit dem "
+            f"Archiv verglichen. Schriftstücke, Musik und alles andere "
+            f"bleiben unberührt.<br>"
+            f"Gelöscht wird nichts, bevor Sie es gesehen haben.")
         self.kopf.setWordWrap(True)
 
         self.balken = QProgressBar()

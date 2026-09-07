@@ -192,6 +192,7 @@ class WolkeDurchsehen(QDialog):
         # nehmen, spart eine Fehlerquelle: Ein erster Anlauf hängte
         # stur einen Doppelpunkt an und suchte dann nach
         # ``meinewolke:Fotos:``.
+        self.mit_unterordnern_gewaehlt = True
         self.zugang, _, self.wurzelpfad = zugang.partition(":")
         # Nur hinten kürzen: Ein führender Schrägstrich gehört bei
         # manchen Backends zum Pfad. Dieselbe Falle wie in wolke.py –
@@ -221,6 +222,9 @@ class WolkeDurchsehen(QDialog):
 
         self.mit_unterordnern = QCheckBox("Unterordner mitnehmen")
         self.mit_unterordnern.setChecked(True)
+        self.mit_unterordnern.setToolTip(
+            "Aus: nur die Dateien, die unmittelbar in diesem Ordner "
+            "liegen.\nEin: auch alles in den Ordnern darunter.")
 
         self.meldung = QLabel()
         self.meldung.setWordWrap(True)
@@ -325,11 +329,13 @@ class Arbeit(QObject):
     fertig = Signal(object)
     misslungen = Signal(str)
 
-    def __init__(self, dienst, quelle: str, ziel: Path) -> None:
+    def __init__(self, dienst, quelle: str, ziel: Path, *,
+                 mit_unterordnern: bool = True) -> None:
         super().__init__()
         self.dienst = dienst
         self.quelle = quelle
         self.ziel = ziel
+        self.mit_unterordnern = mit_unterordnern
         self.abbrechen = False
 
     def laufen(self) -> None:
@@ -338,7 +344,9 @@ class Arbeit(QObject):
         from ..zuordnung import zuordnen
 
         try:
-            quelle, _art = quelle_oeffnen(self.quelle, self.dienst)
+            quelle, _art = quelle_oeffnen(
+                self.quelle, self.dienst,
+                mit_unterordnern=self.mit_unterordnern)
         except Exception as fehler:  # noqa: BLE001
             self.misslungen.emit(str(fehler))
             return
@@ -389,7 +397,8 @@ class Ernter(QDialog):
     """Der Fortschritt beim Holen – und der Abbruch."""
 
     def __init__(self, dienst, quelle: str, ziel: Path,
-                 eltern: QWidget | None = None) -> None:
+                 eltern: QWidget | None = None, *,
+                 mit_unterordnern: bool = True) -> None:
         super().__init__(eltern)
         self.setWindowTitle("Aus der Cloud holen")
         self.setMinimumWidth(560)
@@ -415,7 +424,8 @@ class Ernter(QDialog):
         aufbau.addLayout(unten)
 
         self.faden = QThread(self)
-        self.arbeit = Arbeit(dienst, quelle, ziel)
+        self.arbeit = Arbeit(dienst, quelle, ziel,
+                             mit_unterordnern=mit_unterordnern)
         self.arbeit.moveToThread(self.faden)
         self.faden.started.connect(self.arbeit.laufen)
         self.arbeit.schritt.connect(self._schritt)

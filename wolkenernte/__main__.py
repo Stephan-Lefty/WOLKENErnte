@@ -157,6 +157,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("zugang", help="etwa meinewolke:Fotos")
     p.add_argument("--wirklich", action="store_true",
                    help="tatsächlich löschen statt nur zu zählen")
+    p.add_argument("--ohne-unterordner", action="store_true",
+                   help="nur in genau diesem Ordner aufräumen")
 
     p = unter.add_parser(
         "verschlagworten", help="Schlagwörter vergeben und in die Datenbank "

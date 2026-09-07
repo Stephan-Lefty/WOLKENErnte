@@ -38,13 +38,21 @@ class Wolke:
 
     ``zugang`` ist der Name aus der rclone-Konfiguration, ``unterordner``
     ein Pfad darin – etwa ``Fotos/2024``. Leer heißt: alles.
+
+    ``mit_unterordnern=False`` beschränkt auf **genau diesen einen
+    Ordner**. Beim Ernten will man meistens alles darunter; beim
+    Aufräumen ist das Gegenteil der Fall, denn eine Cloud enthält
+    nicht nur Bilder, und wer in *einem* Ordner aufräumen will, meint
+    nicht die zwanzig darunter.
     """
 
     def __init__(self, dienst: Dienst, zugang: str,
-                 unterordner: str = "") -> None:
+                 unterordner: str = "", *,
+                 mit_unterordnern: bool = True) -> None:
         self.dienst = dienst
         self.zugang = zugang.rstrip(":")
         self.unterordner = unterordner.rstrip("/")
+        self.mit_unterordnern = mit_unterordnern
         self._index: dict[str, Eintrag] = {}
         self._geholt: dict[str, Path] = {}
         self._ablage = Path(tempfile.mkdtemp(prefix="wolkenernte-"))
@@ -66,16 +74,23 @@ class Wolke:
                 else f"{self.zugang}:")
 
     def _auflisten(self) -> None:
-        """Den ganzen Bestand holen – einmal, rekursiv.
+        """Den Bestand holen – einmal, in einem Aufruf.
 
         Ein Aufruf je Unterordner wäre bei einer gewachsenen
         Fotosammlung ein Aufruf je Monat und Album; über eine Leitung
         ist das der Unterschied zwischen Sekunden und Minuten.
+
+        **``recurse`` folgt der Angabe des Aufrufers**, und das ist
+        keine Kleinigkeit: Es stand hier fest auf ``True``, während die
+        Oberfläche einen Haken »Unterordner mitnehmen« zeigte, der
+        nichts bewirkte. Wer in einem Ordner aufräumen wollte, bekam
+        alles darunter mit vorgelegt.
         """
         try:
             eintraege = self.dienst.rufen("operations/list", {
                 "fs": self.wurzel, "remote": "",
-                "opt": {"filesOnly": True, "recurse": True,
+                "opt": {"filesOnly": True,
+                        "recurse": self.mit_unterordnern,
                         # Hashes mitliefern, wo der Anbieter welche hat.
                         "hashTypes": ["crc32"]},
             }).get("list") or []

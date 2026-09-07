@@ -51,11 +51,13 @@ def ist_wolke(angabe: str) -> bool:
     return ":" in vorne and len(vorne.split(":", 1)[0]) > 1
 
 
-def quelle_oeffnen(angabe: str | Path, dienst=None):
+def quelle_oeffnen(angabe: str | Path, dienst=None, *,
+                   mit_unterordnern: bool = True):
     """Ein Takeout-Bestand, ein Ordner oder ein Wolkenzugang.
 
     ``dienst`` ist ein laufender rclone-Dienst; ohne ihn lässt sich
-    keine Wolke öffnen.
+    keine Wolke öffnen. ``mit_unterordnern`` gilt nur für Wolken – bei
+    einem Ordner auf der Platte gibt es die Frage nicht.
     """
     if isinstance(angabe, str) and ist_wolke(angabe):
         if dienst is None:
@@ -63,7 +65,9 @@ def quelle_oeffnen(angabe: str | Path, dienst=None):
                 f"{angabe} ist ein Wolkenzugang, aber rclone läuft nicht."
             )
         zugang, _, unterordner = angabe.partition(":")
-        return Wolke(dienst, zugang, unterordner), "Wolkenzugang"
+        return (Wolke(dienst, zugang, unterordner,
+                      mit_unterordnern=mit_unterordnern),
+                "Wolkenzugang")
 
     pfad = Path(angabe)
     if pfad.is_dir() and any(p.suffix.lower() == ".zip" for p in pfad.iterdir()):

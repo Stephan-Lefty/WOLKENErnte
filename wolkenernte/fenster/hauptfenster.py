@@ -308,7 +308,8 @@ class Hauptfenster(QMainWindow):
         if not dialog.exec() or not dialog.gewaehlt:
             return
 
-        lauf = Ernter(dienst, dialog.gewaehlt, self.archiv, self)
+        lauf = Ernter(dienst, dialog.gewaehlt, self.archiv, self,
+                      mit_unterordnern=dialog.mit_unterordnern_gewaehlt)
         if not lauf.exec() or lauf.bilanz is None:
             return
 
@@ -344,11 +345,16 @@ class Hauptfenster(QMainWindow):
             return
 
         name, _, unterordner = wahl.gewaehlt.partition(":")
-        with Wolke(dienst, name, unterordner) as wolke:
+        with Wolke(dienst, name, unterordner,
+                   mit_unterordnern=wahl.mit_unterordnern_gewaehlt) as wolke:
             if not wolke.medien():
+                darunter = ("" if wahl.mit_unterordnern_gewaehlt else
+                            "\n\nIn den Unterordnern wurde nicht gesucht – "
+                            "dafür »Unterordner mitnehmen« ankreuzen.")
                 QMessageBox.information(
                     self, "WOLKENErnte",
-                    f"In {wolke.wurzel} liegen keine Bilder oder Videos.")
+                    f"In {wolke.wurzel} liegen keine Bilder oder Videos."
+                    + darunter)
                 return
             dialog = AufraeumenDialog(dienst, wolke, self.archiv, self)
             dialog.exec()
