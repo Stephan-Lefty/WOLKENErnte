@@ -139,9 +139,14 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("quelle", nargs="+")
 
     p = unter.add_parser(
-        "erfassen", help="Orte, Titel und Alben in die Datenbank schreiben"
+        "erfassen", help="Orte, Titel, Alben und Fundorte in die Datenbank "
+        "schreiben"
     )
     p.add_argument("archiv", type=Path)
+    # **Nicht als Path.** Eine Quelle kann auch ein Cloudzugang sein.
+    # Bei Clouds wiegt dieser Schritt schwerer als bei einem Ordner:
+    # Nach dem Aufräumen ist die Cloud leer, und was hier nicht
+    # festgehalten wurde, ist endgültig weg.
     p.add_argument("quelle", nargs="+")
 
     p = unter.add_parser(

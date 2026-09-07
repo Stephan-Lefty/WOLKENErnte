@@ -259,6 +259,8 @@ class DasHolen(unittest.TestCase):
         arbeit.misslungen.connect(lambda t: ergebnis.update(fehler=t))
         arbeit.schritt.connect(
             lambda n, g, name: ergebnis.setdefault("schritte", []).append(n))
+        arbeit.schritt.connect(
+            lambda n, g, name: ergebnis.setdefault("texte", []).append(name))
         arbeit.laufen()
         return arbeit, ergebnis
 
@@ -268,9 +270,25 @@ class DasHolen(unittest.TestCase):
         self.assertEqual(ergebnis["bilanz"].uebernommen, 3)
         self.assertTrue(list(self.ziel.rglob("IMG_1.jpg")))
 
-    def test_der_fortschritt_wird_gemeldet(self) -> None:
+    def test_jedes_bild_wird_gemeldet(self) -> None:
         _, ergebnis = self._laufen(f"probe:{self.inhalt}")
-        self.assertEqual(ergebnis["schritte"], [1, 2, 3])
+        self.assertEqual(ergebnis["schritte"][:3], [1, 2, 3])
+
+    def test_zum_schluss_wird_die_herkunft_festgehalten(self) -> None:
+        """Auf der Kommandozeile ist »erfassen« ein eigener Schritt.
+        Im Fenster gibt es ihn nicht – und bei einer Cloud auch keine
+        zweite Gelegenheit, denn nach dem Aufräumen ist sie leer."""
+        _, ergebnis = self._laufen(f"probe:{self.inhalt}")
+        self.assertIn("Herkunft", ergebnis["texte"][-1])
+
+    def test_die_fundorte_stehen_danach_in_der_datenbank(self) -> None:
+        from wolkenernte.bestand import Bestand
+
+        self._laufen(f"probe:{self.inhalt}")
+        with Bestand(self.ziel) as bestand:
+            quellen = {q for q, in bestand.db.execute(
+                "SELECT DISTINCT quelle FROM fundort")}
+        self.assertEqual(quellen, {f"probe:{self.inhalt}"})
 
     def test_ein_leerer_ordner_sagt_das(self) -> None:
         leer = self.tmp / "leer"

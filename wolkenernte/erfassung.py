@@ -17,12 +17,13 @@ from __future__ import annotations
 import sys
 import time
 import zlib
+from collections.abc import Callable
 from pathlib import Path
 
 from .bestand import Bestand
-from .lokal import MEDIEN, Ordner, jahr_aus_ordner
+from .ernten import ist_wolke, quelle_oeffnen
+from .lokal import MEDIEN, jahr_aus_ordner
 from .metadaten import MetadatenFehler, aus_json
-from .takeout import Archiv as Takeout
 from .zuordnung import zuordnen
 
 #: Ordner, die kein Album sind, sondern Googles eigene Fächer.
@@ -59,22 +60,91 @@ def _ist_medium(name: str) -> bool:
     return "." in name and "." + name.rsplit(".", 1)[-1].lower() in MEDIEN
 
 
-def erfassen(archiv: Path, quellen: list[Path]) -> int:
+def archiv_lesen(
+    archiv: Path,
+    melden: Callable[[int, int], None] | None = None,
+    *,
+    nur_groessen: set[int] | None = None,
+) -> dict[tuple[int, int], str]:
+    """Zu jedem Inhalt im Archiv der Pfad, unter dem er dort liegt.
+
+    ``nur_groessen`` beschränkt auf die Größen, die in den Quellen
+    überhaupt vorkommen – über ein gewachsenes Archiv ist das der
+    Unterschied zwischen Sekunden und Minuten. Dieselbe Überlegung wie
+    in :func:`wolkenernte.nachweis.archiv_kennungen`: Eine Datei
+    anderer Größe kann keine der gesuchten sein.
+    """
+    bekannt: dict[tuple[int, int], str] = {}
+    dateien = [p for p in archiv.rglob("*")
+               if p.is_file() and _ist_medium(p.name)]
+    if nur_groessen is not None:
+        dateien = [p for p in dateien if _groesse(p) in nur_groessen]
+    for nummer, pfad in enumerate(dateien, 1):
+        if melden:
+            melden(nummer, len(dateien))
+        try:
+            summe = 0
+            with pfad.open("rb") as datei:
+                while brocken := datei.read(1 << 20):
+                    summe = zlib.crc32(brocken, summe)
+            bekannt[(pfad.stat().st_size, summe)] = str(pfad.relative_to(archiv))
+        except OSError:
+            continue
+    return bekannt
+
+
+def _groesse(pfad: Path) -> int:
+    try:
+        return pfad.stat().st_size
+    except OSError:
+        return -1
+
+
+def quellenname(angabe: str | Path) -> str:
+    """Wie eine Quelle in der Datenbank heißt.
+
+    Bei einem Ordner sein Name, bei einer Cloud der Zugang samt Pfad –
+    ``GuideOS:Photos``. **Das muss unterscheidbar bleiben**: Wer aus
+    zwei Clouds erntet, soll später noch sehen können, woher ein Bild
+    kam. Nach dem Aufräumen ist die Cloud leer, und dann ist dieser
+    Eintrag das Einzige, was davon übrig ist.
+    """
+    return str(angabe) if ist_wolke(str(angabe)) else Path(angabe).name
+
+
+def erfassen(archiv: Path, quellen: list[str | Path], dienst=None) -> int:
+    """Orte, Titel, Alben und Fundorte in die Datenbank schreiben.
+
+    ``dienst`` ist ein laufender rclone-Dienst. Fehlt er und ist eine
+    Cloud unter den Quellen, wird einer gestartet – wie in
+    :func:`wolkenernte.ernten.ernten`. Wer nur aus Ordnern erfasst,
+    soll rclone nicht installiert haben müssen.
+    """
+    eigener_dienst = None
+    if dienst is None and any(ist_wolke(str(q)) for q in quellen):
+        from .rclone import Dienst, RcloneFehler
+        from .zugang import konfiguration
+        try:
+            dienst = eigener_dienst = Dienst.starten(konfiguration())
+        except RcloneFehler as fehler:
+            print(fehler)
+            return 1
+    try:
+        return _erfassen(archiv, quellen, dienst)
+    finally:
+        if eigener_dienst is not None:
+            eigener_dienst.beenden()
+
+
+def _erfassen(archiv: Path, quellen: list[str | Path], dienst) -> int:
     t0 = time.time()
 
     # Zuerst das Archiv: Dort steht, wo ein Bild heute liegt.
     print(f"=== Archiv: {archiv} ===")
-    bekannt: dict[tuple[int, int], str] = {}
-    dateien = [p for p in archiv.rglob("*")
-               if p.is_file() and _ist_medium(p.name)]
-    for nummer, pfad in enumerate(dateien, 1):
-        if nummer % 2000 == 0:
-            print(f"  {nummer}/{len(dateien)}", end="\r", flush=True)
-        summe = 0
-        with pfad.open("rb") as datei:
-            while brocken := datei.read(1 << 20):
-                summe = zlib.crc32(brocken, summe)
-        bekannt[(pfad.stat().st_size, summe)] = str(pfad.relative_to(archiv))
+    bekannt = archiv_lesen(
+        archiv,
+        lambda n, g: (print(f"  {n}/{g}", end="\r", flush=True)
+                      if n % 2000 == 0 else None))
     print(f"  {len(bekannt)} Bilder im Archiv                    ")
 
     with Bestand(archiv) as bestand:
@@ -82,14 +152,12 @@ def erfassen(archiv: Path, quellen: list[Path]) -> int:
             bestand.bild_merken(groesse, summe, pfad=pfad)
         bestand.sichern()
 
-        for quellpfad in quellen:
-            print(f"\n=== Quelle: {quellpfad.name} ===")
-            if quellpfad.is_dir() and any(
-                p.suffix.lower() == ".zip" for p in quellpfad.iterdir()
-            ):
-                quelle = Takeout.aus_ordner(quellpfad)
-            else:
-                quelle = Ordner(quellpfad)
+        for angabe in quellen:
+            name_der_quelle = quellenname(angabe)
+            print(f"\n=== Quelle: {name_der_quelle} ===")
+            quelle, art = quelle_oeffnen(angabe, dienst)
+            print(f"  {art}")
+            if hasattr(quelle, "pruefsummen_rechnen"):
                 print("  Prüfsummen werden gerechnet")
                 quelle.pruefsummen_rechnen(
                     zusatzgroessen={g for g, _ in bekannt},
@@ -136,7 +204,7 @@ def erfassen(archiv: Path, quellen: list[Path]) -> int:
                 if angaben and angaben.ort:
                     mit_ort += 1
 
-                bestand.fundort_merken(bild_id, quellpfad.name, z.medium)
+                bestand.fundort_merken(bild_id, name_der_quelle, z.medium)
                 name = albumname(z.medium)
                 if name:
                     bestand.album_zuordnen(bild_id, name)

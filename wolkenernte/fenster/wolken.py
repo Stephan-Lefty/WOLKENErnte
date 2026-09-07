@@ -391,6 +391,15 @@ class Arbeit(QObject):
                 lambda z: angaben_ermitteln(quelle, z),
                 self.ziel, fortschritt=melden, gesehen=gesehen,
             )
+
+            # **Die Herkunft gleich mit festhalten.** Auf der
+            # Kommandozeile ist »erfassen« ein eigener Schritt, und das
+            # ist dort richtig. Im Fenster gibt es ihn nicht - und bei
+            # einer Cloud auch keine zweite Gelegenheit: Nach dem
+            # Aufräumen ist sie leer, und was nicht in der Datenbank
+            # steht, ist endgültig weg.
+            self.schritt.emit(gesamt, gesamt, "Herkunft wird festgehalten …")
+            self._herkunft_merken(quelle)
         except KeyboardInterrupt:
             self.misslungen.emit("Abgebrochen. Was schon geholt wurde, bleibt.")
             return
@@ -402,6 +411,25 @@ class Arbeit(QObject):
                 quelle.schliessen()
 
         self.fertig.emit(bilanz)
+
+    def _herkunft_merken(self, quelle) -> None:
+        """Fundorte, Orte, Titel und Alben in die Datenbank schreiben.
+
+        Scheitert das, ist der Erntelauf trotzdem gelungen – die Bilder
+        liegen im Archiv. Es wäre unsinnig, deswegen alles als
+        misslungen zu melden; die Datenbank lässt sich nachziehen, das
+        Herunterladen nicht.
+        """
+        import contextlib
+        import io
+
+        from ..erfassung import erfassen
+
+        try:
+            with contextlib.redirect_stdout(io.StringIO()):
+                erfassen(self.ziel, [self.quelle], self.dienst)
+        except Exception:  # noqa: BLE001
+            pass
 
 
 class Ernter(QDialog):
