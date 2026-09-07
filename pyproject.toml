@@ -85,3 +85,9 @@ version = { attr = "wolkenernte.__version__" }
 
 [tool.setuptools.packages.find]
 include = ["wolkenernte*"]
+
+# Die vorberechneten Begriffe (rund 280 KB) gehören ins Paket. Ohne sie
+# tut die Bilderkennung nichts, und nachladen lassen sich Begriffe
+# nicht sinnvoll: Sie gehören zum Programmstand, nicht zum Rechner.
+[tool.setuptools.package-data]
+wolkenernte = ["daten/*.npz"]

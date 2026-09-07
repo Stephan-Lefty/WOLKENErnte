@@ -66,14 +66,24 @@ class Begriff:
     fragen: tuple[str, ...]
 
 
+#: Wie viel besser als der Zufall ein Wort sein muss.
+#:
+#: **Die Schwelle wird gerechnet, nicht gesetzt.** Sie ist ein Anteil
+#: an der Gruppe – und derselbe Anteil bedeutet in einer Gruppe aus
+#: sechs Antworten etwas ganz anderes als in einer aus fünfundzwanzig.
+#: Ein erster Anlauf setzte fünf Zahlen von Hand, und die kleinen
+#: Gruppen kamen viel zu leicht durch: »Zeichnung« landete auf 16 %
+#: aller Bilder, »Regen« auf 20 %.
+#:
+#: Jetzt heißt die Schwelle: *fast fünfmal so wahrscheinlich wie reines
+#: Raten*. Bei 4,8 stehen 400 echte Bilder bei 2,7 Wörtern je Bild und
+#: 2 % ganz ohne – gemessen, nicht geschätzt.
+STRENGE = 4.8
+
+
 @dataclass(frozen=True)
 class Gruppe:
     """Eine Frage an das Bild und die Antworten, die zur Wahl stehen.
-
-    ``schwelle`` ist der Anteil, den der Sieger unter den Antworten
-    dieser Gruppe auf sich vereinen muss. Bei einer Gruppe mit zehn
-    Antworten wäre reines Raten 0,1 – wer bei 0,35 abschneidet,
-    verlangt also, dass das Modell sich deutlich festlegt.
 
     ``hoechstens`` erlaubt einer Gruppe mehr als ein Wort. Das ist die
     Ausnahme: Nur wo sich zwei Antworten wirklich nicht ausschließen
@@ -81,14 +91,49 @@ class Gruppe:
     """
 
     titel: str
-    schwelle: float
     begriffe: tuple[Begriff, ...]
     hoechstens: int = 1
     quelle: str = field(default="bild")
+    strenge: float = STRENGE
+
+    @property
+    def schwelle(self) -> float:
+        """Welchen Anteil der Sieger auf sich vereinen muss.
+
+        Reines Raten wäre ``1/(n+1)`` – die Antworten der Gruppe plus
+        :data:`NICHTS`. Die Schwelle ist ein Vielfaches davon und
+        wächst darum von selbst, wenn eine Gruppe kleiner wird.
+
+        Bei 0,9 gedeckelt: Eine Schwelle, die niemand je erreichen
+        kann, wäre dasselbe wie die Gruppe zu löschen – nur
+        unauffälliger.
+        """
+        return min(0.9, self.strenge / (len(self.begriffe) + 1))
 
 
 def _b(name: str, *fragen: str) -> Begriff:
     return Begriff(name, fragen)
+
+
+#: Die stumme Antwort: »nichts davon«.
+#:
+#: **Ohne sie muss jede Gruppe einen Sieger küren.** Der Vergleich
+#: innerhalb einer Gruppe fragt ja nicht *ob*, sondern *welches* – und
+#: bei einer Gruppe aus sechs Wörtern hat der beste davon immer einen
+#: ordentlichen Anteil, auch wenn keines passt. Am echten Bestand
+#: gemessen: »Regen« landete so auf **60 %** aller Bilder, »Zeichnung«
+#: auf 37 %, und 147 von 200 Bildern trugen die vollen fünf
+#: Schlagwörter.
+#:
+#: Diese Antwort läuft in jeder Gruppe mit, taucht aber nie als
+#: Schlagwort auf. Gewinnt sie, schweigt die Gruppe. Damit heißt die
+#: Schwelle endlich das, was sie heißen soll: *deutlicher als die
+#: Auskunft, dass es eben ein Foto ist*.
+NICHTS = Begriff("", (
+    "a photograph",
+    "an ordinary snapshot of nothing in particular",
+    "a picture of something",
+))
 
 
 #: Wo das Bild entstanden ist.
@@ -96,7 +141,7 @@ def _b(name: str, *fragen: str) -> Begriff:
 #: Die größte Gruppe, und die nützlichste: Nach dem Ort sucht man
 #: zuerst. Drinnen und draußen stehen bewusst in derselben Gruppe – ein
 #: Bild ist das eine oder das andere, nie beides.
-ORT = Gruppe("Ort", 0.22, (
+ORT = Gruppe("Ort", (
     _b("Strand", "a beach", "sand and sea at the shore"),
     _b("Meer", "the open sea", "waves on the ocean"),
     _b("See", "a lake", "a calm lake surrounded by land"),
@@ -109,7 +154,9 @@ ORT = Gruppe("Ort", 0.22, (
     _b("Park", "a public park", "a park with lawns and paths"),
     _b("Stadt", "a city", "streets and buildings in a town"),
     _b("Dorf", "a village", "a small rural village"),
-    _b("Innenraum", "the inside of a room", "an indoor room"),
+    # »Innenraum« stand hier und ist heraus: Es lag bei 0,969 an
+    # »Zuhause« und sagte dabei weniger. Ein Wort, das nur »drinnen«
+    # bedeutet, hilft beim Suchen nicht.
     _b("Küche", "a kitchen", "the inside of a kitchen"),
     _b("Lokal", "the inside of a restaurant or cafe",
        "people sitting at tables in a cafe"),
@@ -130,7 +177,7 @@ ORT = Gruppe("Ort", 0.22, (
 #: ``hoechstens=2``: Anders als beim Ort schließen sich diese Antworten
 #: nicht aus. Ein Bild kann ein Kind mit einem Hund zeigen, und beides
 #: gehört daran.
-MOTIV = Gruppe("Motiv", 0.18, (
+MOTIV = Gruppe("Motiv", (
     _b("Porträt", "a portrait of one person", "a close-up of a person's face"),
     _b("Gruppenbild", "a group of people posing together",
        "several people photographed together"),
@@ -166,7 +213,7 @@ MOTIV = Gruppe("Motiv", 0.18, (
 #: Der Anlass ist das, was ein Bild in der Erinnerung festhält – »die
 #: Hochzeit«, »der Geburtstag«. Die Schwelle liegt hoch: Ein falsch
 #: geratener Anlass ärgert mehr als ein fehlender.
-ANLASS = Gruppe("Anlass", 0.30, (
+ANLASS = Gruppe("Anlass", (
     _b("Feier", "a party", "people celebrating at a party"),
     _b("Geburtstag", "a birthday party", "a birthday cake with candles"),
     _b("Hochzeit", "a wedding", "a bride and groom"),
@@ -174,7 +221,9 @@ ANLASS = Gruppe("Anlass", 0.30, (
     _b("Ostern", "easter", "easter eggs and decorations"),
     _b("Konzert", "a concert", "musicians performing on a stage"),
     _b("Sport", "people playing sport", "a sports match"),
-    _b("Wandern", "hiking", "people walking on a hiking trail"),
+    # Nicht bloß »hiking«: Das traf jeden Feldweg und landete bei 20 %.
+    _b("Wandern", "people hiking with backpacks",
+       "hikers walking on a marked trail"),
     _b("Markt", "a market", "market stalls with goods"),
     _b("Ausflug", "a day trip sightseeing", "tourists visiting a place"),
     _b("Umzug", "moving house", "cardboard moving boxes"),
@@ -185,9 +234,15 @@ ANLASS = Gruppe("Anlass", 0.30, (
 #: Kleine Gruppe, hohe Schwelle: Diese Wörter sind auffällig genau dann,
 #: wenn sie zutreffen, und nichtssagend, wenn man sie großzügig
 #: vergibt.
-WETTER = Gruppe("Wetter", 0.32, (
-    _b("Sonnenuntergang", "a sunset", "the sun setting over the horizon"),
-    _b("Sonnenaufgang", "a sunrise", "the sun rising at dawn"),
+WETTER = Gruppe("Wetter", (
+    # **»Sonnenaufgang« stand hier und ist heraus.** Gemessen liegt er
+    # bei 0,975 an »Sonnenuntergang« – das Modell kann die beiden
+    # schlicht nicht unterscheiden, und ein Mensch könnte es auf dem
+    # Bild allein auch nicht. Die Uhr könnte es: Ein Bild von sechs Uhr
+    # früh ist keiner. Diese Unterscheidung gehört darum zu
+    # :func:`wolkenernte.schlagworte.tageszeit` und nicht hierher; bis
+    # sie dort gezogen wird, heißt beides »Sonnenuntergang«.
+    _b("Sonnenuntergang", "a sunset", "the sun low over the horizon"),
     _b("Schnee", "snow", "a snow-covered landscape"),
     _b("Nebel", "fog", "a foggy misty landscape"),
     _b("Regen", "rain", "a rainy day with wet ground"),
@@ -200,7 +255,7 @@ WETTER = Gruppe("Wetter", 0.32, (
 #: Beschreibt nicht den Inhalt, sondern die Machart – und trennt damit
 #: Bilder, die inhaltlich gleich aussehen: die Luftaufnahme vom Dorf,
 #: die Nahaufnahme der Blume.
-MACHART = Gruppe("Machart", 0.30, (
+MACHART = Gruppe("Machart", (
     _b("Nahaufnahme", "an extreme close-up photograph",
        "a macro photograph of a small subject"),
     _b("Luftaufnahme", "an aerial photograph from above",
@@ -223,12 +278,18 @@ def alle_begriffe() -> list[tuple[str, str, str]]:
     Werkzeug zum Vorberechnen die Zahlenreihen ablegt. Der Aufbau darf
     sich ändern; wer ihn ändert, muss die mitgelieferte Datei neu
     rechnen lassen, sonst zeigen die Zahlen auf die falschen Wörter.
+
+    :data:`NICHTS` steht **einmal** am Ende, unter der Gruppe ``—``:
+    Es läuft in jeder Gruppe mit, muss aber nur einmal gerechnet
+    werden.
     """
     zeilen: list[tuple[str, str, str]] = []
     for gruppe in GRUPPEN:
         for begriff in gruppe.begriffe:
             for frage in begriff.fragen:
                 zeilen.append((gruppe.titel, begriff.name, frage))
+    for frage in NICHTS.fragen:
+        zeilen.append(("—", NICHTS.name, frage))
     return zeilen
 
 

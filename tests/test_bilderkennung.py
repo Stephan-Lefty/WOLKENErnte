@@ -9,7 +9,16 @@ from __future__ import annotations
 
 import unittest
 
-from wolkenernte.begriffe import GRUPPEN, VORLAGEN, alle_begriffe, namen
+from wolkenernte.begriffe import (
+    GRUPPEN,
+    NICHTS,
+    ORT,
+    VORLAGEN,
+    Begriff,
+    Gruppe,
+    alle_begriffe,
+    namen,
+)
 from wolkenernte.bilderkennung import anteile, auswerten, fragen, je_begriff
 from wolkenernte.schlagworte import HOECHSTENS, begrenzen
 
@@ -83,6 +92,72 @@ class DieBegriffsliste(unittest.TestCase):
         dasselbe sagen – die vorberechneten Zahlen liegen in dieser
         Ordnung."""
         self.assertEqual(fragen(), [f for _, _, f in alle_begriffe()])
+
+
+class DieGerechneteSchwelle(unittest.TestCase):
+    """Die Schwelle wird gerechnet, nicht gesetzt.
+
+    Ein erster Anlauf setzte fünf Zahlen von Hand. Die kleinen Gruppen
+    kamen damit viel zu leicht durch: »Zeichnung« landete an 16 % aller
+    Bilder, »Regen« an 20 %. Derselbe Anteil bedeutet in einer Gruppe
+    aus sechs Antworten eben etwas anderes als in einer aus
+    fünfundzwanzig.
+    """
+
+    def test_kleine_gruppe_verlangt_mehr(self) -> None:
+        nach_groesse = sorted(GRUPPEN, key=lambda g: len(g.begriffe))
+        self.assertGreater(nach_groesse[0].schwelle, nach_groesse[-1].schwelle)
+
+    def test_immer_deutlich_ueber_dem_zufall(self) -> None:
+        for gruppe in GRUPPEN:
+            with self.subTest(gruppe.titel):
+                zufall = 1 / (len(gruppe.begriffe) + 1)
+                self.assertGreater(gruppe.schwelle, zufall * 2)
+
+    def test_gedeckelt(self) -> None:
+        """Eine Schwelle, die niemand je erreichen kann, wäre dasselbe
+        wie die Gruppe zu löschen – nur unauffälliger."""
+        winzig = Gruppe("Winzig", (Begriff("Eins", ("one",)),), strenge=99.0)
+        self.assertLessEqual(winzig.schwelle, 0.9)
+
+
+class DieStummeAntwort(unittest.TestCase):
+    """``NICHTS`` läuft mit, gewinnt aber nichts.
+
+    Ohne sie muss jede Gruppe einen Sieger küren – der Vergleich fragt
+    ja nicht *ob*, sondern *welches*. Am echten Bestand gemessen:
+    »Regen« landete so an 60 % aller Bilder, und 147 von 200 Bildern
+    trugen die vollen fünf Schlagwörter.
+    """
+
+    def test_steht_in_den_fragen(self) -> None:
+        for frage in NICHTS.fragen:
+            with self.subTest(frage):
+                self.assertIn(frage, fragen())
+
+    def test_steht_nur_einmal_drin(self) -> None:
+        """Sie läuft in jeder Gruppe mit, muss aber nur einmal
+        gerechnet werden."""
+        alle = [f for _, _, f in alle_begriffe()]
+        for frage in NICHTS.fragen:
+            with self.subTest(frage):
+                self.assertEqual(alle.count(frage), 1)
+
+    def test_gewinnt_sie_schweigt_die_gruppe(self) -> None:
+        werte = _flau()
+        for frage in NICHTS.fragen:
+            werte[frage] = GRUNDRAUSCHEN + 0.05
+        # Ein Wort liegt vorn – aber schwächer als »irgendein Foto«.
+        for frage in ORT.begriffe[0].fragen:
+            werte[frage] = GRUNDRAUSCHEN + 0.02
+        self.assertNotIn(ORT.begriffe[0].name,
+                         [w.name for w in auswerten(werte)])
+
+    def test_wird_nie_selbst_vergeben(self) -> None:
+        werte = _flau()
+        for frage in NICHTS.fragen:
+            werte[frage] = GRUNDRAUSCHEN + 0.20
+        self.assertEqual(auswerten(werte), [])
 
 
 class DieUmrechnung(unittest.TestCase):

@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import math
 
-from .begriffe import GRUPPEN, Gruppe, alle_begriffe
+from .begriffe import GRUPPEN, NICHTS, Gruppe, alle_begriffe
 from .schlagworte import Schlagwort
 
 #: Womit die Ähnlichkeiten gestreckt werden, bevor verglichen wird.
@@ -59,7 +59,10 @@ def je_begriff(gruppe: Gruppe, aehnlichkeiten: dict[str, float]
     allein.
     """
     gemittelt: dict[str, float] = {}
-    for begriff in gruppe.begriffe:
+    # :data:`NICHTS` läuft in jeder Gruppe mit, damit die Gruppe
+    # schweigen kann. Ohne sie fragt der Vergleich nicht *ob*, sondern
+    # nur *welches* – und kürt immer einen Sieger.
+    for begriff in (*gruppe.begriffe, NICHTS):
         einzeln = [aehnlichkeiten[frage] for frage in begriff.fragen
                    if frage in aehnlichkeiten]
         if einzeln:
@@ -78,6 +81,10 @@ def auswerten(aehnlichkeiten: dict[str, float]) -> list[Schlagwort]:
     der ``schwelle`` der Gruppe liegen. Eine Gruppe darf also leer
     ausgehen – ein Bild, auf dem nichts Bestimmtes zu erkennen ist,
     bekommt lieber gar kein Wort als ein geratenes.
+
+    Dass sie leer ausgehen *kann*, liegt an :data:`NICHTS`: Die stumme
+    Antwort läuft mit, gewinnt aber nichts. Schlägt sie ein Wort, ist
+    das Wort weg.
     """
     gefunden: list[Schlagwort] = []
     for gruppe in GRUPPEN:
@@ -87,6 +94,11 @@ def auswerten(aehnlichkeiten: dict[str, float]) -> list[Schlagwort]:
         verteilung = dict(zip(gemittelt, anteile(gemittelt)))
         beste = sorted(verteilung.items(), key=lambda paar: -paar[1])
         for name, anteil in beste[:gruppe.hoechstens]:
+            if name == NICHTS.name:
+                # Die stumme Antwort hat gewonnen. Was dahinter kommt,
+                # ist schwächer als die Auskunft »irgendein Foto« –
+                # dann schweigt die Gruppe ganz.
+                break
             if anteil >= gruppe.schwelle:
                 gefunden.append(Schlagwort(name, gruppe.quelle, anteil))
     return gefunden
