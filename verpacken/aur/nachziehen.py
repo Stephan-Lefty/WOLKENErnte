@@ -69,6 +69,25 @@ def pruefsumme(fassung: str) -> str:
     return hashlib.sha256(roh).hexdigest()
 
 
+def altes_archiv_wegraeumen(fassung: str) -> None:
+    """Ein daneben liegendes Archiv derselben Fassung löschen.
+
+    **Sonst scheitert das Probebauen, und zwar irreführend.** ``makepkg``
+    lädt nichts nach, wenn eine Datei dieses Namens schon da ist – es
+    prüft die Summe des *alten* Archivs und meldet »FEHLGESCHLAGEN«.
+    Das sieht nach einer falsch eingetragenen Prüfsumme aus, dabei ist
+    sie richtig und nur der Nachbar veraltet. Genau das ist passiert,
+    als die Marke ``v0.4.2`` nachträglich verschoben wurde: gleicher
+    Name, anderer Inhalt.
+    """
+    # Der Name stammt aus dem ``source=``-Eintrag im PKGBUILD:
+    # ``${pkgname}-${pkgver}.tar.gz::<Adresse>``.
+    veraltet = HIER / f"wolkenernte-{fassung}.tar.gz"
+    if veraltet.exists():
+        veraltet.unlink()
+        print(f"Altes {veraltet.name} weggeräumt – makepkg lädt neu.")
+
+
 def eintragen(fassung: str, summe: str) -> None:
     pfad = HIER / "PKGBUILD"
     text = pfad.read_text("utf-8")
@@ -109,6 +128,7 @@ def main() -> int:
     # statt eine neue Fassung einzutragen, zu der es kein Archiv gibt.
     summe = pruefsumme(fassung)
     eintragen(fassung, summe)
+    altes_archiv_wegraeumen(fassung)
     srcinfo_erzeugen()
 
     print("\nProbebauen (empfohlen, dauert eine halbe Minute):")
