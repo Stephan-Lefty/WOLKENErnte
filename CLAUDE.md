@@ -3,7 +3,35 @@
 Landkarte des Repositorys. Ergänzt [README.md](README.md) und
 [TODO.md](TODO.md), wiederholt sie nicht.
 
-## Hier war Schluss (Stand 2026-09-07, Montagmittag)
+## Hier war Schluss (Stand 2026-09-09, Mittwoch)
+
+**654 Tests grün.** Zwei Dinge kamen heute dazu.
+
+**Videos haben Vorschaubilder.** ffmpeg als eigener Prozess, `-ss` vor
+`-i`. Alle 424 liefern eines, Median 161 ms. Gegriffen wird bei einer
+Sekunde, nicht am Anfang – gemessen: am Anfang 11 fast schwarze und 10
+strukturlose Bilder, eine Sekunde später 6 und 2. Ein *Fehlschlag*
+bekommt ein Gedächtnis (leere Datei im Zwischenspeicher), ein
+*fehlendes ffmpeg* nicht. Im Fenster liegt seither ein Abspielzeichen
+in der Ecke der Kachel; vorher war das Symbol die ganze Kachel.
+
+**Zeitraum mit Kalender**, in beiden Oberflächen. Der Filter steht in
+`bestandsliste.auswahl()`, das Lesen der Datumsangabe in
+`zeitraum_lesen()`. Drei Entscheidungen, die man ohne den Grund
+umdreht: Verglichen wird der **Tag** (`zeit.date()`), nicht der
+Zeitpunkt – sonst fällt der Bis-Tag heraus. `2024` heißt als
+Untergrenze 1. Januar, als Obergrenze 31. Dezember. Und der Filter ist
+beim Start **aus**, weil sonst die 317 Bilder ohne Aufnahmedatum
+wortlos verschwänden.
+
+Zwei Fallen aus Qt, beide zugeschnappt: `setDateRange` **klemmt** den
+Wert, und ein `setDate` auf den bereits stehenden Wert sendet **kein**
+Signal – ein Test, der so den Filter einschalten wollte, prüfte nichts.
+Und die Wochenendfarbe im Kalender setzt Qt im Code; keine Regel im
+Stilblatt kommt dagegen an. Ihr reines Rot erreicht auf dunklem Grund
+3,81, verlangt sind 4,5.
+
+## Was vorher war (2026-09-07, Montagmittag)
 
 **378 Tests grün.** Seit heute gibt es **Schlagwörter**, beide Hälften,
 und beide sind am echten Bestand gemessen.

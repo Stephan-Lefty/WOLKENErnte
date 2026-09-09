@@ -94,10 +94,16 @@ mehr hat, öffnet den Ordner mit jedem beliebigen Programm.
 
 ## Zwei Oberflächen
 
-Beide zeigen dasselbe: Bilder in Kacheln, Filter nach Jahr und Album, Suche über
-Dateinamen, Titel und Alben, Einzelansicht mit Ort und Aufnahmedatum,
-Videowiedergabe. Sie sitzen auf demselben Fundament; keine ist ein Ersatz für
-die andere.
+Beide zeigen dasselbe: Bilder in Kacheln, Filter nach Jahr, Album, Schlagwort
+und **Zeitraum**, Suche über Dateinamen, Titel und Alben, Einzelansicht mit Ort
+und Aufnahmedatum, Videowiedergabe. Sie sitzen auf demselben Fundament; keine
+ist ein Ersatz für die andere.
+
+**Der Zeitraum arbeitet mit einem Kalender**: »alles zwischen dem 24. und dem
+26. Dezember 2024«, Bilder und Videos gleichermaßen. Beide Enden zählen mit –
+wer »bis zum 30. Juni« sagt, meint den ganzen 30. Juni. Bilder ohne bekanntes
+Aufnahmedatum bleiben draußen; ihr Zeitstempel ist der Zeitpunkt der Übernahme
+und wäre eine falsche Antwort.
 
 **`wolkenernte fenster`** öffnet ein richtiges Fenster. Blättern mit den
 Pfeiltasten, zurück mit Escape. Braucht **PySide6** – rund hundert Megabyte.

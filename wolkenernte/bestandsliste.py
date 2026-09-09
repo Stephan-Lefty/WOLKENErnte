@@ -16,8 +16,10 @@ nichts, was einen Browser oder ein Fenster kennt.
 
 from __future__ import annotations
 
+import calendar
+import re
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 
 #: Der Ordner für Bilder ohne bekanntes Aufnahmedatum – derselbe Name
@@ -26,6 +28,63 @@ OHNE_DATUM = "ohne-datum"
 
 BILDER = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".avif", ".heic", ".heif"}
 VIDEOS = {".mp4", ".mov", ".m4v", ".webm", ".avi", ".mkv", ".3gp", ".mpg", ".m2ts"}
+
+#: Wie ein Datum geschrieben sein darf.
+#:
+#: Deutsch mit Punkten und die Schreibweise nach ISO, beide auch
+#: verkürzt auf Monat oder Jahr. **Zweistellige Jahreszahlen fehlen
+#: absichtlich:** ``06.24`` wäre sonst nicht mehr von »Juni 2024« zu
+#: unterscheiden, und beim Suchen nach einem Zeitraum ist ein Jahr
+#: danebenzuliegen schlimmer als einmal vier Ziffern zu tippen.
+MUSTER = (
+    (re.compile(r"^(\d{1,2})\.(\d{1,2})\.(\d{4})$"), ("tag", "monat", "jahr")),
+    (re.compile(r"^(\d{4})-(\d{1,2})-(\d{1,2})$"), ("jahr", "monat", "tag")),
+    (re.compile(r"^(\d{1,2})\.(\d{4})$"), ("monat", "jahr")),
+    (re.compile(r"^(\d{4})-(\d{1,2})$"), ("jahr", "monat")),
+    (re.compile(r"^(\d{4})$"), ("jahr",)),
+)
+
+
+def zeitraum_lesen(text: str, *, ende: bool = False) -> date | None:
+    """Eine Datumsangabe lesen – leerer Text heißt »keine Grenze«.
+
+    **Eine unvollständige Angabe meint einen Zeitraum, keinen Tag**, und
+    welchen Rand davon man nimmt, hängt von der Seite ab: ``2024`` als
+    *von* ist der 1. Januar, dasselbe ``2024`` als *bis* der
+    31. Dezember. Nur so findet »zwischen 2020 und 2024« auch die Bilder
+    vom Silvesterabend – und genau das erwartet, wer es hinschreibt.
+
+    Was gar nicht zu lesen ist, wirft. Ein stillschweigend übergangener
+    Tippfehler wäre schlimmer: Die Oberfläche zeigte dann den ganzen
+    Bestand, und niemand wüsste, dass die Grenze nie gegolten hat.
+    """
+    text = text.strip()
+    if not text:
+        return None
+
+    for muster, felder in MUSTER:
+        treffer = muster.match(text)
+        if not treffer:
+            continue
+        teile = dict(zip(felder, (int(z) for z in treffer.groups())))
+        jahr = teile["jahr"]
+        if "monat" not in teile:
+            return date(jahr, 12, 31) if ende else date(jahr, 1, 1)
+        monat = teile["monat"]
+        if not 1 <= monat <= 12:
+            break
+        if "tag" not in teile:
+            letzter = calendar.monthrange(jahr, monat)[1]
+            return date(jahr, monat, letzter if ende else 1)
+        try:
+            return date(jahr, monat, teile["tag"])
+        except ValueError:
+            break
+
+    raise ValueError(
+        f"»{text}« ist kein Datum. Erwartet wird 31.12.2024, 2024-12-31, "
+        f"12.2024 oder 2024.")
+
 
 @dataclass
 class Bild:
@@ -242,15 +301,35 @@ class Bestandsliste:
         jahr: int | None = None,
         album: str | None = None,
         schlagwort: str | None = None,
+        von: date | None = None,
+        bis: date | None = None,
         nur_mit_ort: bool = False,
         nur_favoriten: bool = False,
         nur_videos: bool = False,
         nur_ohne_datum: bool = False,
     ) -> list[Bild]:
+        """Die Bilder, auf die alle gesetzten Bedingungen zutreffen.
+
+        ``von`` und ``bis`` schließen ihren Tag **mit ein**. Das ist
+        keine Geschmacksfrage: ``bild.zeit`` trägt eine Uhrzeit, und wer
+        »bis zum 30. Juni« sagt, meint den ganzen 30. Juni – verglichen
+        würde sonst gegen dessen Mitternacht, und der Tag fiele
+        vollständig heraus. Darum ``zeit.date()`` und nicht ``zeit``.
+        """
         treffer = self.bilder
         if jahr is not None:
             treffer = [b for b in treffer
                        if b.datum_bekannt and b.zeit.year == jahr]
+        # Bilder ohne bekanntes Datum tragen den Zeitstempel der
+        # Übernahme. Sie in einen Zeitraum zu rechnen hieße, eine Zahl
+        # als Aufnahmedatum auszugeben, die keines ist - dieselbe Regel
+        # wie bei den Jahren.
+        if von is not None:
+            treffer = [b for b in treffer
+                       if b.datum_bekannt and b.zeit.date() >= von]
+        if bis is not None:
+            treffer = [b for b in treffer
+                       if b.datum_bekannt and b.zeit.date() <= bis]
         if album is not None:
             treffer = [b for b in treffer if album in b.alben]
         if schlagwort is not None:

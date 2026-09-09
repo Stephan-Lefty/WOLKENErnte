@@ -74,6 +74,19 @@ main {{ padding: 1.2rem; }}
 .kachel .ecke {{ position: absolute; top: .4rem; right: .5rem;
   font-size: .9rem; text-shadow: 0 1px 3px #000; }}
 
+.zeitraum {{ display: flex; flex-wrap: wrap; gap: .5rem; align-items: center;
+  margin-bottom: 1rem; font-size: .85rem; color: var(--leise); }}
+/* color-scheme sagt dem Browser, dass er das Kalendersymbol und den
+   Kalender selbst dunkel zeichnen soll - sonst steht ein weisses
+   Blatt in einer dunklen Seite. */
+.zeitraum input {{ padding: .3rem .6rem; border-radius: 6px;
+  border: 1px solid var(--linie); background: var(--flaeche);
+  color: var(--text); font: inherit; color-scheme: dark; }}
+.zeitraum button {{ padding: .35rem .9rem; border-radius: 6px; border: 0;
+  background: var(--blau); color: #fff; font: inherit; cursor: pointer; }}
+.zeitraum .schief {{ color: #fff; background: var(--blau-tief);
+  padding: .3rem .7rem; border-radius: 6px; }}
+
 .blaetter {{ display: flex; gap: .5rem; align-items: center;
   justify-content: center; margin: 1.5rem 0; }}
 .blaetter a, .blaetter span {{ padding: .4rem .9rem; border-radius: 6px;
@@ -227,17 +240,112 @@ def raster_kacheln(bilder: list[Bild]) -> str:
     return "".join(teile)
 
 
+def _als_iso(text: str, *, ende: bool) -> str:
+    """Für das Feld ``type="date"``, das nur ISO annimmt.
+
+    Der Filter versteht auch ``01.06.2024`` und ``2024`` – wer das in
+    die Adresszeile tippt, bekäme sonst ein **leeres** Feld angezeigt,
+    obwohl der Zeitraum sehr wohl gilt. Ein sichtbarer Zustand, der dem
+    tatsächlichen widerspricht, ist schlimmer als gar keiner.
+    """
+    from ..bestandsliste import zeitraum_lesen
+
+    try:
+        tag = zeitraum_lesen(text, ende=ende)
+    except ValueError:
+        return ""
+    return tag.isoformat() if tag else ""
+
+
+def _zeitraum_in_worten(von: str, bis: str) -> str:
+    """»ab 01.06.2024«, »bis 30.06.2024«, »01.06.2024 – 30.06.2024«.
+
+    In der Überschrift soll stehen, was gerade gilt. Ohne das sieht eine
+    eingegrenzte Ansicht aus wie der ganze Bestand, nur mit weniger
+    Bildern – und man sucht den Fehler im Archiv statt im Filter.
+    """
+    from ..bestandsliste import zeitraum_lesen
+
+    def deutsch(text: str, *, ende: bool) -> str:
+        try:
+            tag = zeitraum_lesen(text, ende=ende)
+        except ValueError:
+            return escape(text)
+        return tag.strftime("%d.%m.%Y") if tag else ""
+
+    a, b = deutsch(von, ende=False), deutsch(bis, ende=True)
+    if a and b:
+        return f"{a} – {b}"
+    return f"ab {a}" if a else f"bis {b}"
+
+
+def zeitraum_formular(von: str, bis: str, mitnehmen: dict[str, str],
+                      fehler: str | None = None) -> str:
+    """Zwei Datumsfelder mit dem Kalender des Browsers.
+
+    ``type="date"`` statt eines Textfeldes: Der Browser bringt sein
+    eigenes Kalenderblatt mit, kennt die Schreibweise des jeweiligen
+    Landes und schickt trotzdem immer ISO – genau das, was
+    :func:`wolkenernte.bestandsliste.zeitraum_lesen` versteht. Ein
+    selbstgebauter Kalender wäre mehr Code und schlechter bedienbar.
+
+    ``mitnehmen`` sind die übrigen Filter als versteckte Felder. Ohne
+    sie fiele beim Absenden zurück, was der Anwender vorher ausgewählt
+    hat – wer im Jahr 2024 steht und einen Monat eingrenzt, will nicht
+    plötzlich im ganzen Bestand stehen.
+    """
+    teile = ['<form class="zeitraum" action="/raster">']
+    for name, wert in mitnehmen.items():
+        teile.append(f'<input type="hidden" name="{escape(name)}" '
+                     f'value="{escape(wert)}">')
+    teile.append('<label>von <input type="date" name="von" '
+                 f'value="{_als_iso(von, ende=False)}"></label>')
+    teile.append('<label>bis <input type="date" name="bis" '
+                 f'value="{_als_iso(bis, ende=True)}"></label>')
+    teile.append('<button type="submit">Zeitraum</button>')
+    if von or bis:
+        rest = "".join(f"{quote(n)}={quote(w)}&" for n, w in mitnehmen.items())
+        teile.append(f'<a href="/raster?{rest}">Zeitraum aufheben</a>')
+    if fehler:
+        teile.append(f'<span class="schief">{escape(fehler)}</span>')
+    teile.append("</form>")
+    return "".join(teile)
+
+
 def raster(
     liste: Bestandsliste, bilder: list[Bild], *, seite: int, je_seite: int,
     jahr: int | None, album: str | None, zusatz: str,
     schlagwort: str | None = None,
+    von: str = "", bis: str = "", zeitfehler: str | None = None,
 ) -> str:
     seiten = max(1, -(-len(bilder) // je_seite))
     seite = max(1, min(seite, seiten))
     ausschnitt = bilder[(seite - 1) * je_seite: seite * je_seite]
 
     was = f"{jahr}" if jahr else (album or schlagwort or "Alle Bilder")
+    # Bei einem unlesbaren Datum **nicht**: Die Überschrift schriebe
+    # sonst »ab morgen« über die Zahl des ganzen Bestands - ein
+    # sichtbarer Zustand, der dem tatsächlichen widerspricht. Warum
+    # nichts eingegrenzt wurde, sagt der Hinweis im Formular.
+    if (von or bis) and not zeitfehler:
+        was += f" · {_zeitraum_in_worten(von, bis)}"
     inhalt = [f"<main><h2>{escape(str(was))} – {zahl(len(bilder))} Dateien</h2>"]
+
+    mitnehmen = {}
+    if jahr:
+        mitnehmen["jahr"] = str(jahr)
+    if album:
+        mitnehmen["album"] = album
+    if schlagwort:
+        mitnehmen["schlagwort"] = schlagwort
+    # »ohne Datum« wird bewusst **nicht** mitgenommen: Bilder ohne
+    # Aufnahmedatum liegen in keinem Zeitraum, die Verbindung beider
+    # Filter ergibt immer null Treffer.
+    for name in ("ort", "favoriten", "videos"):
+        if f"{name}=1" in zusatz:
+            mitnehmen[name] = "1"
+    inhalt.append(zeitraum_formular(von, bis, mitnehmen, zeitfehler))
+
     inhalt.append(raster_kacheln(ausschnitt))
 
     if seiten > 1:

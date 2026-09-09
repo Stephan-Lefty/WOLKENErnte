@@ -74,9 +74,13 @@ from there into the database and the interfaces.
   anyway – roughly ten times faster than decoding the full image.
 - [ ] Cache following the freedesktop convention (`$XDG_CACHE_HOME/thumbnails/`)
   so the user's file manager and WOLKENErnte share the same one.
-- [ ] **Video thumbnails** with ffmpeg as a separate process, `-ss` **before**
+- [x] **Video thumbnails** with ffmpeg as a separate process, `-ss` **before**
   `-i` (seek before decoding). A corrupt video then cannot take the program down
-  with it. Currently the 424 videos show only a play symbol.
+  with it. — *Done: all 424 videos yield a frame, median 161 ms, the whole
+  archive in 71 seconds. The frame is taken one second in, not at the start
+  (there 11 thumbnails are near-black instead of 6, and 10 without structure
+  instead of 2); the 30 shorter videos fall back to the start. The 41 videos
+  carrying a rotation come out the right way up.*
 - [ ] **HDR material needs tone mapping.** Not critical for this archive – it
   holds only five HEVC files – but anyone receiving HDR footage will see grey
   thumbnails. Check `color_transfer` with `ffprobe` first; on SDR material the
@@ -133,6 +137,27 @@ package manager bring along. Nobody should download rclone by hand.
   clean route – and perhaps the first way into Proton Photos.
 
 ## Done
+
+### Date range with a calendar (2026-09-09)
+
+- [x] **"Everything between … and …"** in both interfaces, images and videos
+  alike. The filter lives in the foundation (`bestandsliste.auswahl`), not in
+  one interface – otherwise the two drift apart.
+- [x] **The calendar comes from the system**: `QDateEdit` with a calendar popup
+  in the window, `type="date"` in the browser. A hand-built one would be more
+  code and harder to use.
+- [x] **Both ends are included.** The comparison is by day, not by instant –
+  otherwise the closing day drops out entirely.
+- [x] **An incomplete entry means a period**: `2024` is 1 January as a lower
+  bound and 31 December as an upper one. February is computed, not guessed.
+- [x] **The filter is off at startup** – otherwise the 317 images without a
+  capture date would vanish silently. It turns itself on as soon as someone
+  changes a date.
+- [x] **An unreadable date is reported**, not ignored; otherwise the whole
+  archive would be mistaken for the result of the range.
+- [x] **Qt's weekend red replaced**: contrast 3,81 on the dark background where
+  4,5 is required. Now `ROT_HELL` at 7,07.
+- [x] Nine counter-checks, each failing exactly the tests it should.
 
 ### Proven against a real Nextcloud (2026-09-07)
 

@@ -148,6 +148,27 @@ Paketverwalter mitbringen. Niemand soll rclone von Hand herunterladen.
 
 ## Erledigt
 
+### Zeitraum mit Kalender (2026-09-09)
+
+- [x] **»Alles zwischen … und …«** in beiden Oberflächen, Bilder und Videos
+  gleichermaßen. Der Filter steht im Fundament (`bestandsliste.auswahl`), nicht
+  in einer Oberfläche – sonst laufen die beiden auseinander.
+- [x] **Der Kalender kommt vom System**: im Fenster `QDateEdit` mit
+  Kalenderblatt, im Browser `type="date"`. Ein nachgebauter wäre mehr Code und
+  schlechter bedienbar.
+- [x] **Beide Enden zählen mit.** Verglichen wird der Tag, nicht der Zeitpunkt –
+  sonst fiele der Bis-Tag vollständig heraus.
+- [x] **Eine unvollständige Angabe meint einen Zeitraum**: `2024` ist als
+  Untergrenze der 1. Januar, als Obergrenze der 31. Dezember. Der Februar wird
+  gerechnet, nicht geraten.
+- [x] **Beim Start ist der Filter aus** – sonst verschwänden die 317 Bilder ohne
+  Aufnahmedatum wortlos. Er schaltet sich ein, sobald jemand ein Datum ändert.
+- [x] **Ein unlesbares Datum wird gesagt**, nicht übergangen; sonst hielte man
+  den ganzen Bestand für das Ergebnis seines Zeitraums.
+- [x] **Qts Wochenendrot ersetzt**: 3,81 Kontrast auf dunklem Grund, verlangt
+  sind 4,5. Jetzt `ROT_HELL` mit 7,07.
+- [x] Neun Gegenproben, jede fällt auf genau die Tests, die sie treffen soll.
+
 ### Ein .deb für Debian (2026-09-07)
 
 - [x] **`verpacken/debian/deb-bauen.py`** baut aus dem Wheel ein Paket mit

@@ -93,9 +93,15 @@ folder with any program they like.
 
 ## Two interfaces
 
-Both show the same thing: images as tiles, filters by year and album, search
-across filenames, titles and albums, single view with location and capture date,
-video playback. They sit on the same foundation; neither replaces the other.
+Both show the same thing: images as tiles, filters by year, album, keyword and
+**date range**, search across filenames, titles and albums, single view with
+location and capture date, video playback. They sit on the same foundation;
+neither replaces the other.
+
+**The date range comes with a calendar**: "everything between 24 and
+26 December 2024", images and videos alike. Both ends are included – "up to
+30 June" means all of 30 June. Images with no known capture date stay out;
+their timestamp is when they were imported, which would be a wrong answer.
 
 **`wolkenernte fenster`** opens a real window. Arrow keys to browse, Escape to
 go back. Requires **PySide6** – around a hundred megabytes.

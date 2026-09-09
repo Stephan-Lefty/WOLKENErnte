@@ -4,6 +4,48 @@
 
 Alle nennenswerten Änderungen an WOLKENErnte. Neueste zuerst.
 
+## Unveröffentlicht
+
+**Vorschaubilder für Videos.** Die 424 Videos zeigten bisher nur ein
+Abspielsymbol; jetzt holt ffmpeg ein Einzelbild heraus – als eigener
+Prozess, damit ein beschädigtes Video höchstens sich selbst mitreißt,
+und mit `-ss` **vor** `-i`, damit gesprungen und nicht dekodiert wird.
+Alle 424 liefern ein Bild, im Mittel in 161 ms.
+
+Gegriffen wird bei einer Sekunde, nicht am Anfang: An 394 Videos
+gemessen sind am Anfang 11 Vorschaubilder fast schwarz und 10 ohne jede
+Struktur, eine Sekunde später nur noch 6 und 2. Die 30 Videos, die
+kürzer sind, fallen auf den Anfang zurück. Ein Fehlschlag bekommt ein
+Gedächtnis, damit nicht jedes Blättern erneut in die volle ffmpeg-Frist
+läuft – ein *fehlendes* ffmpeg dagegen wird nicht festgeschrieben: Wer
+es nachinstalliert, soll seine Videos danach sehen.
+
+Im Fenster liegt jetzt ein Abspielzeichen in der Ecke der Kachel. Vorher
+war das Symbol die ganze Kachel und die Unterscheidung geschenkt; mit
+einem echten Standbild sähe ein Video sonst aus wie ein Foto.
+
+**Zeitraum mit Kalender.** »Alle Bilder und Videos zwischen dem 24. und
+dem 26. Dezember 2024«, in beiden Oberflächen. Im Fenster zwei Felder
+mit Kalenderblatt, im Browser `type="date"` – beide Male der Kalender,
+den das System ohnehin mitbringt, statt eines nachgebauten.
+
+Beide Enden zählen mit: Verglichen wird der **Tag**, nicht der
+Zeitpunkt. Wer »bis zum 30. Juni« sagt, meint den ganzen 30. Juni;
+gegen dessen Mitternacht verglichen fiele der Tag vollständig heraus.
+Eine unvollständige Angabe meint einen Zeitraum – `2024` ist als
+Untergrenze der 1. Januar und als Obergrenze der 31. Dezember. Bilder
+ohne bekanntes Aufnahmedatum bleiben draußen; ihr Zeitstempel ist der
+Zeitpunkt der Übernahme und wäre eine falsche Antwort.
+
+Der Filter ist beim Start **aus**. Wäre er es nicht, verschwänden die
+317 Bilder ohne Aufnahmedatum wortlos. Er schaltet sich aber von selbst
+ein, sobald jemand ein Datum ändert – ein Datum zu wählen und nichts
+geschehen zu sehen, wäre die schlechtere Antwort.
+
+Nebenbei: Qts Wochenendrot im Kalender erreicht auf dem dunklen Grund
+nur einen Kontrast von 3,81 – für Text verlangt WCAG 4,5. Jetzt steht
+dort `ROT_HELL` aus der Palette mit 7,07.
+
 ## 0.4.0 – 2026-09-07
 
 **Schlagwörter.** Jedes Bild bekommt höchstens fünf, und sie kommen aus

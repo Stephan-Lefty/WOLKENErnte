@@ -195,6 +195,158 @@ class DasHauptfenster(unittest.TestCase):
                          self.fenster.modell.rowCount() - 1)
 
 
+def _archiv_ueber_jahre() -> Path:
+    """Ein Archiv mit Streuung – und einem Bild ohne Aufnahmedatum.
+
+    Das letzte ist der Fall, der beim Zeitraum leicht verlorengeht: Es
+    liegt in keinem, und beim Start darf es trotzdem nicht fehlen.
+    """
+    tmp = Path(tempfile.mkdtemp())
+    tage = {
+        "2021/2021-03/a.jpg": datetime(2021, 3, 10, 9, 0),
+        "2023/2023-07/b.jpg": datetime(2023, 7, 15, 12, 0),
+        "2023/2023-12/c.mp4": datetime(2023, 12, 31, 23, 59),
+        "2024/2024-01/d.jpg": datetime(2024, 1, 1, 0, 30),
+    }
+    for name, wann in tage.items():
+        ziel = tmp / name
+        ziel.parent.mkdir(parents=True, exist_ok=True)
+        ziel.write_bytes(b"inhalt")
+        os.utime(ziel, (wann.timestamp(), wann.timestamp()))
+    ohne = tmp / "ohne-datum" / "e.jpg"
+    ohne.parent.mkdir(parents=True)
+    ohne.write_bytes(b"inhalt")
+    return tmp
+
+
+@unittest.skipUnless(QT, "PySide6 nicht vorhanden")
+class DerZeitraum(unittest.TestCase):
+    """»Alles, was zwischen … und … entstanden ist.«"""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.app = QApplication.instance() or QApplication([])
+
+    def setUp(self) -> None:
+        from wolkenernte.fenster.hauptfenster import Hauptfenster
+
+        self.archiv = _archiv_ueber_jahre()
+        self.fenster = Hauptfenster(self.archiv)
+
+    def tearDown(self) -> None:
+        self.fenster.ansicht.aufraeumen()
+        self.fenster.close()
+
+    def _stellen(self, von: datetime, bis: datetime) -> None:
+        from PySide6.QtCore import QDate
+
+        self.fenster.von_feld.setDate(QDate(von.year, von.month, von.day))
+        self.fenster.bis_feld.setDate(QDate(bis.year, bis.month, bis.day))
+
+    def test_beim_start_filtert_nichts(self) -> None:
+        """**Die Falle.** Wären die Felder von Anfang an scharf, fehlte
+        das Bild ohne Aufnahmedatum wortlos – es liegt in keinem
+        Zeitraum, und niemand hätte danach gefragt."""
+        self.assertFalse(self.fenster.zeitraum_an.isChecked())
+        self.assertEqual(self.fenster.modell.rowCount(), 5)
+
+    def test_die_felder_sind_erst_aus(self) -> None:
+        self.assertFalse(self.fenster.von_feld.isEnabled())
+        self.assertFalse(self.fenster.bis_feld.isEnabled())
+
+    def test_ein_datum_schaltet_von_selbst_ein(self) -> None:
+        """Sonst wählt man einen Tag und es passiert nichts."""
+        self._stellen(datetime(2023, 1, 1), datetime(2023, 12, 31))
+        self.assertTrue(self.fenster.zeitraum_an.isChecked())
+        self.assertTrue(self.fenster.von_feld.isEnabled())
+
+    def test_grenzt_auf_den_zeitraum_ein(self) -> None:
+        self._stellen(datetime(2023, 1, 1), datetime(2023, 12, 31))
+        self.assertEqual(self.fenster.modell.rowCount(), 2)
+
+    def test_der_letzte_tag_gehoert_dazu(self) -> None:
+        """``c.mp4`` liegt am 31.12.2023 um 23:59."""
+        self._stellen(datetime(2023, 12, 31), datetime(2023, 12, 31))
+        self.assertEqual(self.fenster.modell.rowCount(), 1)
+
+    def test_bilder_und_videos_gleichermassen(self) -> None:
+        self._stellen(datetime(2023, 12, 1), datetime(2024, 1, 31))
+        namen = sorted(b.name for b in self.fenster.modell.bilder)
+        self.assertEqual(namen, ["c.mp4", "d.jpg"])
+
+    def test_ohne_datum_faellt_heraus(self) -> None:
+        """Der Haken muss hier **von Hand** gesetzt werden.
+
+        Die Felder stehen schon auf der vollen Spanne, und ein
+        ``setDate`` auf denselben Wert sendet kein Signal – das
+        Selbsteinschalten kann also gar nicht greifen. Genau darum ist
+        die volle Spanne der einzige Zeitraum, den man nur über den
+        Haken bekommt.
+        """
+        self.fenster.zeitraum_an.setChecked(True)
+        self.assertEqual(self.fenster.modell.rowCount(), 4)
+
+    def test_der_kalender_endet_am_bestand(self) -> None:
+        """In ein Jahr blättern zu können, in dem es kein Bild gibt,
+        hilft niemandem."""
+        self.assertEqual(self.fenster.von_feld.minimumDate().year(), 2021)
+        self.assertEqual(self.fenster.bis_feld.maximumDate().year(), 2024)
+
+    def test_zuruecksetzen_gibt_alles_zurueck(self) -> None:
+        self._stellen(datetime(2023, 1, 1), datetime(2023, 12, 31))
+        self.fenster._zeitraum_zuruecksetzen()
+        self.assertFalse(self.fenster.zeitraum_an.isChecked())
+        self.assertEqual(self.fenster.modell.rowCount(), 5)
+
+    def test_haken_wieder_weg_zeigt_wieder_alles(self) -> None:
+        self._stellen(datetime(2023, 1, 1), datetime(2023, 12, 31))
+        self.fenster.zeitraum_an.setChecked(False)
+        self.assertEqual(self.fenster.modell.rowCount(), 5)
+
+    def test_zusammen_mit_der_suche(self) -> None:
+        """»Alles zum Suchwort, aber nur aus dem Zeitraum.«"""
+        self._stellen(datetime(2023, 1, 1), datetime(2023, 12, 31))
+        self.fenster.suchfeld.setText("jpg")
+        self.fenster._auswahl_anwenden()
+        namen = [b.name for b in self.fenster.modell.bilder]
+        self.assertEqual(namen, ["b.jpg"])
+
+    def test_vertauschte_grenzen_werden_gesagt(self) -> None:
+        """Null Treffer sehen aus wie ein leeres Archiv, wenn niemand
+        den Grund nennt."""
+        self._stellen(datetime(2024, 1, 1), datetime(2021, 1, 1))
+        self.assertEqual(self.fenster.modell.rowCount(), 0)
+        self.assertIn("Bis-Datum", self.fenster.zeit_hinweis.text())
+
+    def test_ohne_datum_und_zeitraum_wird_gesagt(self) -> None:
+        self.fenster.zeitraum_an.setChecked(True)
+        stelle = self.fenster.jahrwahl.findData("ohne")
+        self.fenster.jahrwahl.setCurrentIndex(stelle)
+        self.assertEqual(self.fenster.modell.rowCount(), 0)
+        self.assertIn("schließen einander aus",
+                      self.fenster.zeit_hinweis.text())
+
+    def test_ohne_zeitraum_kein_hinweis(self) -> None:
+        self.assertEqual(self.fenster.zeit_hinweis.text(), "")
+
+    def test_das_wochenende_ist_lesbar(self) -> None:
+        """Qts Wochenendrot erreicht auf dem dunklen Grund nur 3,81 –
+        für Text verlangt WCAG 4,5. Und weil Qt die Farbe im Code setzt,
+        kommt keine Regel im Stilblatt dagegen an; wer sie dort sucht,
+        hält das Problem für gelöst."""
+        from PySide6.QtCore import Qt
+
+        from wolkenernte import farben
+
+        kalender = self.fenster.von_feld.calendarWidget()
+        for tag in (Qt.DayOfWeek.Saturday, Qt.DayOfWeek.Sunday):
+            farbe = kalender.weekdayTextFormat(tag).foreground().color()
+            with self.subTest(tag):
+                self.assertEqual(farbe.name(), farben.ROT_HELL)
+                self.assertGreaterEqual(
+                    farben.kontrast(farbe.name(), farben.GRAU_NACHT), 4.5)
+
+
 @unittest.skipUnless(QT, "PySide6 nicht vorhanden")
 class DieEinzelansicht(unittest.TestCase):
     @classmethod

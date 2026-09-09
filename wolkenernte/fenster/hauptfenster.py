@@ -11,16 +11,19 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QAction, QKeySequence
+from PySide6.QtCore import QDate, Qt
+from PySide6.QtGui import QAction, QColor, QKeySequence, QTextCharFormat
 from PySide6.QtWidgets import (
+    QCheckBox,
     QComboBox,
+    QDateEdit,
     QLabel,
     QLineEdit,
     QListView,
     QMainWindow,
     QMenu,
     QMessageBox,
+    QPushButton,
     QStackedWidget,
     QStatusBar,
     QToolBar,
@@ -36,6 +39,7 @@ from ..farben import (
     GRAU_KOHLE,
     GRAU_MITTE,
     GRAU_NACHT,
+    ROT_HELL,
     WEISS,
 )
 from .ansicht import Einzelansicht
@@ -44,11 +48,21 @@ from .modell import KACHEL, Bildmodell
 STIL = f"""
 QMainWindow, QWidget {{ background: {GRAU_NACHT}; color: {GRAU_HELL}; }}
 QToolBar {{ background: {GRAU_KOHLE}; border: 0; padding: 4px; spacing: 6px; }}
-QLineEdit, QComboBox {{
+QLineEdit, QComboBox, QDateEdit {{
     background: {GRAU_NACHT}; color: {GRAU_HELL};
     border: 1px solid {GRAU_DUNKEL}; border-radius: 4px; padding: 4px 8px;
 }}
-QLineEdit:focus, QComboBox:focus {{ border-color: {BLAU}; }}
+QLineEdit:focus, QComboBox:focus, QDateEdit:focus {{ border-color: {BLAU}; }}
+QDateEdit:disabled {{ color: {GRAU_MITTE}; }}
+/* Das Kalenderblatt selbst erbt den dunklen Grund nicht von allein -
+   ohne diese Zeilen klappt ein weisses Blatt aus einem dunklen
+   Fenster. */
+QCalendarWidget QWidget {{ background: {GRAU_KOHLE}; color: {GRAU_HELL}; }}
+QCalendarWidget QAbstractItemView {{
+    background: {GRAU_NACHT}; color: {GRAU_HELL};
+    selection-background-color: {BLAU}; selection-color: {WEISS};
+}}
+QCalendarWidget QAbstractItemView:disabled {{ color: {GRAU_MITTE}; }}
 QListView {{ background: {GRAU_NACHT}; border: 0; }}
 QListView::item:selected {{ background: {BLAU}; color: {WEISS}; }}
 QStatusBar {{ background: {GRAU_KOHLE}; color: {GRAU_HELL}; }}
@@ -79,6 +93,24 @@ QProgressBar {{
 }}
 QProgressBar::chunk {{ background: {BLAU}; border-radius: 4px; }}
 """
+
+
+def _wochenende_faerben(kalender) -> None:
+    """Samstag und Sonntag in ``ROT_HELL`` statt in Qts reinem Rot.
+
+    **Über die Textformate, nicht über das Stilblatt** – Qt setzt die
+    Wochenendfarbe im Code, und keine CSS-Regel kommt dagegen an.
+
+    Das Rot muss weichen, weil es auf dem dunklen Grund nur einen
+    Kontrast von 3,81 erreicht; für Text verlangt WCAG 4,5. ``ROT_HELL``
+    steht in der Palette genau dafür (»dasselbe auf dunklem Grund«) und
+    kommt auf 7,07. Die Unterscheidung selbst bleibt: In einem
+    Fotoarchiv ist das Wochenende die halbe Suche.
+    """
+    fett = QTextCharFormat()
+    fett.setForeground(QColor(ROT_HELL))
+    for tag in (Qt.DayOfWeek.Saturday, Qt.DayOfWeek.Sunday):
+        kalender.setWeekdayTextFormat(tag, fett)
 
 
 class Hauptfenster(QMainWindow):
@@ -189,6 +221,108 @@ class Hauptfenster(QMainWindow):
         suchen.setShortcut(QKeySequence.StandardKey.Find)
         suchen.triggered.connect(self.suchfeld.setFocus)
         self.addAction(suchen)
+
+        self._zeitleiste_bauen()
+
+    def _zeitleiste_bauen(self) -> None:
+        """Zwei Kalender: alles, was zwischen zwei Tagen entstanden ist.
+
+        **Eine eigene Zeile.** Die erste ist mit Jahr, Album, Schlagwort
+        und Suchfeld schon voll; zwei Datumsfelder dazwischen drückten
+        das Suchfeld auf Fingerbreite.
+
+        **Und ein Haken davor, kein bloßes Feldpaar.** Ohne ihn müsste
+        beim Start irgendein Zeitraum voreingestellt sein, und der
+        filterte sofort – die 317 Bilder ohne Aufnahmedatum wären
+        wortlos verschwunden, weil sie in keinem Zeitraum liegen. Der
+        Haken setzt sich von selbst, sobald jemand ein Datum ändert:
+        Datum wählen und nichts passiert, wäre die schlechtere Antwort.
+        """
+        self.addToolBarBreak()
+        leiste = QToolBar()
+        leiste.setMovable(False)
+        self.addToolBar(leiste)
+
+        self.zeitraum_an = QCheckBox("Zeitraum")
+        self.zeitraum_an.toggled.connect(self._zeitraum_umschalten)
+        leiste.addWidget(QLabel("  "))
+        leiste.addWidget(self.zeitraum_an)
+
+        erste, letzte = self._spanne()
+        self.von_feld, self.bis_feld = QDateEdit(), QDateEdit()
+        for feld, tag in ((self.von_feld, erste), (self.bis_feld, letzte)):
+            feld.setCalendarPopup(True)
+            feld.setDisplayFormat("dd.MM.yyyy")
+            # Die Grenzen sind die des Bestands: Ein Kalender, in dem
+            # man ins Jahr 1752 blaettern kann, obwohl das aelteste Bild
+            # von 2011 ist, hilft niemandem.
+            feld.setDateRange(erste, letzte)
+            feld.setDate(tag)
+            feld.setEnabled(False)
+            _wochenende_faerben(feld.calendarWidget())
+            feld.dateChanged.connect(self._zeitraum_geaendert)
+
+        leiste.addWidget(QLabel(" von "))
+        leiste.addWidget(self.von_feld)
+        leiste.addWidget(QLabel(" bis "))
+        leiste.addWidget(self.bis_feld)
+
+        self.zeit_zuruecksetzen = QPushButton("Ganzer Bestand")
+        self.zeit_zuruecksetzen.setEnabled(False)
+        self.zeit_zuruecksetzen.clicked.connect(self._zeitraum_zuruecksetzen)
+        leiste.addWidget(self.zeit_zuruecksetzen)
+
+        self.zeit_hinweis = QLabel("")
+        self.zeit_hinweis.setStyleSheet(f"color: {GRAU_MITTE};")
+        leiste.addWidget(QLabel("  "))
+        leiste.addWidget(self.zeit_hinweis)
+
+    def _spanne(self) -> tuple[QDate, QDate]:
+        """Der älteste und der jüngste Aufnahmetag im Archiv.
+
+        Bilder ohne bekanntes Datum tragen den Zeitstempel der
+        Übernahme – die zählen hier nicht mit, sonst reichte die Spanne
+        immer bis heute. Ist das Archiv leer, bleibt ein weites Fenster
+        stehen, damit die Felder überhaupt bedienbar sind.
+        """
+        tage = [b.zeit.date() for b in self.liste.bilder if b.datum_bekannt]
+        if not tage:
+            return QDate(1990, 1, 1), QDate.currentDate()
+        return QDate(min(tage)), QDate(max(tage))
+
+    def _zeitraum_umschalten(self, an: bool) -> None:
+        for teil in (self.von_feld, self.bis_feld, self.zeit_zuruecksetzen):
+            teil.setEnabled(an)
+        self._auswahl_anwenden()
+
+    def _zeitraum_geaendert(self) -> None:
+        if not self.zeitraum_an.isChecked():
+            # Von selbst einschalten, ohne diesen Aufruf zu verdoppeln:
+            # ``setChecked`` löst ``_zeitraum_umschalten`` aus, und das
+            # wendet die Auswahl schon an.
+            self.zeitraum_an.setChecked(True)
+            return
+        self._auswahl_anwenden()
+
+    def _zeitraum_zuruecksetzen(self) -> None:
+        self._spanne_setzen()
+        # Ohne das Stummschalten schaltete ``setDate`` den Haken gleich
+        # wieder ein, den die letzte Zeile ausschaltet.
+        self.zeitraum_an.setChecked(False)
+
+    def _spanne_setzen(self) -> None:
+        """Die Felder auf den ganzen Bestand stellen.
+
+        Auch nach dem Ernten nötig: Neue Bilder verschieben den
+        jüngsten Tag, und ein Kalender, der davor endet, ließe sich
+        nicht auf sie einstellen.
+        """
+        erste, letzte = self._spanne()
+        for feld, tag in ((self.von_feld, erste), (self.bis_feld, letzte)):
+            gesperrt = feld.blockSignals(True)
+            feld.setDateRange(erste, letzte)
+            feld.setDate(tag)
+            feld.blockSignals(gesperrt)
 
     # -- Wolken ------------------------------------------------------------
 
@@ -366,23 +500,59 @@ class Hauptfenster(QMainWindow):
     def _neu_einlesen(self) -> None:
         """Das Archiv noch einmal einlesen, nach dem Ernten."""
         self.liste = Bestandsliste(self.archiv)
+        if not self.zeitraum_an.isChecked():
+            # Nur wenn kein Zeitraum gilt. Sonst risse das Einlesen dem
+            # Anwender die Grenzen weg, die er gerade eingestellt hat.
+            self._spanne_setzen()
         self._auswahl_anwenden()
 
     # -- Auswahl -----------------------------------------------------------
 
+    def _zeit_hinweis_setzen(self, von, bis) -> None:
+        """Sagen, warum nichts kommt – statt eine leere Fläche zu zeigen.
+
+        Zwei Fälle liefern zuverlässig null Treffer, und beide sehen wie
+        ein leeres Archiv aus, wenn niemand sie benennt: vertauschte
+        Grenzen, und »ohne Datum« zusammen mit einem Zeitraum – Bilder
+        ohne Aufnahmedatum liegen in keinem.
+        """
+        if von and bis and von > bis:
+            self.zeit_hinweis.setText(
+                "Das Bis-Datum liegt vor dem Von-Datum.")
+        elif von and self.jahrwahl.currentData() == "ohne":
+            self.zeit_hinweis.setText(
+                "»ohne Datum« und ein Zeitraum schließen einander aus.")
+        else:
+            self.zeit_hinweis.setText("")
+
+    def _zeitgrenzen(self) -> tuple[object, object]:
+        """Was der Zeitraumfilter gerade vorgibt – oder zweimal ``None``."""
+        if not self.zeitraum_an.isChecked():
+            return None, None
+        return self.von_feld.date().toPython(), self.bis_feld.date().toPython()
+
     def _auswahl_anwenden(self) -> None:
+        von, bis = self._zeitgrenzen()
         wort = self.suchfeld.text().strip()
         if wort:
             bilder = self.liste.suchen(wort)
+            # Der Zeitraum gilt **auch für die Suche**. »Alle Bilder
+            # aus dem Urlaub, aber nur die aus 2023« ist genau die
+            # Frage, für die es beides zusammen braucht.
+            if von or bis:
+                bilder = [b for b in bilder if b.datum_bekannt
+                          and von <= b.zeit.date() <= bis]
         else:
             jahr = self.jahrwahl.currentData()
             bilder = self.liste.auswahl(
                 jahr=jahr if isinstance(jahr, int) else None,
                 album=self.albumwahl.currentData(),
                 schlagwort=self.schlagwortwahl.currentData(),
+                von=von, bis=bis,
                 nur_ohne_datum=(jahr == "ohne"),
             )
 
+        self._zeit_hinweis_setzen(von, bis)
         self.modell.zeigen(bilder)
         gb = sum(b.groesse for b in bilder) / 1e9
         self.statusBar().showMessage(

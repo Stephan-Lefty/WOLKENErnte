@@ -23,10 +23,10 @@ import socket
 import threading
 import webbrowser
 from pathlib import Path
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, quote, urlparse
 
 from . import seiten, vorschau
-from ..bestandsliste import Bestandsliste
+from ..bestandsliste import Bestandsliste, zeitraum_lesen
 
 JE_SEITE = 120
 
@@ -161,8 +161,20 @@ class Behandler(http.server.BaseHTTPRequestHandler):
         schlagwort = eins("schlagwort")
         seite = int(eins("seite")) if (eins("seite") or "").isdigit() else 1
 
+        # Ein unlesbares Datum wird **gesagt**, nicht übergangen. Sonst
+        # zeigte die Seite den ganzen Bestand, und der Anwender hielte
+        # das für das Ergebnis seines Zeitraums.
+        von_text, bis_text = eins("von") or "", eins("bis") or ""
+        zeitfehler = None
+        try:
+            von = zeitraum_lesen(von_text)
+            bis = zeitraum_lesen(bis_text, ende=True)
+        except ValueError as schief:
+            zeitfehler = str(schief)
+            von = bis = None
+
         bilder = liste.auswahl(
-            jahr=jahr, album=album, schlagwort=schlagwort,
+            jahr=jahr, album=album, schlagwort=schlagwort, von=von, bis=bis,
             nur_mit_ort=bool(eins("ort")),
             nur_favoriten=bool(eins("favoriten")),
             nur_videos=bool(eins("videos")),
@@ -170,9 +182,15 @@ class Behandler(http.server.BaseHTTPRequestHandler):
         )
         zusatz = "".join(f"{n}=1&" for n in
                          ("ort", "favoriten", "videos", "ohnedatum") if eins(n))
+        # Beim Blättern muss der Zeitraum mit - sonst steht man auf
+        # Seite 2 wieder im ganzen Bestand.
+        zusatz += "".join(f"{n}={quote(w)}&" for n, w in
+                          (("von", von_text), ("bis", bis_text)) if w)
         self._seite(seiten.raster(liste, bilder, seite=seite, je_seite=JE_SEITE,
                                   jahr=jahr, album=album, zusatz=zusatz,
-                                  schlagwort=schlagwort))
+                                  schlagwort=schlagwort,
+                                  von=von_text, bis=bis_text,
+                                  zeitfehler=zeitfehler))
 
     def _einzeln(self, liste, pfad) -> None:
         bild = liste.bei(pfad) if pfad else None
