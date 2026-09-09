@@ -3,9 +3,50 @@
 Landkarte des Repositorys. Ergänzt [README.md](README.md) und
 [TODO.md](TODO.md), wiederholt sie nicht.
 
-## Hier war Schluss (Stand 2026-09-09, Mittwoch)
+## Hier war Schluss (Stand 2026-09-09, Mittwoch abends)
 
-**654 Tests grün.** Zwei Dinge kamen heute dazu.
+**685 Tests grün, 0.4.2 gebaut.** Die Marke `v0.4.2` steht auf GitHub
+noch auf dem **falschen** Stand – auf `90070ec` statt auf `fcd3cb4` –
+und einen Release gibt es noch nicht. Was zu tun bleibt, steht in
+[TODO.md](TODO.md) unter *Ausliefern*; die Befehle dafür sind
+`git tag -f v0.4.2`, `git push -f origin v0.4.2`, dann
+`gh release create` mit den beiden Dateien aus `dist/`, und **danach**
+`python3 verpacken/aur/nachziehen.py` – nicht davor: Die Prüfsumme
+wird aus dem veröffentlichten Archiv gerechnet.
+
+### Bildschirmfotos, und was sie aufgedeckt haben
+
+`werkzeuge/bildschirmfotos.py` baut ein **erfundenes** Archiv –
+gerechnete Landschaften, Platzhalter als Albumnamen – und schickt es
+durch `ernten`, `erfassen` und `verschlagworten`. Fünf Bilder landen in
+`docs/bilder/`. Der Umweg über das echte Programm ist der Punkt: Ein
+nachgestelltes Bild wäre schneller gemacht und wäre eine Behauptung.
+
+Genau dadurch fielen zwei Fehler heraus, die kein Test hatte:
+
+**Die EXIF-Uhrzeit wurde als UTC gelesen.** EXIF trägt die Ortszeit der
+Kamera. Ein Foto von 15:44 stand danach als »16:44« unter dem Bild, um
+genau den Abstand zu Greenwich. Aufgefallen ist es, weil auf dem
+Bildschirmfoto Dateiname und angezeigte Uhrzeit nebeneinanderstanden
+und sich widersprachen. **Der Test deckte es**: Er prüfte Jahr, Monat,
+Tag und `tzinfo == utc` – und sah bei der Stunde weg. Bereits geerntete
+Archive tragen den falschen Zeitstempel weiter; ein Reparaturbefehl
+steht in TODO.
+
+**»0.0 GB«** stand in beiden Oberflächen über einem Archiv aus 47
+Bildern. `bestandsliste.umfang()` wählt jetzt kB, MB oder GB.
+
+Und die Doku behauptete an drei Stellen noch, der Abruf aus der Wolke
+fehle – der ist seit 0.4.0 da.
+
+**Ein Video hat aus einem gewöhnlichen Ordner kein Datum.** EXIF gibt
+es dort nicht, und `creation_time` im Container liest niemand; ohne
+Takeout-JSON landet jedes Video in `ohne-datum`. Deshalb legt das
+Schaufenster-Skript neben seine Videos eine JSON.
+
+## Was vorher war (2026-09-09, Mittwochmittag)
+
+**654 Tests grün.** Zwei Dinge kamen dazu.
 
 **Videos haben Vorschaubilder.** ffmpeg als eigener Prozess, `-ss` vor
 `-i`. Alle 424 liefern eines, Median 161 ms. Gegriffen wird bei einer
