@@ -18,7 +18,9 @@ einer neuen Fassung sonst gar nichts.
 
 Verglichen wird über Zahlen, nicht über Text – als Text wäre `0.10.0`
 kleiner als `0.4.1`, und der Hinweis bliebe genau dann aus, wenn er am
-nötigsten ist.
+nötigsten ist. Ist die eigene Fassung *höher* als die veröffentlichte,
+sagt der Befehl das ausdrücklich: Dann arbeitet jemand aus dem
+Quelltext, und »aktuell« wäre zwar nicht falsch, aber nichtssagend.
 
 **Ein AUR-Paket** liegt unter `verpacken/aur/` bereit: PKGBUILD aus dem
 veröffentlichten Quellarchiv statt aus dem Arbeitsverzeichnis, dazu
