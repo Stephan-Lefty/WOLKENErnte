@@ -13,6 +13,8 @@ from wolkenernte.schlagworte import (
     form,
     herkunft,
     jahreszeit,
+    ostersonntag,
+    nach_dem_kalender,
     nach_der_uhr,
     tageszeit,
     uhrzeit_ist_geraten,
@@ -213,6 +215,100 @@ class WasDieUhrBesserWeiss(unittest.TestCase):
 
     def test_ohne_zeit_kein_absturz(self) -> None:
         self.assertEqual(nach_der_uhr([], None), [])
+
+
+class WasDerKalenderBesserWeiss(unittest.TestCase):
+    """Ein Anlass, der zur falschen Jahreszeit auftaucht, ist keiner.
+
+    Am echten Bestand gegen die Aufnahmedaten gehalten: »Weihnachten«
+    trifft im Dezember 6,3-mal so oft wie blind geraten – das Wort
+    trägt. »Ostern« trifft im April zwar 3,5-mal so oft, aber **71 %
+    seiner Treffer lagen außerhalb von März und April**, und der
+    zweitstärkste Monat war der Mai. Das Modell findet
+    Frühlingsblumen und nennt sie Ostern.
+    """
+
+    def _bleibt(self, wort: str, wann: datetime, **rest) -> bool:
+        return bool(nach_dem_kalender([Schlagwort(wort, "bild", 0.8)],
+                                      wann, **rest))
+
+    def test_ostern_zur_osterzeit(self) -> None:
+        # Ostersonntag 2024 war der 31. März.
+        self.assertTrue(self._bleibt("Ostern", datetime(2024, 3, 31)))
+        self.assertTrue(self._bleibt("Ostern", datetime(2024, 4, 1)))
+
+    def test_ostern_im_mai_faellt_weg(self) -> None:
+        """Der zweitstärkste Monat des Wortes – und der falscheste."""
+        self.assertFalse(self._bleibt("Ostern", datetime(2024, 5, 15)))
+
+    def test_ostern_wandert_mit(self) -> None:
+        """2024 war Ostern am 31. März, 2025 erst am 20. April. Ein
+        festes Fenster »März und April« träfe beides zu grob."""
+        self.assertTrue(self._bleibt("Ostern", datetime(2025, 4, 20)))
+        self.assertFalse(self._bleibt("Ostern", datetime(2025, 3, 1)))
+
+    def test_die_karwoche_gehoert_dazu(self) -> None:
+        self.assertTrue(self._bleibt("Ostern", datetime(2024, 3, 25)))
+
+    def test_weihnachten_im_dezember(self) -> None:
+        self.assertTrue(self._bleibt("Weihnachten", datetime(2024, 12, 24)))
+
+    def test_weihnachten_bis_dreikoenig(self) -> None:
+        """Der Baum steht in vielen Wohnungen bis zum 6. Januar."""
+        self.assertTrue(self._bleibt("Weihnachten", datetime(2025, 1, 6)))
+        self.assertFalse(self._bleibt("Weihnachten", datetime(2025, 1, 7)))
+
+    def test_weihnachten_im_juli_faellt_weg(self) -> None:
+        self.assertFalse(self._bleibt("Weihnachten", datetime(2024, 7, 1)))
+
+    def test_ohne_datum_bleibt_alles(self) -> None:
+        """Bei 291 Bildern im Bestand ist der Zeitstempel der Zeitpunkt
+        der Übernahme – daraus einen Anlass abzusprechen wäre
+        erfunden."""
+        self.assertTrue(self._bleibt("Ostern", datetime(2024, 8, 1),
+                                     datum_bekannt=False))
+        self.assertTrue(nach_dem_kalender(
+            [Schlagwort("Ostern", "bild", 0.8)], None))
+
+    def test_andere_woerter_bleiben_unberuehrt(self) -> None:
+        gefunden = nach_dem_kalender(
+            [Schlagwort("Berge", "bild", 0.9), Schlagwort("Sommer", "zeit")],
+            datetime(2024, 7, 1))
+        self.assertEqual([w.name for w in gefunden], ["Berge", "Sommer"])
+
+    def test_es_wird_nur_weggenommen_nie_hinzugefuegt(self) -> None:
+        """Dass ein Bild am 24. Dezember entstand, macht es noch nicht
+        zu einem Weihnachtsbild."""
+        gefunden = nach_dem_kalender([Schlagwort("Berge", "bild", 0.9)],
+                                     datetime(2024, 12, 24))
+        self.assertEqual([w.name for w in gefunden], ["Berge"])
+
+
+class DerOstersonntag(unittest.TestCase):
+    """Gegen den Kirchenkalender geprüft, nicht aus dem Gedächtnis.
+
+    Ostern ist der erste Sonntag nach dem ersten Frühlingsvollmond und
+    wandert deshalb zwischen dem 22. März und dem 25. April.
+    """
+
+    def test_bekannte_jahre(self) -> None:
+        for jahr, erwartet in [(2000, "2000-04-23"), (2024, "2024-03-31"),
+                               (2025, "2025-04-20"), (2026, "2026-04-05"),
+                               (2027, "2027-03-28"), (2038, "2038-04-25")]:
+            with self.subTest(jahr):
+                self.assertEqual(ostersonntag(jahr).isoformat(), erwartet)
+
+    def test_es_ist_immer_ein_sonntag(self) -> None:
+        for jahr in range(1990, 2060):
+            with self.subTest(jahr):
+                self.assertEqual(ostersonntag(jahr).weekday(), 6)
+
+    def test_immer_zwischen_dem_22_maerz_und_dem_25_april(self) -> None:
+        for jahr in range(1990, 2060):
+            tag = ostersonntag(jahr)
+            with self.subTest(jahr):
+                self.assertGreaterEqual((tag.month, tag.day), (3, 22))
+                self.assertLessEqual((tag.month, tag.day), (4, 25))
 
 
 class DieBegrenzung(unittest.TestCase):

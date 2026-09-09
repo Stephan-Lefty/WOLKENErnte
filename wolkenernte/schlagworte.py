@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import re as _re
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 #: Wie viele Schlagwörter ein Bild höchstens trägt.
 HOECHSTENS = 5
@@ -228,6 +228,82 @@ def nach_der_uhr(woerter: list[Schlagwort], zeit: datetime | None,
     return [Schlagwort("Sonnenaufgang", w.quelle, w.sicherheit)
             if w.name == "Sonnenuntergang" else w
             for w in woerter]
+
+
+def ostersonntag(jahr: int) -> date:
+    """Wann Ostersonntag in diesem Jahr war.
+
+    Die anonyme gregorianische Rechnung – dasselbe Verfahren, das im
+    Kirchenkalender steht. Ostern ist der erste Sonntag nach dem ersten
+    Frühlingsvollmond und wandert deshalb zwischen dem 22. März und dem
+    25. April.
+    """
+    a = jahr % 19
+    b, c = divmod(jahr, 100)
+    d, e = divmod(b, 4)
+    g = (8 * b + 13) // 25
+    h = (19 * a + b - d - g + 15) % 30
+    i, k = divmod(c, 4)
+    l = (32 + 2 * e + 2 * i - h - k) % 7  # noqa: E741
+    m = (a + 11 * h + 19 * l) // 433
+    monat, tag = divmod(h + l - 7 * m + 90, 25)
+    tag = (h + l - 7 * m + 33 * monat + 19) % 32
+    return date(jahr, monat, tag)
+
+
+#: Welche Schlagwörter nur zu ihrer Zeit im Jahr gelten.
+#:
+#: **Der Kalender weiß es besser als das Modell.** Am echten Bestand
+#: gemessen, gegen die Aufnahmedaten gehalten:
+#:
+#: * »Weihnachten« trifft im Dezember **6,3-mal** so oft wie blind
+#:   geraten – das Wort trägt.
+#: * »Ostern« trifft im April 3,5-mal so oft, aber **71 % seiner
+#:   Treffer liegen außerhalb von März und April**, und der
+#:   zweitstärkste Monat ist der Mai. Das Modell findet
+#:   Frühlingsblumen und nennt sie Ostern.
+#:
+#: Deshalb entscheidet hier das Datum. Ostern wandert zwischen dem
+#: 22. März und dem 25. April und wird darum gerechnet; die
+#: Weihnachtszeit ist die deutsche vom ersten Advent bis Dreikönig,
+#: grob genommen als Dezember bis 6. Januar.
+JAHRESZEITEN = {
+    "Ostern": "ostern",
+    "Weihnachten": "weihnachten",
+}
+
+#: Wie viele Tage um Ostern herum das Wort noch gilt.
+#:
+#: Zwei Wochen in jede Richtung: Karwoche und Osterferien gehören dazu,
+#: der Mai nicht mehr.
+OSTERFENSTER = 14
+
+
+def _passt_zur_jahreszeit(wort: str, tag: date) -> bool:
+    if wort == "Ostern":
+        return abs((tag - ostersonntag(tag.year)).days) <= OSTERFENSTER
+    if wort == "Weihnachten":
+        return tag.month == 12 or (tag.month == 1 and tag.day <= 6)
+    return True
+
+
+def nach_dem_kalender(woerter: list[Schlagwort], zeit: datetime | None,
+                      datum_bekannt: bool = True) -> list[Schlagwort]:
+    """Schlagwörter wegnehmen, die zum Datum nicht passen können.
+
+    **Ohne bekanntes Datum bleibt alles stehen.** Bei 291 Bildern im
+    Bestand ist der Zeitstempel der Zeitpunkt der Übernahme; daraus
+    einen Anlass abzuleiten oder abzusprechen wäre erfunden.
+
+    Es wird nur weggenommen, nie hinzugefügt: Dass ein Bild am
+    24. Dezember entstand, macht es noch nicht zu einem
+    Weihnachtsbild.
+    """
+    if zeit is None or not datum_bekannt:
+        return woerter
+    tag = zeit.date()
+    return [w for w in woerter
+            if w.name not in JAHRESZEITEN or _passt_zur_jahreszeit(w.name, tag)]
 
 
 def begrenzen(woerter: list[Schlagwort],

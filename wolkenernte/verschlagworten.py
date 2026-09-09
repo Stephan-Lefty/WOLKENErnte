@@ -26,7 +26,13 @@ from pathlib import Path
 
 from .bestand import Bestand
 from .bestandsliste import Bestandsliste, Bild
-from .schlagworte import Schlagwort, aus_angaben, begrenzen, nach_der_uhr
+from .schlagworte import (
+    Schlagwort,
+    aus_angaben,
+    begrenzen,
+    nach_dem_kalender,
+    nach_der_uhr,
+)
 
 #: Welche Herkünfte dieser Durchlauf schreibt.
 #:
@@ -149,8 +155,9 @@ def fuer_ein_bild(bild: Bild, archiv: Path, modell: object | None = None
         gefunden.extend(modell.schlagworte(voll))  # type: ignore[attr-defined]
 
     # Hier treffen sich die beiden Hälften: Was das Modell nicht
-    # unterscheiden kann, berichtigt die Uhr.
+    # unterscheiden kann, berichtigen Uhr und Kalender.
     gefunden = nach_der_uhr(gefunden, bild.zeit, bild.datum_bekannt)
+    gefunden = nach_dem_kalender(gefunden, bild.zeit, bild.datum_bekannt)
     return begrenzen(gefunden)
 
 
