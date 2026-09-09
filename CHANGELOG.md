@@ -4,13 +4,15 @@
 
 Alle nennenswerten Änderungen an WOLKENErnte. Neueste zuerst.
 
-## Unveröffentlicht
+## 0.4.3 – 2026-09-09
 
 **`wolkenernte uhrzeit`** rechnet die EXIF-Uhrzeit in einem bestehenden
-Archiv nach. Sie wurde bis 0.4.2 als UTC gelesen, obwohl EXIF die Ortszeit der
-Kamera trägt; der Zeitstempel in der Datei liegt deshalb um den Abstand zu
-Greenwich daneben. Ein zweiter Erntelauf würde das auch richtigstellen – nur
-gibt es die Quellen oft nicht mehr, und das Archiv ist die einzige Kopie.
+Archiv nach. Sie wurde bis einschließlich 0.4.1 als UTC gelesen, obwohl EXIF
+die Ortszeit der Kamera trägt; der Zeitstempel in der Datei liegt deshalb um
+den Abstand zu Greenwich daneben. 0.4.2 hat den Fehler behoben, aber nur für
+neue Läufe – was vorher geerntet wurde, trägt ihn weiter. Ein zweiter Erntelauf
+würde das auch richtigstellen, nur gibt es die Quellen oft nicht mehr, und das
+Archiv ist die einzige Kopie.
 
 **Erkannt wird nicht geraten, sondern nachgerechnet.** Aus dem EXIF *dieser
 Datei* wird ermittelt, was die alte Fassung daraus gemacht hätte; nur wenn der

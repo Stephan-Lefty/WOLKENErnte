@@ -4,12 +4,15 @@
     wolkenernte uhrzeit ~/Bilder/Archiv --wirklich    und richtigstellen
     wolkenernte uhrzeit ~/Bilder/Archiv --zurueck     den letzten Lauf aufheben
 
-**Was schiefging.** Bis 0.4.2 las WOLKENErnte die Aufnahmezeit aus dem
-EXIF als UTC. EXIF trägt aber die *Ortszeit der Kamera*; so steht es im
-Standard, und so stellt jeder Mensch seine Kamera. Der Zeitstempel, der
-daraus in die Datei geschrieben wurde, liegt deshalb um den Abstand zu
-Greenwich daneben – in Deutschland ein bis zwei Stunden, je nach
-Sommerzeit. Ein Foto von 15:44 steht seither als »16:44« unter dem Bild.
+**Was schiefging.** Bis einschließlich 0.4.1 las WOLKENErnte die
+Aufnahmezeit aus dem EXIF als UTC – 0.4.2 hat den Fehler behoben, aber
+nur für neue Läufe; was vorher geerntet wurde, trägt ihn weiter.
+
+EXIF trägt die *Ortszeit der Kamera*; so steht es im Standard, und so
+stellt jeder Mensch seine Kamera. Der Zeitstempel, der daraus in die
+Datei geschrieben wurde, liegt deshalb um den Abstand zu Greenwich
+daneben – in Deutschland ein bis zwei Stunden, je nach Sommerzeit. Ein
+Foto von 15:44 steht seither als »16:44« unter dem Bild.
 
 **Warum ein eigener Befehl und nicht »einfach neu ernten«.** Das
 Aufnahmedatum steht im Zeitstempel der Datei, und der wurde beim Ernten

@@ -181,7 +181,7 @@ def main(argv: list[str] | None = None) -> int:
 
     p = unter.add_parser(
         "uhrzeit", help="die EXIF-Uhrzeit in einem alten Archiv nachrechnen "
-        "(bis 0.4.2 als UTC gelesen statt als Ortszeit)"
+        "(bis 0.4.1 als UTC gelesen statt als Ortszeit)"
     )
     p.add_argument("archiv", type=Path)
     p.add_argument("--wirklich", action="store_true",

@@ -80,9 +80,10 @@ searches for similar images, `wolkenernte verschlagworten` assigns keywords,
 `wolkenernte aufraeumen` clears out in the cloud, `wolkenernte rclone` checks
 whether cloud access is ready, and `wolkenernte zugang` manages accounts.
 
-**If your archive was created with 0.4.2 or earlier**, every image whose date
+**If your archive was created with 0.4.1 or earlier**, every image whose date
 came from the picture itself shows a time one or two hours too late – EXIF was
-read as UTC instead of local time. To recompute:
+read as UTC instead of local time. 0.4.2 fixed that for new runs; this command
+recomputes an existing archive:
 
 ```
 wolkenernte uhrzeit ~/Pictures/Archive              # only look

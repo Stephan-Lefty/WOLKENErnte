@@ -80,9 +80,10 @@ Weitere Befehle: `wolkenernte anbieter` zeigt die Tabelle von oben,
 der Zugang zu den Wolken bereit ist, und `wolkenernte zugang` verwaltet die
 Zugänge.
 
-**Wenn Ihr Archiv mit 0.4.2 oder früher entstanden ist**, steht unter jedem
+**Wenn Ihr Archiv mit 0.4.1 oder früher entstanden ist**, steht unter jedem
 Bild, dessen Datum aus dem Bild selbst kam, eine um ein bis zwei Stunden zu
-späte Uhrzeit – EXIF wurde als UTC gelesen statt als Ortszeit. Zum Nachrechnen:
+späte Uhrzeit – EXIF wurde als UTC gelesen statt als Ortszeit. 0.4.2 hat das
+für neue Läufe behoben; ein bestehendes Archiv rechnet dieser Befehl nach:
 
 ```
 wolkenernte uhrzeit ~/Bilder/Archiv              # nur nachsehen
