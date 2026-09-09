@@ -65,13 +65,17 @@ EMPFOHLEN = [
     "python3-pyside6.qtwidgets",   # die Fensteranwendung
     "python3-pil",                 # Vorschaubilder, Doppelgänger, EXIF
     "rclone",                      # der Zugang zu den Cloudspeichern
+    # Vorschaubilder aus Videos. Stand unter »Suggests«, solange es
+    # nichts zu holen gab; seit 0.4.1 zieht ffmpeg das Einzelbild, und
+    # ohne es bleibt jedes Video eine graue Kachel. Neben PySide6 mit
+    # seinen hundert Megabyte fällt die Größe nicht ins Gewicht.
+    "ffmpeg",
 ]
 
 #: Was nur manche brauchen.
 VORGESCHLAGEN = [
     "python3-numpy",               # kommt mit onnxruntime ohnehin
     "python3-onnxruntime",         # Schlagwörter aus dem Bild
-    "ffmpeg",                      # Vorschaubilder aus Videos
     "libimage-exiftool-perl",      # Metadaten von Fotos und Videos
 ]
 

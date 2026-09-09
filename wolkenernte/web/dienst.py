@@ -26,6 +26,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, quote, urlparse
 
 from . import seiten, vorschau
+from .. import video
 from ..bestandsliste import Bestandsliste, zeitraum_lesen
 
 JE_SEITE = 120
@@ -266,6 +267,13 @@ def starten(archiv: Path, *, port: int = 0, browser: bool = True) -> int:
     if not vorschau.verfuegbar():
         print("  Hinweis: Ohne Pillow gibt es keine Vorschaubilder.")
         print("           Unter Manjaro: pacman -S python-pillow")
+    # Nur sagen, wenn es hier auch Videos gibt - ein Hinweis auf ein
+    # fehlendes Werkzeug für etwas, das gar nicht vorkommt, ist Lärm.
+    videos = sum(1 for b in dienst.liste.bilder if b.ist_video)
+    if videos and not video.verfuegbar():
+        print(f"  Hinweis: Ohne ffmpeg bleiben die {videos} Videos ohne "
+              f"Vorschaubild.")
+        print("           Unter Manjaro: pacman -S ffmpeg")
     print("  Beenden mit Strg-C")
 
     if browser:

@@ -15,7 +15,7 @@
 # etwas zu veröffentlichen.
 
 pkgname=wolkenernte
-pkgver=0.4.0
+pkgver=0.4.1
 pkgrel=1
 pkgdesc="Bilder und Videos aus den Wolken holen und dort aufräumen"
 arch=('any')
@@ -26,17 +26,18 @@ depends=('python')
 
 # Alles Weitere ist Kür und wird zur Laufzeit geprüft.
 #
-# **rclone steht hier noch bei den Empfehlungen, nicht bei den
-# Abhängigkeiten.** Sobald der Abruf aus den Wolken eingebaut ist,
-# gehört es nach `depends` - mit `rclone>=1.75.0`, denn erst dort gibt
-# es die Schnittstelle, über die ein Programm die Anmelde-Adresse für
-# den Browser erfährt. Es jetzt schon zu verlangen wäre eine Zusage,
-# die das Programm nicht einlöst.
+# **rclone bleibt bei den Empfehlungen, obwohl der Abruf inzwischen
+# eingebaut ist.** Wer nur ein Archiv durchsehen oder aus einem
+# Takeout-Paket ernten will, braucht es nicht - und ein Paket, das für
+# jeden Zweck alles verlangt, ist unhöflich. Wer in die Wolke will,
+# braucht `rclone>=1.75.0`: Erst dort gibt es die Schnittstelle, über
+# die ein Programm die Anmelde-Adresse für den Browser erfährt.
 optdepends=(
-    'rclone>=1.75.0: Bilder aus Wolkenspeichern holen (noch nicht eingebaut)'
+    'rclone>=1.75.0: Bilder aus Wolkenspeichern holen und dort aufräumen'
     'pyside6: die Fensteranwendung (wolkenernte fenster)'
     'python-pillow: Vorschaubilder, Doppelgängersuche und Aufnahmedatum aus dem Bild'
-    'ffmpeg: Vorschaubilder aus Videos (noch nicht eingebaut)'
+    'ffmpeg: Vorschaubilder aus Videos'
+    'python-onnxruntime-cpu: Schlagwörter aus dem Bild'
     'perl-image-exiftool: Metadaten von Fotos und Videos (noch nicht eingebaut)'
 )
 

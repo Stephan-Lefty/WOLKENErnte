@@ -4,7 +4,7 @@
 
 Alle nennenswerten Änderungen an WOLKENErnte. Neueste zuerst.
 
-## Unveröffentlicht
+## 0.4.1 – 2026-09-09
 
 **Vorschaubilder für Videos.** Die 424 Videos zeigten bisher nur ein
 Abspielsymbol; jetzt holt ffmpeg ein Einzelbild heraus – als eigener
