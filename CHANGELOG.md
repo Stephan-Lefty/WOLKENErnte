@@ -4,7 +4,7 @@
 
 Alle nennenswerten Änderungen an WOLKENErnte. Neueste zuerst.
 
-## Unveröffentlicht
+## 0.4.4 – 2026-09-09
 
 **Der eigene Zwischenspeicher zählt nicht mehr als Bestand.** In
 `.wolkenernte/vorschau/` liegen tausende JPEG-Dateien, und für ein `rglob("*")`
