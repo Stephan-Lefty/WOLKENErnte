@@ -138,6 +138,14 @@ def bericht() -> int:
     wann = f" (vom {neu.erschienen})" if neu.erschienen else ""
     print(f"Neueste:      {neu.fassung}{wann}")
 
+    if ist_neuer(__version__, neu.fassung):
+        # Kommt vor, wenn jemand aus dem Quelltext arbeitet: Die Marke
+        # ist gesetzt, der Release aber noch nicht angelegt. »Aktuell«
+        # wäre nicht falsch, sagte aber nicht, was los ist.
+        print("\nDie installierte Fassung ist neuer als die "
+              "veröffentlichte – ein Stand aus dem Quelltext.")
+        return 0
+
     if not ist_neuer(neu.fassung, __version__):
         print("\nDie installierte Fassung ist aktuell.")
         return 0

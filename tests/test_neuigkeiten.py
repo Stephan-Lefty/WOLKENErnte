@@ -174,6 +174,15 @@ class DerBefehl(unittest.TestCase):
         self.assertIn("99.0.0", text)
         self.assertIn("CHANGELOG", text)
 
+    def test_null_auch_wenn_die_eigene_neuer_ist(self) -> None:
+        """Wer aus dem Quelltext arbeitet, hat die Marke gesetzt und den
+        Release noch nicht angelegt. »Aktuell« wäre nicht falsch, sagte
+        aber nicht, was los ist."""
+        wert, text = self._laufen(tag_name="v0.0.1")
+        self.assertEqual(wert, 0)
+        self.assertIn("neuer als die veröffentlichte", text)
+        self.assertNotIn("Es gibt eine neuere Fassung", text)
+
     def test_eins_wenn_es_nicht_geht(self) -> None:
         gedruckt: list[str] = []
 
