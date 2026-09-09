@@ -80,9 +80,13 @@ Weg von dort in die Datenbank und in die Oberflächen.
 - [ ] Zwischenspeicher nach dem freedesktop-Muster
   (`$XDG_CACHE_HOME/thumbnails/`), damit der Dateimanager des Anwenders und
   WOLKENErnte sich denselben teilen.
-- [ ] **Vorschaubilder für Videos** mit ffmpeg als eigenem Prozess, `-ss`
+- [x] **Vorschaubilder für Videos** mit ffmpeg als eigenem Prozess, `-ss`
   **vor** `-i` (Sprung vor dem Dekodieren). Ein beschädigtes Video reißt so das
-  Programm nicht mit. Bisher zeigen die 424 Videos nur ein Abspielsymbol.
+  Programm nicht mit. — *Erledigt: alle 424 Videos liefern ein Bild, Median
+  161 ms, der ganze Bestand in 71 Sekunden. Gegriffen wird bei einer Sekunde,
+  nicht am Anfang (dort sind 11 Bilder fast schwarz statt 6 und 10 ohne
+  Struktur statt 2); die 30 kürzeren Videos fallen auf den Anfang zurück. Die
+  41 Videos mit Drehwinkel kommen richtig herum heraus.*
 - [ ] **HDR-Material braucht Tonwertabbildung.** Für diesen Bestand
   unkritisch – er enthält nur fünf HEVC-Dateien –, aber wer HDR-Aufnahmen
   geschickt bekommt, sieht graue Vorschaubilder. Vorher mit `ffprobe` auf

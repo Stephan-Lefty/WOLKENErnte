@@ -12,12 +12,19 @@ später hineinsieht, soll Fotos finden und keine Verwaltungsdateien.
 Ohne Pillow gibt es keine Vorschau. Dann liefert die Oberfläche das
 Original aus – langsamer, aber sie bleibt benutzbar. Ein Bildbetrachter,
 der ohne Zusatzpaket gar nicht startet, wäre die schlechtere Lösung.
+
+**Videos gehen denselben Weg**, nur holt bei ihnen ffmpeg das Bild aus
+der Datei statt Pillow (:mod:`wolkenernte.video`). Für alles danach –
+Zwischenspeicher, Dateiname, Rückgabewert – ist kein Unterschied mehr,
+und beide Oberflächen bekommen die Vorschau geschenkt.
 """
 
 from __future__ import annotations
 
 import hashlib
 from pathlib import Path
+
+from ..bestandsliste import VIDEOS
 
 #: Kantenlänge der Vorschaubilder. 400 statt 200: Auf einem Bildschirm
 #: mit doppelter Punktdichte sind 200 Punkte bereits 400 Bildpunkte, und
@@ -54,23 +61,53 @@ def _ziel(archiv: Path, pfad: str) -> Path:
 
 
 def hole(archiv: Path, pfad: str) -> bytes | None:
-    """Das Vorschaubild zu einem Archivbild – erzeugt es notfalls.
+    """Das Vorschaubild zu einem Archivbild oder Video – erzeugt es notfalls.
 
     Gibt ``None`` zurück, wenn keines erzeugt werden kann. Das ist kein
-    Fehler: Videos haben hier noch keines, und ohne Pillow gibt es gar
-    keine.
+    Fehler, sondern der Normalfall bei fehlendem Pillow, fehlendem
+    ffmpeg und beschädigten Dateien – die Oberfläche zeigt dann ihr
+    Abspiel- beziehungsweise Platzhaltersymbol.
     """
     ziel = _ziel(archiv, pfad)
     if ziel.exists():
         try:
-            return ziel.read_bytes()
+            gemerkt = ziel.read_bytes()
         except OSError:
-            pass
+            gemerkt = None
+        # Eine leere Datei heißt: schon versucht, ging nicht. Ohne diese
+        # Notiz liefe die Oberfläche bei jedem Aufbau des Rasters wieder
+        # in dieselbe ffmpeg-Frist - bei einem beschädigten Video wären
+        # das zwanzig Sekunden Stillstand, jedes Mal aufs Neue.
+        if gemerkt is not None:
+            return gemerkt or None
 
     quelle = archiv / pfad
     if not quelle.is_file():
         return None
 
+    if quelle.suffix.lower() in VIDEOS:
+        return _aus_video(quelle, ziel)
+    return _aus_bild(quelle, ziel)
+
+
+def _aus_video(quelle: Path, ziel: Path) -> bytes | None:
+    """Ein Einzelbild aus dem Video, notfalls ein Fehlschlag mit Gedächtnis."""
+    from .. import video
+
+    daten = video.einzelbild(quelle, KANTE)
+    if daten:
+        _merken(ziel, daten)
+        return daten
+    # Nur wenn ffmpeg **da** ist, war es ein echter Fehlschlag. Fehlt es
+    # bloß, darf das nicht auf Dauer festgeschrieben werden - sonst
+    # bliebe das Video auch nach der Installation ohne Vorschau.
+    if video.verfuegbar():
+        _merken(ziel, b"")
+    return None
+
+
+def _aus_bild(quelle: Path, ziel: Path) -> bytes | None:
+    """Das verkleinerte Foto – der Weg über Pillow."""
     try:
         import io
 
@@ -101,9 +138,14 @@ def hole(archiv: Path, pfad: str) -> bytes | None:
         # eines dabei.
         return None
 
+    _merken(ziel, daten)
+    return daten
+
+
+def _merken(ziel: Path, daten: bytes) -> None:
+    """In den Zwischenspeicher legen – ein Fehlschlag ist keiner."""
     try:
         ziel.parent.mkdir(parents=True, exist_ok=True)
         ziel.write_bytes(daten)
     except OSError:
         pass  # Ohne Zwischenspeicher ist es langsamer, aber es geht.
-    return daten

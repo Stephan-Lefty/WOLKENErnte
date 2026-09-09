@@ -27,6 +27,7 @@ from PySide6.QtCore import (
     QAbstractListModel,
     QModelIndex,
     QObject,
+    QRect,
     QRunnable,
     QSize,
     Qt,
@@ -95,6 +96,39 @@ def _quadratisch(bild: QPixmap) -> QPixmap:
     links = max(0, (gross.width() - KACHEL) // 2)
     oben = max(0, (gross.height() - KACHEL) // 2)
     return gross.copy(links, oben, KACHEL, KACHEL)
+
+
+#: Kantenlänge des Abspielzeichens auf einer Videokachel.
+ZEICHEN = 44
+
+
+def _mit_abspielzeichen(kachel: QPixmap) -> QPixmap:
+    """Ein ▶ in die Ecke legen.
+
+    **Seit Videos ein echtes Vorschaubild bekommen, sehen sie aus wie
+    Fotos.** Vorher war das Abspielsymbol die ganze Kachel und die
+    Unterscheidung geschenkt; jetzt braucht es ein Zeichen, sonst klickt
+    man ein Standbild an und bekommt unerwartet einen Film. Die
+    Weboberfläche macht dasselbe, dort schon länger.
+
+    Erst eine dunkle Scheibe, dann das Zeichen darauf: Ein weißes ▶
+    ohne Untergrund verschwindet auf einer hellen Aufnahme.
+    """
+    bild = QPixmap(kachel)
+    maler = QPainter(bild)
+    maler.setRenderHint(QPainter.RenderHint.Antialiasing)
+    rand = 6
+    feld = QRect(bild.width() - ZEICHEN - rand, rand, ZEICHEN, ZEICHEN)
+    maler.setPen(Qt.PenStyle.NoPen)
+    maler.setBrush(QColor(0, 0, 0, 140))
+    maler.drawEllipse(feld)
+    maler.setPen(QColor("white"))
+    schrift = maler.font()
+    schrift.setPointSize(16)
+    maler.setFont(schrift)
+    maler.drawText(feld, Qt.AlignmentFlag.AlignCenter, "▶")
+    maler.end()
+    return bild
 
 
 def _platzhalter(ist_video: bool) -> QPixmap:
@@ -184,7 +218,11 @@ class Bildmodell(QAbstractListModel):
                 self._leer_video if eintrag and eintrag.ist_video else self._leer
             )
         else:
-            self._vorschau[zeile] = _quadratisch(bild)
+            eintrag = self.bilder[zeile] if zeile < len(self.bilder) else None
+            kachel = _quadratisch(bild)
+            if eintrag is not None and eintrag.ist_video:
+                kachel = _mit_abspielzeichen(kachel)
+            self._vorschau[zeile] = kachel
         stelle = self.index(zeile, 0)
         self.dataChanged.emit(stelle, stelle,
                               [Qt.ItemDataRole.DecorationRole])
