@@ -10,13 +10,9 @@ wurde.
 
 ### Der eigentliche Zweck: aus einer Wolke ernten
 
-Das Programm kann inzwischen Zugänge einrichten, auflisten und löschen – aber
-**noch nichts aus einer Wolke ins Archiv holen.** Es fehlt das Stück zwischen
-`rclone.auflisten()` und `archiv.uebernehmen()`.
-
-Ernten, anmelden und aufräumen stehen (siehe *Erledigt*) – **aber noch nie
-gegen eine echte Nextcloud gelaufen.** Erprobt ist alles nur gegen rclones
-`local`- und `alias`-Backend.
+Ernten, anmelden und aufräumen stehen (siehe *Erledigt*), und an einer echten
+Nextcloud sind Anmelden, Durchsehen, Holen, Erfassen und der Aufräum-Probelauf
+gelaufen. Was fehlt, ist der letzte Schritt.
 
 - [ ] **Das scharfe Löschen ist noch nie gelaufen.** Anmelden, Ordner aussuchen,
   holen und der Probelauf sind an einer echten Nextcloud erprobt; `--wirklich`
@@ -71,6 +67,19 @@ Weg von dort in die Datenbank und in die Oberflächen.
 - [ ] **HEIC über pi-heif** als Pillow-Erweiterung; Qt bringt außerhalb von
   macOS kein HEIF-Modul mit. Bisher zeigt die Einzelansicht dort das
   Vorschaubild.
+
+### Aufnahmedatum
+
+- [ ] **Bereits geerntete Archive nachziehen.** Die EXIF-Uhrzeit wurde bis 0.4.2
+  als UTC gelesen, obwohl EXIF die Ortszeit der Kamera trägt; der Zeitstempel in
+  der Datei ist dadurch um den Abstand zu Greenwich verschoben. Betroffen ist
+  jedes Bild, dessen Datum aus EXIF stammt und nicht aus einer Takeout-JSON. Ein
+  Befehl, der ein vorhandenes Archiv einmal nachrechnet, wäre besser als
+  »einfach neu ernten« – manche Quellen gibt es nicht mehr.
+- [ ] **Videos aus einem gewöhnlichen Ordner haben kein Datum.** EXIF gibt es
+  bei ihnen nicht, und das Feld `creation_time` im Container liest niemand.
+  Ohne Takeout-JSON daneben landet jedes Video in `ohne-datum`. `ffprobe` kann
+  es auslesen, und ffmpeg ist ohnehin schon eine Empfehlung.
 
 ### Bilder und Videos
 

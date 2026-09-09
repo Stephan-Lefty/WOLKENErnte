@@ -10,14 +10,20 @@ Harvest photos and videos from your clouds – and clear them out over there.
 
 Photos end up scattered: some at Google, some at Apple, some at Proton, plus
 OneDrive, Dropbox and your own Nextcloud. WOLKENErnte brings them to a place of
-your choosing, orders them by capture date, finds duplicates – and is meant to
-delete at the source, on your word, whatever you no longer need.
+your choosing, orders them by capture date, finds duplicates – and clears out at
+the source, on your word, whatever you no longer need.
 
-**What already works:** reading Google Takeout archives, importing images from
-folders, finding duplicates, browsing everything – either in the browser or as a
-desktop application. Cloud accounts can be set up.
-**What does not work yet:** harvesting from a cloud and deleting there. The
-piece between listing and importing is missing – see [TODO.en.md](TODO.en.md).
+**What works today:** harvesting from a cloud storage and clearing it out there,
+reading Google Takeout archives, importing images from folders, finding
+duplicates, tagging, browsing everything – either in the browser or as a desktop
+application. Signing in, browsing, fetching, recording and the clean-up dry run
+have been tried against a real Nextcloud. **Not yet tried is the actual
+deletion** (`--wirklich`); whatever else is open is in
+[TODO.en.md](TODO.en.md).
+
+[![The desktop window with the image grid](docs/bilder/fenster-raster.png)](docs/bilder/README.md)
+
+More of them: [all screenshots](docs/bilder/README.md).
 
 ## What works with which provider
 
@@ -70,8 +76,9 @@ may a source be deleted.
 
 Further commands: `wolkenernte anbieter` prints the table above,
 `wolkenernte bestand` the figures from the database, `wolkenernte doppelt`
-searches for similar images, `wolkenernte rclone` checks whether cloud access is
-ready, and `wolkenernte zugang` manages accounts.
+searches for similar images, `wolkenernte verschlagworten` assigns keywords,
+`wolkenernte aufraeumen` clears out in the cloud, `wolkenernte rclone` checks
+whether cloud access is ready, and `wolkenernte zugang` manages accounts.
 
 `wolkenernte neuigkeiten` asks GitHub whether a newer version exists. **This is
 the only network call WOLKENErnte makes to a third-party server of its own
@@ -148,16 +155,20 @@ Recommended but not required:
 | `python-pillow` | thumbnails and duplicate detection |
 | `pyside6` | the desktop application (`wolkenernte fenster`) |
 | `rclone` 1.75.0+ | access to cloud storage |
+| `ffmpeg` | thumbnails from videos |
+| `python-onnxruntime-cpu` | keywords from the image itself |
 
 Without Pillow the web interface serves the originals – slower, but usable.
-Without PySide6 only the web interface is available.
+Without PySide6 only the web interface is available. Without ffmpeg videos carry
+a symbol instead of a still. Without onnxruntime the keywords stay with what
+date, filename and image dimensions can tell.
 
 ## How it is built
 
-The core needs **no third-party packages**. The planned cloud access will be
-handled by [rclone](https://rclone.org/), which runs as its own service and is
-addressed over an ordinary HTTP interface – `urllib` and `json` from the
-standard library are enough for that.
+The core needs **no third-party packages**. Cloud access is handled by
+[rclone](https://rclone.org/), which runs as its own service and is addressed
+over an ordinary HTTP interface – `urllib` and `json` from the standard library
+are enough for that.
 
 This has a side effect that saves money: because the user creates their own
 Google credentials, there is no need for the annual CASA security audit that

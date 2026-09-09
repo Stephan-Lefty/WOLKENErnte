@@ -22,6 +22,25 @@ nötigsten ist. Ist die eigene Fassung *höher* als die veröffentlichte,
 sagt der Befehl das ausdrücklich: Dann arbeitet jemand aus dem
 Quelltext, und »aktuell« wäre zwar nicht falsch, aber nichtssagend.
 
+**Die EXIF-Uhrzeit stimmt wieder.** Das Aufnahmedatum aus dem Bild wurde als
+UTC gelesen, obwohl EXIF die Ortszeit der Kamera trägt. Ein Foto von 15:44 stand
+danach als »16:44« unter dem Bild – um genau den Abstand zu Greenwich, das ganze
+Jahr über. Der Test, der das hätte fangen müssen, prüfte Jahr, Monat, Tag und
+die Zeitzone und sah bei der **Stunde** weg. Betroffen sind nur Bilder, deren
+Datum aus EXIF stammt, nicht die aus einer Takeout-JSON – und bei bereits
+geernteten Archiven bleibt der falsche Zeitstempel in der Datei stehen, bis
+erneut geerntet wird.
+
+**Dateigrößen in der passenden Einheit.** Ein frisch geerntetes Archiv stand in
+beiden Oberflächen als »0.0 GB« da, als wäre nichts darin. Jetzt kB, MB oder GB,
+je nachdem – und gerade beim ersten Blick auf ein neues Archiv sagt das etwas.
+
+**Bildschirmfotos** liegen unter [docs/bilder/](docs/bilder/README.md). Sie
+zeigen ein **erfundenes** Archiv: gerechnete Aufnahmen, Platzhalter als
+Albumnamen. Alles andere darauf ist echt – die Bilder laufen durch `ernten`,
+`erfassen` und `verschlagworten` wie jeder andere Bestand. Erzeugt werden sie
+mit `werkzeuge/bildschirmfotos.py`; beide Fehler oben sind dabei aufgefallen.
+
 **Ein AUR-Paket** liegt unter `verpacken/aur/` bereit: PKGBUILD aus dem
 veröffentlichten Quellarchiv statt aus dem Arbeitsverzeichnis, dazu
 `.SRCINFO` und `nachziehen.py`, das bei jeder neuen Fassung das Archiv

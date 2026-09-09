@@ -11,13 +11,18 @@ Bilder und Videos aus den Wolken holen – und dort aufräumen.
 Fotos liegen heute verstreut: ein Teil bei Google, ein Teil bei Apple, ein Teil
 bei Proton, dazu OneDrive, Dropbox und die eigene Nextcloud. WOLKENErnte holt
 sie an einen Ort Ihrer Wahl, ordnet sie nach Aufnahmedatum, findet Doppelgänger
-– und soll später auf Ihr Wort hin drüben löschen, was Sie nicht mehr brauchen.
+– und räumt auf Ihr Wort hin drüben auf, was Sie nicht mehr brauchen.
 
-**Was heute schon geht:** Google-Takeout-Archive einlesen, Bilder aus Ordnern
-übernehmen, Doppelgänger finden, alles durchsehen – wahlweise im Browser oder
-als Fensteranwendung. Zugänge zu Wolkenspeichern lassen sich einrichten.
-**Was noch nicht geht:** aus einer Wolke ernten und dort löschen. Das Stück
-zwischen Auflisten und Übernehmen fehlt – siehe [TODO.md](TODO.md).
+**Was heute geht:** aus einem Wolkenspeicher ernten und dort aufräumen,
+Google-Takeout-Archive einlesen, Bilder aus Ordnern übernehmen, Doppelgänger
+finden, verschlagworten, alles durchsehen – wahlweise im Browser oder als
+Fensteranwendung. An einer echten Nextcloud erprobt sind Anmelden, Durchsehen,
+Holen, Erfassen und der Aufräum-Probelauf. **Noch nicht erprobt ist das scharfe
+Löschen** (`--wirklich`); was sonst offen ist, steht in [TODO.md](TODO.md).
+
+[![Das Fenster mit dem Bilderraster](docs/bilder/fenster-raster.png)](docs/bilder/README.md)
+
+Mehr davon: [alle Bildschirmfotos](docs/bilder/README.md).
 
 ## Was bei welchem Anbieter geht
 
@@ -70,8 +75,10 @@ Quelle gelöscht werden.
 
 Weitere Befehle: `wolkenernte anbieter` zeigt die Tabelle von oben,
 `wolkenernte bestand` die Zahlen aus der Datenbank, `wolkenernte doppelt` sucht
-ähnliche Bilder, `wolkenernte rclone` prüft, ob der Zugang zu den Wolken bereit
-ist, und `wolkenernte zugang` verwaltet die Zugänge.
+ähnliche Bilder, `wolkenernte verschlagworten` vergibt Schlagwörter,
+`wolkenernte aufraeumen` räumt in der Wolke auf, `wolkenernte rclone` prüft, ob
+der Zugang zu den Wolken bereit ist, und `wolkenernte zugang` verwaltet die
+Zugänge.
 
 `wolkenernte neuigkeiten` fragt bei GitHub nach, ob es eine neuere Fassung gibt.
 **Das ist der einzige Netzaufruf, den WOLKENErnte von sich aus an einen fremden
@@ -152,16 +159,20 @@ Empfohlen, aber nicht nötig:
 | `python-pillow` | Vorschaubilder und Doppelgängersuche |
 | `pyside6` | die Fensteranwendung (`wolkenernte fenster`) |
 | `rclone` ab 1.75.0 | Zugang zu den Wolkenspeichern |
+| `ffmpeg` | Vorschaubilder aus Videos |
+| `python-onnxruntime-cpu` | Schlagwörter aus dem Bild |
 
 Ohne Pillow zeigt die Weboberfläche die Originale – langsamer, aber benutzbar.
-Ohne PySide6 gibt es nur die Weboberfläche.
+Ohne PySide6 gibt es nur die Weboberfläche. Ohne ffmpeg tragen Videos ein
+Symbol statt eines Standbildes. Ohne onnxruntime bleiben die Schlagwörter bei
+dem, was Datum, Dateiname und Bildmaße hergeben.
 
 ## Wie es gebaut ist
 
-Der Kern kommt **ohne Fremdpakete** aus. Der geplante Abruf aus den Wolken wird
-[rclone](https://rclone.org/) übernehmen, das als eigener Dienst läuft und über
-eine gewöhnliche HTTP-Schnittstelle angesprochen wird – dafür genügen `urllib`
-und `json` aus der Standardbibliothek.
+Der Kern kommt **ohne Fremdpakete** aus. Den Abruf aus den Wolken übernimmt
+[rclone](https://rclone.org/), das als eigener Dienst läuft und über eine
+gewöhnliche HTTP-Schnittstelle angesprochen wird – dafür genügen `urllib` und
+`json` aus der Standardbibliothek.
 
 Das hat einen Nebeneffekt, der Geld spart: Weil die Zugangsdaten zu Google der
 Anwender selbst anlegt, entfällt das jährliche CASA-Sicherheitsaudit, das Google

@@ -9,13 +9,9 @@ not deleted but moved down – with the date they were finished.
 
 ### The actual purpose: harvesting from a cloud
 
-The program can now set up accounts, list and delete – but it **cannot yet
-fetch anything from a cloud into the archive.** The piece between
-`rclone.auflisten()` and `archiv.uebernehmen()` is missing.
-
-Harvesting, signing in and cleaning up are in place (see *Done*) – **but have
-never run against a real Nextcloud.** Everything has only been tried against
-rclone's `local` and `alias` backends.
+Harvesting, signing in and cleaning up are in place (see *Done*), and signing
+in, browsing, fetching, recording and the clean-up dry run have run against a
+real Nextcloud. What is missing is the last step.
 
 - [ ] **Deleting for real has never run.** Signing in, picking a folder,
   harvesting and the dry run are proven against a real Nextcloud; `--wirklich`
@@ -67,6 +63,19 @@ from there into the database and the interfaces.
   "same shot" and "similar".
 - [ ] **HEIC via pi-heif** as a Pillow plugin; outside macOS, Qt ships no HEIF
   module. For now the single view falls back to the thumbnail there.
+
+### Capture date
+
+- [ ] **Repair archives already harvested.** Up to 0.4.2 the EXIF time was read
+  as UTC although EXIF carries the camera's local time; the timestamp in the
+  file is off by the distance to Greenwich. Affected is every image whose date
+  came from EXIF rather than from a Takeout JSON. A command that recomputes an
+  existing archive once would be better than "just harvest again" – some of the
+  sources are gone.
+- [ ] **Videos from a plain folder have no date.** They carry no EXIF, and
+  nobody reads the container's `creation_time` field. Without a Takeout JSON
+  beside them every video ends up in `ohne-datum`. `ffprobe` can read it, and
+  ffmpeg is a recommendation already.
 
 ### Images and videos
 
