@@ -21,6 +21,7 @@
 | `erfassen` | Orte, Titel und Alben in die Datenbank schreiben |
 | `pruefen` | nachweisen, dass alles angekommen ist |
 | `aufraeumen` | in der Wolke löschen, was nachweislich im Archiv liegt |
+| `uhrzeit` | die EXIF-Uhrzeit in einem alten Archiv nachrechnen |
 | `bestand` | zeigt, was in der Datenbank steht |
 | `doppelt` | sucht ähnliche Bilder |
 | `verschlagworten` | Schlagwörter vergeben |

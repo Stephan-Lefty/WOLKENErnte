@@ -179,6 +179,16 @@ def main(argv: list[str] | None = None) -> int:
                    help="auch die schon verschlagworteten neu bewerten "
                         "(nach einer Änderung an der Begriffsliste)")
 
+    p = unter.add_parser(
+        "uhrzeit", help="die EXIF-Uhrzeit in einem alten Archiv nachrechnen "
+        "(bis 0.4.2 als UTC gelesen statt als Ortszeit)"
+    )
+    p.add_argument("archiv", type=Path)
+    p.add_argument("--wirklich", action="store_true",
+                   help="tatsächlich richtigstellen statt nur zu zählen")
+    p.add_argument("--zurueck", action="store_true",
+                   help="den zuletzt protokollierten Lauf aufheben")
+
     p = unter.add_parser("bestand", help="zeigen, was in der Datenbank steht")
     p.add_argument("archiv", type=Path)
 
@@ -245,6 +255,11 @@ def main(argv: list[str] | None = None) -> int:
         return bericht(archiv,
                        mit_bilderkennung=not werte.ohne_bilderkennung,
                        nur_fehlende=not werte.alle)
+
+    if werte.befehl == "uhrzeit":
+        from .uhrzeit import bericht
+        return bericht(archiv, wirklich=werte.wirklich,
+                       rueckgaengig=werte.zurueck)
 
     if werte.befehl == "bestand":
         return bestand_zeigen(archiv)

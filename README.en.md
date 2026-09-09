@@ -80,6 +80,19 @@ searches for similar images, `wolkenernte verschlagworten` assigns keywords,
 `wolkenernte aufraeumen` clears out in the cloud, `wolkenernte rclone` checks
 whether cloud access is ready, and `wolkenernte zugang` manages accounts.
 
+**If your archive was created with 0.4.2 or earlier**, every image whose date
+came from the picture itself shows a time one or two hours too late – EXIF was
+read as UTC instead of local time. To recompute:
+
+```
+wolkenernte uhrzeit ~/Pictures/Archive              # only look
+wolkenernte uhrzeit ~/Pictures/Archive --wirklich   # and put it right
+```
+
+The first call changes nothing, it only counts. The second writes a log and can
+be undone completely with `--zurueck`. Images whose date came from a Takeout
+metadata file were never affected and are left alone.
+
 `wolkenernte neuigkeiten` asks GitHub whether a newer version exists. **This is
 the only network call WOLKENErnte makes to a third-party server of its own
 accord** – and only when you explicitly ask for it. No call at startup, none in

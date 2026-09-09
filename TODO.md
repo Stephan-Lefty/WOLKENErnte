@@ -70,12 +70,19 @@ Weg von dort in die Datenbank und in die Oberflächen.
 
 ### Aufnahmedatum
 
-- [ ] **Bereits geerntete Archive nachziehen.** Die EXIF-Uhrzeit wurde bis 0.4.2
-  als UTC gelesen, obwohl EXIF die Ortszeit der Kamera trägt; der Zeitstempel in
-  der Datei ist dadurch um den Abstand zu Greenwich verschoben. Betroffen ist
-  jedes Bild, dessen Datum aus EXIF stammt und nicht aus einer Takeout-JSON. Ein
-  Befehl, der ein vorhandenes Archiv einmal nachrechnet, wäre besser als
-  »einfach neu ernten« – manche Quellen gibt es nicht mehr.
+- [x] **Bereits geerntete Archive nachziehen.** — *Erledigt am 2026-09-09:
+  `wolkenernte uhrzeit`, Probelauf voreingestellt, mit Protokoll und
+  `--zurueck`. Erkannt wird über den Fingerabdruck der alten Rechnung, nicht
+  über eine Vermutung; Bilder aus Takeout-JSONs bleiben deshalb unangetastet
+  und der Lauf ist beliebig wiederholbar. Dabei fiel auf, dass der **Ordner
+  nie betroffen war**: `zielordner()` liest `.year`/`.month` des Zeitobjekts,
+  und die zeigen die Wanduhr.*
+- [ ] **Den Lauf am eigenen Bestand scharf schalten.** Gemessen ist er:
+  **5.017 von 14.105 Bildern** tragen den Fingerabdruck, verschoben um −1 h
+  oder −2 h je nach Sommerzeit. An einer Kopie von 40 echten Dateien ist der
+  ganze Weg durchgespielt – richtigstellen, zweiter Lauf findet nichts mehr,
+  `--zurueck` stellt den Ausgangsstand byteweise wieder her. Am echten Archiv
+  ist `--wirklich` noch nicht gelaufen.
 - [ ] **Videos aus einem gewöhnlichen Ordner haben kein Datum.** EXIF gibt es
   bei ihnen nicht, und das Feld `creation_time` im Container liest niemand.
   Ohne Takeout-JSON daneben landet jedes Video in `ohne-datum`. `ffprobe` kann

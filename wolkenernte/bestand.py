@@ -373,6 +373,21 @@ class Bestand:
             (bild_id, quelle, pfad),
         )
 
+    def zeit_richtigstellen(self, pfad: str, zeit: datetime) -> int:
+        """Das Aufnahmedatum eines Bildes nachtragen, über seinen Pfad.
+
+        Für die Zeitreparatur. **Über den Pfad und nicht über Größe und
+        Prüfsumme**, obwohl das sonst der Weg ist: Die Reparatur läuft
+        über das Archiv, sie hat den Pfad in der Hand und müsste sonst
+        29 GB durchrechnen, um eine Uhrzeit um zwei Stunden zu
+        verschieben.
+        """
+        zeiger = self.db.execute(
+            "UPDATE bild SET aufgenommen = ? WHERE pfad = ?",
+            (zeit.astimezone(timezone.utc).isoformat(), pfad),
+        )
+        return zeiger.rowcount
+
     def sichern(self) -> None:
         self.db.commit()
 

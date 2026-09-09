@@ -66,12 +66,18 @@ from there into the database and the interfaces.
 
 ### Capture date
 
-- [ ] **Repair archives already harvested.** Up to 0.4.2 the EXIF time was read
-  as UTC although EXIF carries the camera's local time; the timestamp in the
-  file is off by the distance to Greenwich. Affected is every image whose date
-  came from EXIF rather than from a Takeout JSON. A command that recomputes an
-  existing archive once would be better than "just harvest again" – some of the
-  sources are gone.
+- [x] **Repair archives already harvested.** — *Done on 2026-09-09:
+  `wolkenernte uhrzeit`, dry run by default, with a log and `--zurueck`.
+  Detection goes by the fingerprint of the old calculation, not by a guess, so
+  images dated from a Takeout JSON are left alone and the run can be repeated
+  freely. It turned out the **folder was never affected**: `zielordner()` reads
+  `.year`/`.month` off the time object, and those show the wall clock.*
+- [ ] **Run it for real against the developer's own archive.** It has been
+  measured: **5,017 of 14,105 images** carry the fingerprint, shifted by −1 h
+  or −2 h depending on daylight saving. The whole path was rehearsed on a copy
+  of 40 real files – put right, second run finds nothing, `--zurueck` restores
+  the starting state byte for byte. On the real archive `--wirklich` has not
+  been run.
 - [ ] **Videos from a plain folder have no date.** They carry no EXIF, and
   nobody reads the container's `creation_time` field. Without a Takeout JSON
   beside them every video ends up in `ohne-datum`. `ffprobe` can read it, and

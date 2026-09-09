@@ -4,6 +4,36 @@
 
 Alle nennenswerten Änderungen an WOLKENErnte. Neueste zuerst.
 
+## Unveröffentlicht
+
+**`wolkenernte uhrzeit`** rechnet die EXIF-Uhrzeit in einem bestehenden
+Archiv nach. Sie wurde bis 0.4.2 als UTC gelesen, obwohl EXIF die Ortszeit der
+Kamera trägt; der Zeitstempel in der Datei liegt deshalb um den Abstand zu
+Greenwich daneben. Ein zweiter Erntelauf würde das auch richtigstellen – nur
+gibt es die Quellen oft nicht mehr, und das Archiv ist die einzige Kopie.
+
+**Erkannt wird nicht geraten, sondern nachgerechnet.** Aus dem EXIF *dieser
+Datei* wird ermittelt, was die alte Fassung daraus gemacht hätte; nur wenn der
+Zeitstempel damit auf die Sekunde übereinstimmt, wird er ersetzt. Bilder, deren
+Datum aus einer Takeout-JSON kam, bleiben damit unangetastet, der Lauf lässt
+sich beliebig wiederholen, und auf einem Rechner, der auf UTC steht, tut er gar
+nichts.
+
+Voreingestellt ist der **Probelauf** – wie beim Aufräumen ändert erst
+`--wirklich` etwas. Jeder Lauf schreibt ein Protokoll und lässt sich mit
+`--zurueck` vollständig aufheben.
+
+Am eigenen Bestand gemessen: **5.017 von 14.105 Bildern** tragen den
+Fingerabdruck, verschoben um eine oder zwei Stunden je nach Sommerzeit. An
+einer Kopie von 40 echten Dateien ist der ganze Weg durchgespielt – die Inhalte
+bleiben dabei byteweise unangetastet, angefasst wird nur der Zeitstempel.
+
+**Der Ordner bleibt, wo er ist.** Beim Bauen sah es so aus, als müsse eine
+Aufnahme vom 1. Januar 00:30 ins Vorjahr umziehen. Sie muss nicht:
+`zielordner()` nimmt `.year` und `.month` des Zeitobjekts, und die zeigen die
+Wanduhr, gleich welche Zeitzone daranhängt. Ein Test hält das fest, damit die
+Annahme nicht unbemerkt kippt.
+
 ## 0.4.2 – 2026-09-09
 
 **`wolkenernte neuigkeiten`** fragt bei GitHub nach, ob es eine neuere

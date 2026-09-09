@@ -80,6 +80,20 @@ Weitere Befehle: `wolkenernte anbieter` zeigt die Tabelle von oben,
 der Zugang zu den Wolken bereit ist, und `wolkenernte zugang` verwaltet die
 Zugänge.
 
+**Wenn Ihr Archiv mit 0.4.2 oder früher entstanden ist**, steht unter jedem
+Bild, dessen Datum aus dem Bild selbst kam, eine um ein bis zwei Stunden zu
+späte Uhrzeit – EXIF wurde als UTC gelesen statt als Ortszeit. Zum Nachrechnen:
+
+```
+wolkenernte uhrzeit ~/Bilder/Archiv              # nur nachsehen
+wolkenernte uhrzeit ~/Bilder/Archiv --wirklich   # und richtigstellen
+```
+
+Der erste Aufruf ändert nichts, er zählt nur. Der zweite schreibt ein
+Protokoll und lässt sich mit `--zurueck` vollständig aufheben. Bilder, deren
+Datum aus einer Takeout-Metadatendatei kam, waren nie betroffen und bleiben
+unangetastet.
+
 `wolkenernte neuigkeiten` fragt bei GitHub nach, ob es eine neuere Fassung gibt.
 **Das ist der einzige Netzaufruf, den WOLKENErnte von sich aus an einen fremden
 Server richtet** – und er geschieht nur, wenn Sie ihn ausdrücklich verlangen.
