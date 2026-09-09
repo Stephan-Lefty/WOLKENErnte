@@ -6,8 +6,8 @@ Landkarte des Repositorys. Ergänzt [README.md](README.md) und
 ## Hier war Schluss (Stand 2026-09-09, Mittwoch abends)
 
 **685 Tests grün, 0.4.2 gebaut.** Die Marke `v0.4.2` steht auf GitHub
-noch auf dem **falschen** Stand – auf `90070ec` statt auf `fcd3cb4` –
-und einen Release gibt es noch nicht. Was zu tun bleibt, steht in
+noch auf dem **falschen** Stand – auf `90070ec` statt auf der Spitze
+von `main` – und einen Release gibt es noch nicht. Was zu tun bleibt, steht in
 [TODO.md](TODO.md) unter *Ausliefern*; die Befehle dafür sind
 `git tag -f v0.4.2`, `git push -f origin v0.4.2`, dann
 `gh release create` mit den beiden Dateien aus `dist/`, und **danach**
