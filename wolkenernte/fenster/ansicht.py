@@ -25,7 +25,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from ..bestandsliste import Bild, wann
+from ..bestandsliste import Bild, umfang, wann
 from ..farben import BLAU_LEUCHT, GRAU_MITTE, GRAU_NACHT, WEISS
 from ..web import vorschau
 
@@ -108,7 +108,7 @@ class Einzelansicht(QWidget):
         self._aktuell = bild
         self._beenden()
 
-        teile = [bild.name, wann(bild), f"{bild.groesse / 1e6:.1f} MB"]
+        teile = [bild.name, wann(bild), umfang(bild.groesse)]
         if bild.schlagworte:
             teile.append("· " + ", ".join(bild.schlagworte))
         if bild.alben:

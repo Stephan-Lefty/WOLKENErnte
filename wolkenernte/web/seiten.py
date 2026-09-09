@@ -14,7 +14,7 @@ from html import escape
 from urllib.parse import quote
 
 from .. import __version__, farben
-from ..bestandsliste import Bestandsliste, Bild, wann
+from ..bestandsliste import Bestandsliste, Bild, umfang, wann
 
 STIL = f"""
 :root {{
@@ -138,14 +138,13 @@ def zahl(wert: int) -> str:
 
 
 def _kopf(titel: str, liste: Bestandsliste, suchwort: str = "") -> str:
-    gb = liste.gesamtgroesse / 1e9
     return f"""<!doctype html><html lang="de"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{escape(titel)} – WOLKENErnte</title><style>{STIL}</style></head><body>
 <header><h1><a href="/">WOLKENErnte</a></h1>
 <form action="/suche"><input type="search" name="q" placeholder="Suchen …"
  value="{escape(suchwort)}" autocomplete="off"></form>
-<span class="zahlen">{zahl(len(liste.bilder))} Dateien · {gb:.1f} GB</span></header>
+<span class="zahlen">{zahl(len(liste.bilder))} Dateien · {umfang(liste.gesamtgroesse)}</span></header>
 """
 
 
@@ -203,7 +202,7 @@ def uebersicht(liste: Bestandsliste) -> str:
         (zahl(favoriten), "Favoriten", "/raster?favoriten=1"),
         (zahl(len(liste.ohne_datum)), "ohne Datum", "/raster?ohnedatum=1"),
         (f"{len(liste.alben())}", "Alben", None),
-        (f"{liste.gesamtgroesse/1e9:.1f} GB", "Größe", None),
+        (umfang(liste.gesamtgroesse), "Größe", None),
     ]
 
     inhalt = ['<main><div class="karten">']
@@ -382,7 +381,7 @@ def einzeln(liste: Bestandsliste, bild: Bild) -> str:
         ("Datei", escape(bild.name)),
         ("Aufgenommen", escape(wann(bild)) if bild.datum_bekannt else
          "<i>unbekannt</i> – weder Metadaten noch EXIF gaben etwas her"),
-        ("Größe", f"{bild.groesse/1e6:.1f} MB"),
+        ("Größe", umfang(bild.groesse)),
         ("Liegt in", escape(bild.pfad.rsplit("/", 1)[0])),
     ]
     if bild.titel and bild.titel != bild.name:
@@ -499,7 +498,7 @@ def doppelt(liste: Bestandsliste, gruppen: list[tuple[list[Bild], str]],
                 f'<a class="kachel{rand}" href="/bild?p={p}" '
                 f'title="{escape(bild.pfad)}">'
                 f'<img loading="lazy" src="/vorschau?p={p}" alt="">'
-                f'<span class="marke">{bild.groesse/1e6:.1f} MB · '
+                f'<span class="marke">{umfang(bild.groesse)} · '
                 f'{escape(bild.zeit.strftime("%d.%m.%Y"))}</span></a>')
         teile.append("</div></div>")
 

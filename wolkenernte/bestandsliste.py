@@ -142,6 +142,22 @@ class Bild:
         return not uhrzeit_ist_geraten(self.zeit)
 
 
+def umfang(bytes_: int) -> str:
+    """Eine Dateigröße in der Einheit, die etwas aussagt.
+
+    **Feste Gigabyte lügen im Kleinen.** Ein Archiv aus vierzig Bildern
+    stand in beiden Oberflächen als »0.0 GB« da, als wäre nichts darin.
+    Für 29 GB ist die Einheit richtig, für die erste Handvoll Bilder
+    nach dem Ernten ist sie es nicht – und gerade dann sieht jemand zum
+    ersten Mal hin.
+    """
+    if bytes_ >= 1e9:
+        return f"{bytes_ / 1e9:.1f} GB"
+    if bytes_ >= 1e6:
+        return f"{bytes_ / 1e6:.0f} MB"
+    return f"{bytes_ / 1e3:.0f} kB"
+
+
 def wann(bild: Bild) -> str:
     """Wann ein Bild entstand, in Worten – für beide Oberflächen.
 

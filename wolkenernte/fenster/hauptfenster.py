@@ -31,7 +31,7 @@ from PySide6.QtWidgets import (
 )
 
 from .. import __version__, symbole
-from ..bestandsliste import Bestandsliste
+from ..bestandsliste import Bestandsliste, umfang
 from ..farben import (
     BLAU,
     GRAU_DUNKEL,
@@ -554,10 +554,9 @@ class Hauptfenster(QMainWindow):
 
         self._zeit_hinweis_setzen(von, bis)
         self.modell.zeigen(bilder)
-        gb = sum(b.groesse for b in bilder) / 1e9
         self.statusBar().showMessage(
             f"{len(bilder):n} von {len(self.liste.bilder):n} Dateien"
-            f"   ·   {gb:.1f} GB"
+            f"   ·   {umfang(sum(b.groesse for b in bilder))}"
         )
 
     # -- Weiterreichen -----------------------------------------------------
