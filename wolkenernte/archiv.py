@@ -33,6 +33,38 @@ from .zuordnung import Zuordnung
 #: Ordner für Bilder, deren Aufnahmedatum unbekannt ist.
 OHNE_DATUM = "ohne-datum"
 
+#: Der Ordner, in dem WOLKENErnte seine eigenen Dateien ablegt –
+#: Datenbank, Vorschaubilder, Protokolle.
+EIGENES = ".wolkenernte"
+
+
+def medien(archiv: Path) -> list[Path]:
+    """Alle Bilder und Videos im Archiv – **ohne unsere eigenen**.
+
+    **Warum das eine eigene Funktion ist.** In ``.wolkenernte/vorschau/``
+    liegen Tausende von JPEG-Dateien, und für ein ``rglob("*")`` sehen
+    die aus wie Fotos. Drei Stellen im Programm sind darüber gestolpert
+    oder hätten es getan: ``erfassen`` legte für 1.470 Vorschaubilder
+    eine Datenbankzeile an (am echten Bestand passiert, 2026-09-09);
+    ``archiv_kennungen`` hätte sie als Nachweis dafür gelten lassen,
+    dass ein Bild im Archiv liegt – und das ist die Bedingung fürs
+    Löschen in der Wolke; und ``archiv_ist_leer`` hätte ein Archiv, in
+    dem nur noch ein alter Zwischenspeicher steht, für gefüllt gehalten.
+
+    Der Zwischenspeicher gehört uns und ist jederzeit neu zu rechnen.
+    Er darf nirgends als Bestand zählen.
+    """
+    from .lokal import MEDIEN
+
+    gefunden = []
+    for pfad in archiv.rglob("*"):
+        teile = pfad.relative_to(archiv).parts
+        if teile and teile[0] == EIGENES:
+            continue
+        if pfad.is_file() and pfad.suffix.lower() in MEDIEN:
+            gefunden.append(pfad)
+    return gefunden
+
 
 @dataclass
 class Bilanz:

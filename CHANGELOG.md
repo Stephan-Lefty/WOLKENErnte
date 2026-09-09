@@ -4,6 +4,38 @@
 
 Alle nennenswerten Änderungen an WOLKENErnte. Neueste zuerst.
 
+## Unveröffentlicht
+
+**Der eigene Zwischenspeicher zählt nicht mehr als Bestand.** In
+`.wolkenernte/vorschau/` liegen tausende JPEG-Dateien, und für ein `rglob("*")`
+sehen die aus wie Fotos. Drei Stellen im Programm haben sie mitgezählt:
+
+* `erfassen` legte für jedes Vorschaubild eine Datenbankzeile an – am echten
+  Bestand 1.470 Stück, die Datenbank behauptete danach 16.294 Bilder, wo 14.821
+  liegen.
+* `archiv_kennungen` hätte ein Vorschaubild als Nachweis dafür gelten lassen,
+  dass ein Bild im Archiv liegt. **Daran hängt das Löschen in der Wolke.**
+* `archiv_ist_leer` hätte ein Archiv, aus dem die Bilder verschwunden sind und
+  in dem nur noch der Zwischenspeicher steht, für gefüllt gehalten – und damit
+  genau die Notbremse gelöst, die den gefährlichsten Fall abfangen soll.
+
+Jetzt entscheidet eine Stelle, `archiv.medien()`, und die lässt `.wolkenernte`
+aus. Zwei Tests halten es fest.
+
+**`wolkenernte erfassen` kommt ohne Quelle aus.** Dann wird nur das Archiv
+selbst eingelesen: Jede Datei bekommt eine Datenbankzeile. Das braucht, wer
+Bilder von Hand hineingelegt hat – ohne Zeile bekommen sie kein Schlagwort und
+keinen Titel, und die Oberfläche zeigt sie zwar (das Dateisystem ist die
+Wahrheit), aber die Datenbank kennt sie nicht. Am echten Bestand waren das 54
+Bilder. Vorhandene Angaben werden dabei nicht angetastet, und es entstehen
+keine Fundorte: Das Archiv als eigenen Fundort einzutragen wäre eine
+Selbstverständlichkeit in vierzehntausend Zeilen.
+
+**`ohne-datum` ist kein Album.** `albumname()` nimmt den letzten Ordner vor der
+Datei; im Archiv heißt der für Bilder ohne Aufnahmedatum `ohne-datum`, und der
+wäre als Album durchgegangen – mit dreihundert Bildern darin. Die Jahresordner
+fängt die Jahresprüfung ab, dieser trägt keine Jahreszahl und rutschte durch.
+
 ## 0.4.3 – 2026-09-09
 
 **`wolkenernte uhrzeit`** rechnet die EXIF-Uhrzeit in einem bestehenden

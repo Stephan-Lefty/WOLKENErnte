@@ -38,6 +38,32 @@ zeigen die **Wanduhr**, gleich welche Zeitzone daranhängt. Die Datei lag
 von Anfang an im richtigen Ordner. Die Mechanik ist raus, an ihrer
 Stelle steht der Test `DerOrdnerBleibt` und nagelt die Annahme fest.
 
+### Der Zwischenspeicher galt als Bestand
+
+Aufgefallen beim `erfassen` über das Archiv selbst: Es legte für **1.470
+Vorschaubilder** aus `.wolkenernte/vorschau/` eine Datenbankzeile an. Für
+ein `rglob("*")` sehen die aus wie Fotos.
+
+**Dieselbe Verwechslung steckte an zwei gefährlicheren Stellen.**
+`archiv_kennungen` hätte ein Vorschaubild als Nachweis gelten lassen,
+dass ein Bild im Archiv liegt – daran hängt das Löschen in der Wolke.
+Und `archiv_ist_leer`, die Notbremse davor, hätte ein Archiv, in dem
+nur noch der Zwischenspeicher steht, für gefüllt gehalten. Jetzt
+entscheidet `archiv.medien()` an einer Stelle.
+
+**Und `ohne-datum` wäre ein Album geworden**, mit dreihundert Bildern
+darin: `albumname()` nimmt den letzten Ordner vor der Datei, die
+Jahresordner fängt die Jahresprüfung ab, dieser trägt keine Jahreszahl.
+Fiel nur auf, weil das Archiv seit heute seine eigene Quelle sein kann.
+
+**Wie es glimpflich ausging:** Vor dem Lauf lag eine Kopie von
+`bestand.db` daneben, und der Vergleich vorher/nachher zeigte die 1.470
+Zeilen sofort. Zurückgestellt, Fehler behoben, neu gelaufen – danach
+54 Bilder nachgetragen und sonst jede Zahl unverändert.
+
+*(Am Rande: `cp` ist hier auf `cp -i` gesetzt. Ein Wiederherstellen im
+Skript bleibt an der Rückfrage hängen; `/usr/bin/cp` umgeht das.)*
+
 ### Bildschirmfotos, und was sie aufgedeckt haben
 
 `werkzeuge/bildschirmfotos.py` baut ein **erfundenes** Archiv –

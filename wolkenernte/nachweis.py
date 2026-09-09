@@ -21,6 +21,7 @@ import zlib
 from collections.abc import Callable
 from pathlib import Path
 
+from .archiv import medien as archiv_medien
 from .lokal import MEDIEN, Ordner
 from .takeout import Archiv as Takeout
 
@@ -39,8 +40,11 @@ def archiv_ist_leer(archiv: Path) -> bool:
     aufräumen will, bevor er geerntet hat, und das ist der
     gefährlichste denkbare Fall.
     """
-    return not any(p.is_file() and _ist_medium(p.name)
-                   for p in archiv.rglob("*"))
+    # **Der Zwischenspeicher zählt nicht mit.** In .wolkenernte/vorschau
+    # liegen Tausende JPEG-Dateien; ein Archiv, in dem nur noch die
+    # stehen, ist leer – und genau dann muss diese Funktion »ja« sagen,
+    # weil unmittelbar danach in einer Cloud gelöscht wird.
+    return not archiv_medien(archiv)
 
 
 def _groesse(pfad: Path) -> int:
@@ -79,7 +83,9 @@ def archiv_kennungen(
     Fortschrittsbalken saß, der von alledem nichts wusste.
     """
     kennungen: set[tuple[int, int]] = set()
-    dateien = [p for p in archiv.rglob("*") if p.is_file() and _ist_medium(p.name)]
+    # Ohne .wolkenernte: Ein Vorschaubild darf nicht als Nachweis
+    # gelten, dass ein Bild im Archiv liegt – daran hängt das Löschen.
+    dateien = archiv_medien(archiv)
     if nur_groessen is not None:
         # Ein stat() je Datei statt sie ganz zu lesen.
         dateien = [p for p in dateien

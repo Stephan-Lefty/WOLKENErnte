@@ -150,7 +150,12 @@ def main(argv: list[str] | None = None) -> int:
     # Bei Clouds wiegt dieser Schritt schwerer als bei einem Ordner:
     # Nach dem Aufräumen ist die Cloud leer, und was hier nicht
     # festgehalten wurde, ist endgültig weg.
-    p.add_argument("quelle", nargs="+")
+    #
+    # **Und keine Quelle ist auch eine Angabe:** Dann wird nur das
+    # Archiv selbst eingelesen. Das braucht, wer Bilder von Hand
+    # hineingelegt hat - ohne Datenbankzeile bekommen sie kein
+    # Schlagwort.
+    p.add_argument("quelle", nargs="*")
 
     p = unter.add_parser(
         "pruefen", help="nachweisen, dass alles im Archiv angekommen ist"

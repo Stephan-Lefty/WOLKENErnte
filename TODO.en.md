@@ -78,12 +78,17 @@ from there into the database and the interfaces.
   time now matches the EXIF wall clock, a second pass finds 0, and 5,002 rows
   were carried along in the database. The log sits in
   `.wolkenernte/uhrzeit-reparatur.jsonl`.*
-- [ ] **51 files in the archive have no database row.** Noticed while checking
-  the time repair: 14,821 files but only 14,770 rows with a path. They are
-  images placed by hand or harvested from folders that `erfassen` never ran
-  over. No harm – the interface shows them because the file system is the
-  truth – but they carry neither title nor album nor keyword. Running
-  `erfassen` over the archive itself would be the way.
+- [x] **Files in the archive with no database row.** — *Done on 2026-09-09:
+  `wolkenernte erfassen <archive>` now works without a source and reads only
+  the archive. 54 images added, afterwards 0 without a row; `verschlagworten`
+  gave them keywords (57 → 3, and about those three the model has nothing to
+  say either). Places, titles, albums, favourites and origins stayed identical
+  down to the number.*
+- [x] **The thumbnail cache counted as inventory.** — *Done on 2026-09-09: on
+  the first run `erfassen` created a database row for 1,470 thumbnails. The
+  same confusion sat in `archiv_kennungen` (the proof that cloud deletion
+  hangs on) and in `archiv_ist_leer` (the emergency brake before it). One
+  place decides now: `archiv.medien()`.*
 - [ ] **Videos from a plain folder have no date.** They carry no EXIF, and
   nobody reads the container's `creation_time` field. Without a Takeout JSON
   beside them every video ends up in `ohne-datum`. `ffprobe` can read it, and

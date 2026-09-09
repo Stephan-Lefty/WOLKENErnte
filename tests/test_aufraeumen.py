@@ -234,6 +234,28 @@ class DerDurchgang(unittest.TestCase):
             with self.subTest(name):
                 self.assertTrue((self.wolkenordner / name).exists())
 
+    def test_nur_vorschaubilder_ist_auch_leer(self) -> None:
+        """**Die Notbremse darf nicht auf den eigenen Zwischenspeicher
+        hereinfallen.**
+
+        In ``.wolkenernte/vorschau/`` liegen JPEG-Dateien, und für ein
+        ``rglob("*")`` sehen die aus wie Fotos. Ein Archiv, aus dem die
+        Bilder verschwunden sind und in dem nur noch der
+        Zwischenspeicher steht, gälte damit als gefüllt – und in der
+        Cloud würde gelöscht. Der Zwischenspeicher ist jederzeit neu zu
+        rechnen; er ist kein Bestand.
+        """
+        leer = self.tmp / "nur-zwischenspeicher"
+        (leer / ".wolkenernte" / "vorschau" / "ab").mkdir(parents=True)
+        (leer / ".wolkenernte" / "vorschau" / "ab" / "abcd.jpg").write_bytes(
+            b"sieht aus wie ein Bild")
+        with self.assertRaises(AufraeumFehler) as fehler:
+            durchgehen(leer, self.wolke, wirklich=True)
+        self.assertIn("kein einziges Bild", str(fehler.exception))
+        for name in self.inhalte:
+            with self.subTest(name):
+                self.assertTrue((self.wolkenordner / name).exists())
+
     def test_noch_nichts_geerntet_ist_kein_fehler(self) -> None:
         """**Nur Auskunft, kein Abbruch.**
 

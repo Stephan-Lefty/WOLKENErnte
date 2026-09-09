@@ -20,17 +20,26 @@ import zlib
 from collections.abc import Callable
 from pathlib import Path
 
+from .archiv import OHNE_DATUM
+from .archiv import medien as archiv_medien
 from .bestand import Bestand
 from .ernten import ist_wolke, quelle_oeffnen
 from .lokal import MEDIEN, jahr_aus_ordner
 from .metadaten import MetadatenFehler, aus_json
 from .zuordnung import zuordnen
 
-#: Ordner, die kein Album sind, sondern Googles eigene Fächer.
+#: Ordner, die kein Album sind – Googles eigene Fächer und unser eigenes.
+#:
+#: **``ohne-datum`` steht hier, seit das Archiv seine eigene Quelle sein
+#: kann.** Wer `erfassen` über das Archiv laufen lässt, um von Hand
+#: hineingelegte Bilder nachzutragen, bekäme sonst ein Album namens
+#: »ohne-datum« mit dreihundert Bildern darin. Die Jahresordner fängt
+#: die Jahresprüfung in :func:`albumname` ab; ``ohne-datum`` trägt keine
+#: Jahreszahl und rutschte durch.
 KEIN_ALBUM = {
     "archiv", "archivieren", "archive", "papierkorb", "bin", "trash",
     "failed videos", "takeout", "google fotos", "google photos",
-    "gesperrter ordner", "locked folder",
+    "gesperrter ordner", "locked folder", OHNE_DATUM,
 }
 
 
@@ -75,8 +84,7 @@ def archiv_lesen(
     anderer Größe kann keine der gesuchten sein.
     """
     bekannt: dict[tuple[int, int], str] = {}
-    dateien = [p for p in archiv.rglob("*")
-               if p.is_file() and _ist_medium(p.name)]
+    dateien = archiv_medien(archiv)
     if nur_groessen is not None:
         dateien = [p for p in dateien if _groesse(p) in nur_groessen]
     for nummer, pfad in enumerate(dateien, 1):
@@ -87,7 +95,8 @@ def archiv_lesen(
             with pfad.open("rb") as datei:
                 while brocken := datei.read(1 << 20):
                     summe = zlib.crc32(brocken, summe)
-            bekannt[(pfad.stat().st_size, summe)] = str(pfad.relative_to(archiv))
+            bekannt[(pfad.stat().st_size, summe)] = \
+                pfad.relative_to(archiv).as_posix()
         except OSError:
             continue
     return bekannt
@@ -146,6 +155,16 @@ def _erfassen(archiv: Path, quellen: list[str | Path], dienst) -> int:
         lambda n, g: (print(f"  {n}/{g}", end="\r", flush=True)
                       if n % 2000 == 0 else None))
     print(f"  {len(bekannt)} Bilder im Archiv                    ")
+    if not quellen:
+        # **Ohne Quelle ist das kein Leerlauf.** Die Schleife gleich
+        # darunter legt für jede Datei im Archiv eine Zeile an. Genau
+        # das braucht, wer Bilder von Hand hineingelegt hat: Ohne Zeile
+        # bekommen sie kein Schlagwort und keinen Titel - die Oberfläche
+        # zeigt sie zwar, weil das Dateisystem die Wahrheit ist, aber
+        # die Datenbank kennt sie nicht.
+        print("  Keine Quelle angegeben – es wird nur das Archiv selbst")
+        print("  eingelesen. Orte, Titel und Alben stehen in den Quellen")
+        print("  und kommen dabei nicht dazu.")
 
     with Bestand(archiv) as bestand:
         for (groesse, summe), pfad in bekannt.items():

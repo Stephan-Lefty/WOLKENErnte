@@ -18,11 +18,12 @@ import io
 import shutil
 import tempfile
 import unittest
+import zlib
 from pathlib import Path
 
 from wolkenernte.bestand import Bestand
 from wolkenernte.einrichten import einrichten
-from wolkenernte.erfassung import archiv_lesen, erfassen, quellenname
+from wolkenernte.erfassung import albumname, archiv_lesen, erfassen, quellenname
 from wolkenernte.rclone import Dienst, fassung, finden
 
 _PROGRAMM = finden()
@@ -109,6 +110,120 @@ class DasArchivWirdGelesen(unittest.TestCase):
         gesehen: list[tuple[int, int]] = []
         archiv_lesen(self.tmp, lambda n, g: gesehen.append((n, g)))
         self.assertEqual(gesehen[-1], (2, 2))
+
+    def test_der_zwischenspeicher_zaehlt_nicht_mit(self) -> None:
+        """**Am echten Bestand passiert, 2026-09-09.**
+
+        In ``.wolkenernte/vorschau/`` liegen Tausende JPEG-Dateien, und
+        für ein ``rglob("*")`` sehen die aus wie Fotos. `erfassen` legte
+        für 1.470 Vorschaubilder eine Datenbankzeile an. Kein Datenverlust
+        – aber die Datenbank behauptete danach 16.294 Bilder, wo 14.821
+        liegen, und dieselbe Verwechslung entscheidet an anderer Stelle
+        darüber, ob in einer Cloud gelöscht werden darf.
+        """
+        vorschau = self.tmp / ".wolkenernte" / "vorschau" / "ab"
+        vorschau.mkdir(parents=True)
+        (vorschau / "abcdef.jpg").write_bytes(_jpeg((7, 7, 7)))
+        self.assertEqual(sorted(archiv_lesen(self.tmp).values()),
+                         ["2024/eins.jpg", "2024/zwei.jpg"])
+
+
+@unittest.skipUnless(PILLOW, "Pillow nicht vorhanden")
+class DasArchivAlsEigeneQuelle(unittest.TestCase):
+    """`erfassen` ohne Quelle – für von Hand hineingelegte Bilder.
+
+    **Der Anlass:** Nach der Zeitreparatur am echten Bestand fielen 51
+    Dateien auf, zu denen es gar keine Datenbankzeile gab. Ohne Zeile
+    bekommt ein Bild kein Schlagwort und keinen Titel; die Oberfläche
+    zeigt es zwar, weil das Dateisystem die Wahrheit ist, aber die
+    Datenbank kennt es nicht.
+    """
+
+    def setUp(self) -> None:
+        self.tmp = Path(tempfile.mkdtemp())
+        # **Jedes Bild eine eigene Farbe.** Der erste Anlauf leitete sie
+        # aus der Namenslänge ab – und »eins.jpg«, »zwei.jpg« und
+        # »drei.jpg« sind alle acht Zeichen lang. Die drei Dateien waren
+        # byteidentisch, das Archiv kannte sie als *ein* Bild, und der
+        # Test schlug fehl, ohne dass am Programm etwas falsch war.
+        for nummer, (ordner, name) in enumerate((
+                ("2024/2024-03", "eins.jpg"),
+                ("2024/2024-03", "zwei.jpg"),
+                ("ohne-datum", "drei.jpg"))):
+            ziel = self.tmp / ordner
+            ziel.mkdir(parents=True, exist_ok=True)
+            (ziel / name).write_bytes(_jpeg((20 + nummer * 70, 60, 40)))
+
+    def tearDown(self) -> None:
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_jede_datei_bekommt_eine_zeile(self) -> None:
+        erfassen(self.tmp, [])
+        with Bestand(self.tmp) as bestand:
+            pfade = {z[0] for z in bestand.db.execute("SELECT pfad FROM bild")}
+        self.assertEqual(pfade, {"2024/2024-03/eins.jpg",
+                                 "2024/2024-03/zwei.jpg",
+                                 "ohne-datum/drei.jpg"})
+
+    def test_ohne_datum_wird_kein_album(self) -> None:
+        """**Der Fehler, der das fast unbrauchbar gemacht hätte.**
+
+        ``albumname()`` nimmt den letzten Ordner vor der Datei. Bei
+        einer echten Quelle ist das ein Albumname; im Archiv heißt der
+        Ordner für Bilder ohne Aufnahmedatum ``ohne-datum`` – und der
+        wäre als Album durchgegangen, mit dreihundert Bildern darin.
+        Die Jahresordner fängt die Jahresprüfung ab, dieser trägt keine
+        Jahreszahl und rutschte durch.
+        """
+        self.assertIsNone(albumname("ohne-datum/IMG_1.jpg"))
+        erfassen(self.tmp, [])
+        with Bestand(self.tmp) as bestand:
+            self.assertEqual(bestand.alben(), [])
+
+    def test_jahresordner_bleiben_auch_kein_album(self) -> None:
+        self.assertIsNone(albumname("2024/2024-03/eins.jpg"))
+        self.assertIsNone(albumname("2024/eins.jpg"))
+
+    def test_ein_zweiter_lauf_legt_nichts_doppelt_an(self) -> None:
+        erfassen(self.tmp, [])
+        erfassen(self.tmp, [])
+        with Bestand(self.tmp) as bestand:
+            anzahl = bestand.db.execute(
+                "SELECT COUNT(*) FROM bild").fetchone()[0]
+        self.assertEqual(anzahl, 3)
+
+    def test_ohne_quelle_kein_fundort(self) -> None:
+        """Ein Fundort sagt, *wo das Bild ursprünglich lag*. Das Archiv
+        als eigenen Fundort einzutragen wäre eine Selbstverständlichkeit
+        in vierzehntausend Zeilen."""
+        erfassen(self.tmp, [])
+        with Bestand(self.tmp) as bestand:
+            self.assertEqual(
+                bestand.db.execute(
+                    "SELECT COUNT(*) FROM fundort").fetchone()[0], 0)
+
+    def test_vorhandene_angaben_bleiben_stehen(self) -> None:
+        """**Die eigentliche Gefahr.** Orte, Titel und Alben stehen nur
+        hier; ein Lauf ohne Quelle darf sie nicht durch Leeres
+        ersetzen."""
+        datei = self.tmp / "2024/2024-03/eins.jpg"
+        groesse = datei.stat().st_size
+        summe = zlib.crc32(datei.read_bytes())
+        with Bestand(self.tmp) as bestand:
+            kennung = bestand.bild_merken(
+                groesse, summe, pfad="2024/2024-03/eins.jpg",
+                titel="Der Steg", ort=(53.5, 8.1), favorit=True)
+            bestand.album_zuordnen(kennung, "Nordsee 2023")
+            bestand.sichern()
+
+        erfassen(self.tmp, [])
+
+        with Bestand(self.tmp) as bestand:
+            titel, breite, favorit = bestand.db.execute(
+                "SELECT titel, breite, favorit FROM bild WHERE pfad = ?",
+                ("2024/2024-03/eins.jpg",)).fetchone()
+            self.assertEqual((titel, breite, favorit), ("Der Steg", 53.5, 1))
+            self.assertEqual(bestand.alben(), [("Nordsee 2023", 1)])
 
 
 @unittest.skipUnless(PILLOW and ECHTES_RCLONE, "Pillow oder rclone fehlt")
