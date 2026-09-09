@@ -117,11 +117,16 @@ from there into the database and the interfaces.
 **Principle:** whatever WOLKENErnte needs, it either brings along or has the
 package manager bring along. Nobody should download rclone by hand.
 
-- [ ] **Upload the AUR package.** Everything is ready under `verpacken/aur/`;
-  only the AUR account is missing (SSH key in the profile). After that every
-  new version arrives with `pamac update` by itself. **What prompted it:** the
-  developer's own machine was running 0.3.0 while 0.4.0 and 0.4.1 had long been
-  published – build it yourself and nothing tells you a new version exists.
+- [ ] **Upload the AUR package.** *Postponed on 2026-09-09.* Everything is ready
+  under `verpacken/aur/` and sits at 0.4.2: PKGBUILD and `.SRCINFO` are up to
+  date, the checksum is computed from the published source archive, and
+  `makepkg -f` builds cleanly from it. **Only** the AUR account is missing: the
+  public SSH key in the profile on aur.archlinux.org, then
+  `git clone ssh://aur@aur.archlinux.org/wolkenernte.git`, copy the two files
+  in and push. After that every new version arrives with `pamac update` by
+  itself. **What prompted it:** the developer's own machine was running 0.3.0
+  while 0.4.0 and 0.4.1 had long been published – build it yourself and nothing
+  tells you a new version exists.
 - [ ] **Publish on PyPI** so that `pip install -U wolkenernte` works. Needs an
   account and a token. For everyone not on Arch this is the usual route.
 - [ ] **An APT repository** would be the counterpart for Debian and Ubuntu –

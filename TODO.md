@@ -125,11 +125,16 @@ Weg von dort in die Datenbank und in die Oberflächen.
 **Grundsatz:** Was WOLKENErnte braucht, bringt es mit oder lässt es vom
 Paketverwalter mitbringen. Niemand soll rclone von Hand herunterladen.
 
-- [ ] **Das AUR-Paket hochladen.** Alles liegt fertig unter `verpacken/aur/`;
-  es fehlt nur der AUR-Zugang (SSH-Schlüssel im Konto). Danach kommt jede neue
-  Fassung mit `pamac update` von selbst. **Der Anlass:** Auf dem Rechner des
-  Entwicklers lief 0.3.0, während 0.4.0 und 0.4.1 längst veröffentlicht waren –
-  wer selbst baut, erfährt von einer neuen Fassung sonst gar nichts.
+- [ ] **Das AUR-Paket hochladen.** *Zurückgestellt am 2026-09-09.* Alles liegt
+  fertig unter `verpacken/aur/` und steht auf 0.4.2: PKGBUILD und `.SRCINFO`
+  sind nachgezogen, die Prüfsumme ist aus dem veröffentlichten Quellarchiv
+  gerechnet, und `makepkg -f` baut daraus sauber durch. Es fehlt **nur** der
+  AUR-Zugang: der öffentliche SSH-Schlüssel im Konto auf aur.archlinux.org,
+  dann `git clone ssh://aur@aur.archlinux.org/wolkenernte.git`, die beiden
+  Dateien hineinkopieren und pushen. Danach kommt jede neue Fassung mit
+  `pamac update` von selbst. **Der Anlass:** Auf dem Rechner des Entwicklers
+  lief 0.3.0, während 0.4.0 und 0.4.1 längst veröffentlicht waren – wer selbst
+  baut, erfährt von einer neuen Fassung sonst gar nichts.
 - [ ] **Auf PyPI veröffentlichen**, damit `pip install -U wolkenernte` geht.
   Braucht ein Konto und einen Token. Für alle, die kein Arch fahren, ist das
   der übliche Weg.
