@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import tempfile
 import unittest
-from datetime import timezone
+from datetime import datetime
 from pathlib import Path
 
 from wolkenernte.lokal import (
@@ -49,7 +49,25 @@ class DieExifZeit(unittest.TestCase):
         zeit = _exif_zeit_lesen("2023:07:15 12:30:45")
         assert zeit is not None
         self.assertEqual((zeit.year, zeit.month, zeit.day), (2023, 7, 15))
-        self.assertEqual(zeit.tzinfo, timezone.utc)
+
+    def test_die_uhrzeit_bleibt_stehen(self) -> None:
+        """**Der Fehler, den die alte Fassung dieses Tests deckte.**
+
+        Sie prüfte Jahr, Monat, Tag und ``tzinfo == utc`` – und sah bei
+        der Stunde weg. Als UTC gelesen wurde aus 12:30 in Deutschland
+        14:30, sobald die Oberfläche zurück in Ortszeit rechnete. EXIF
+        trägt Ortszeit; wer sie umrechnet, verschiebt jedes Foto um den
+        Abstand zu Greenwich.
+        """
+        zeit = _exif_zeit_lesen("2023:07:15 12:30:45")
+        assert zeit is not None
+        # Der Zeitstempel wandert beim Ernten in die Datei, und die
+        # Oberfläche liest ihn als Ortszeit zurück - genau dort fiel
+        # die Stunde vorher heraus.
+        self.assertEqual(
+            datetime.fromtimestamp(zeit.timestamp()).strftime(
+                "%d.%m.%Y %H:%M"),
+            "15.07.2023 12:30")
 
     def test_ungestellte_uhr(self) -> None:
         """``0000:00:00`` heißt: Die Kamera kannte das Datum nicht."""

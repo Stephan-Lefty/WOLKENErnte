@@ -170,10 +170,9 @@ def exif_datum(rohdaten: bytes) -> datetime | None:
     Ordnernamen. Das Programm soll deswegen nicht abbrechen; ein Bild
     ohne Datum ist ärgerlich, ein Absturz ist schlimmer.
 
-    Die Zeit im EXIF trägt **keine Zeitzone**. Sie wird als UTC gelesen,
-    was für die Einordnung nach Jahr und Monat genügt und nur an den
-    wenigen Stunden um einen Monatswechsel überhaupt einen Unterschied
-    macht.
+    Die Zeit im EXIF trägt **keine Zeitzone**, und sie ist die *Ortszeit
+    der Kamera* – so steht es im Standard, und so stellt es jeder
+    Mensch seine Kamera ein.
     """
     try:
         import io
@@ -206,15 +205,27 @@ def _exif_zeit_lesen(roh: str) -> datetime | None:
 
     Kameras schreiben auch ``0000:00:00 00:00:00``, wenn die Uhr nie
     gestellt wurde – das ist kein Datum, sondern dessen Fehlen.
+
+    **Ortszeit, nicht UTC.** Die erste Fassung setzte hier
+    ``tzinfo=timezone.utc`` und begründete das damit, es mache nur um
+    den Monatswechsel einen Unterschied. Das stimmt für die Einordnung
+    in Ordner – aber der Zeitstempel wandert von hier aus in die Datei,
+    und die Oberfläche rechnet ihn zurück in Ortszeit. Ein Foto von
+    15:44 stand danach als »16:44« unter dem Bild, das ganze Jahr über,
+    um genau den Abstand zu Greenwich. Aufgefallen ist es an einem
+    Bildschirmfoto, auf dem Dateiname und angezeigte Uhrzeit
+    nebeneinanderstanden und sich widersprachen.
+
+    ``astimezone()`` ohne Argument liest eine zeitzonenlose Angabe als
+    Ortszeit – genau die Annahme, die EXIF meint.
     """
     roh = roh.strip().replace("/", ":")
     if roh.startswith("0000"):
         return None
     for form in ("%Y:%m:%d %H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y:%m:%d"):
         try:
-            return datetime.strptime(roh[:len(form) + 2].strip(), form).replace(
-                tzinfo=timezone.utc
-            )
+            return datetime.strptime(
+                roh[:len(form) + 2].strip(), form).astimezone()
         except ValueError:
             continue
     return None
