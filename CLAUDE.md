@@ -281,6 +281,31 @@ gewürfelt und über die **Prozessumgebung** übergeben – die
 Kommandozeile kann unter Linux jeder in `/proc` lesen – und
 `--rc-no-auth` niemals. Drei Tests nageln das fest.
 
+## Niemals `sudo pip install` neben einem Systempaket
+
+Am 2026-09-09 ließ sich 0.4.1 nicht installieren: **Dateikonflikte.** In
+`/usr/lib/python3.14/site-packages/wolkenernte/` lagen 19 Dateien, die
+pacman nicht gehörten – `schlagworte.py`, `verschlagworten.py`,
+`begriffe.py`, `daten/begriffe.npz` und andere, alle vom 2026-09-07 um
+12:13. Ein `sudo pip install` des 0.4.0-Wheels, wahrscheinlich beim
+Prüfen des Programmsymbols.
+
+**Das Ergebnis war schlimmer als ein veralteter Stand: ein Zwitter.**
+`__init__.py` gehörte pacman und meldete 0.3.0, die Schlagwortmodule
+daneben stammten aus 0.4.0. Das Programm hatte also Fähigkeiten, die es
+selbst nicht kannte – und meldete eine Fassung, die es nicht war.
+Aufgefallen ist es erst, als pacman sich weigerte.
+
+Zum Prüfen eines Wheels gehört ein eigener Ort, nie das System:
+`pip install --target <ordner>` und dann von dort starten, wie es
+`verpacken/debian/deb-bauen.py` ohnehin tut. Wer aufräumen muss:
+`pacman -R`, den Ordner löschen, neu installieren – vorher mit
+`pacman -Qo` nachsehen, was wirklich herrenlos ist.
+
+Daraus ist `wolkenernte neuigkeiten` entstanden. Auf dem Rechner des
+Entwicklers lief zwei Veröffentlichungen lang ein alter Stand, ohne
+dass irgendetwas darauf hingewiesen hätte.
+
 ## Was das Ausprobieren gelehrt hat
 
 Diese Fehler waren alle grün getestet, bevor echte Daten sie zeigten.
