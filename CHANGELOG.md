@@ -4,7 +4,7 @@
 
 Alle nennenswerten Änderungen an WOLKENErnte. Neueste zuerst.
 
-## Unveröffentlicht
+## 0.4.2 – 2026-09-09
 
 **`wolkenernte neuigkeiten`** fragt bei GitHub nach, ob es eine neuere
 Fassung gibt. Das ist der **einzige Netzaufruf**, den WOLKENErnte von
