@@ -120,6 +120,9 @@ def main(argv: list[str] | None = None) -> int:
 
     unter.add_parser("anbieter", help="zeigen, was wo möglich ist")
     unter.add_parser("rclone", help="nachsehen, ob rclone bereit ist")
+    unter.add_parser("neuigkeiten",
+                     help="bei GitHub nachfragen, ob es eine neuere Fassung "
+                          "gibt – der einzige Netzaufruf des Programms")
 
     p = unter.add_parser("zugang", help="Zugänge zu Wolkenspeichern verwalten")
     zugaenge = p.add_subparsers(dest="zugangsbefehl")
@@ -201,6 +204,10 @@ def main(argv: list[str] | None = None) -> int:
 
     if werte.befehl == "rclone":
         from .rclone import bericht
+        return bericht()
+
+    if werte.befehl == "neuigkeiten":
+        from .neuigkeiten import bericht
         return bericht()
 
     if werte.befehl == "zugang":

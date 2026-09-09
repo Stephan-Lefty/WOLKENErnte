@@ -73,6 +73,12 @@ Further commands: `wolkenernte anbieter` prints the table above,
 searches for similar images, `wolkenernte rclone` checks whether cloud access is
 ready, and `wolkenernte zugang` manages accounts.
 
+`wolkenernte neuigkeiten` asks GitHub whether a newer version exists. **This is
+the only network call WOLKENErnte makes to a third-party server of its own
+accord** – and only when you explicitly ask for it. No call at startup, none in
+the background. Nothing is sent but the request itself: no archive contents, no
+identifier, no counter.
+
 ## The archive
 
 ```
@@ -116,10 +122,17 @@ visible, and both interfaces share the cache.
 
 ## Installing
 
-**Arch and Manjaro**
+**Arch and Manjaro** – from source:
 
 ```
 cd verpacken/arch && makepkg -si
+```
+
+Once the package is in the AUR this gets simpler, and updates then arrive with
+the rest of the system (see [verpacken/aur/](verpacken/aur/README.md)):
+
+```
+pamac install wolkenernte
 ```
 
 **Everywhere else** – the core runs on Python 3.11+ with no third-party packages:

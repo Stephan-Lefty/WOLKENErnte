@@ -108,6 +108,17 @@ from there into the database and the interfaces.
 **Principle:** whatever WOLKENErnte needs, it either brings along or has the
 package manager bring along. Nobody should download rclone by hand.
 
+- [ ] **Upload the AUR package.** Everything is ready under `verpacken/aur/`;
+  only the AUR account is missing (SSH key in the profile). After that every
+  new version arrives with `pamac update` by itself. **What prompted it:** the
+  developer's own machine was running 0.3.0 while 0.4.0 and 0.4.1 had long been
+  published – build it yourself and nothing tells you a new version exists.
+- [ ] **Publish on PyPI** so that `pip install -U wolkenernte` works. Needs an
+  account and a token. For everyone not on Arch this is the usual route.
+- [ ] **An APT repository** would be the counterpart for Debian and Ubuntu –
+  today the `.deb` is a file attached to a release that nobody updates. Cost:
+  own signing keys and somewhere to host it.
+
 - [ ] **rclone as a Linux package dependency** once fetching is implemented –
   before that it would be a promise the program does not keep. **At least
   1.75.0.** Arch and Manjaro are current enough; **for Debian stable this is

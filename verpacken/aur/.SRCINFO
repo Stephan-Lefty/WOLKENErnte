@@ -1,0 +1,24 @@
+pkgbase = wolkenernte
+	pkgdesc = Bilder und Videos aus den Wolken holen und dort aufräumen
+	pkgver = 0.4.1
+	pkgrel = 1
+	url = https://github.com/Stephan-Lefty/WOLKENErnte
+	arch = any
+	license = MIT
+	checkdepends = python-pillow
+	makedepends = python-build
+	makedepends = python-installer
+	makedepends = python-setuptools
+	makedepends = python-wheel
+	depends = python
+	optdepends = rclone>=1.75.0: Bilder aus Wolkenspeichern holen und dort aufräumen
+	optdepends = pyside6: die Fensteranwendung (wolkenernte fenster)
+	optdepends = python-pillow: Vorschaubilder, Doppelgängersuche und Aufnahmedatum aus dem Bild
+	optdepends = ffmpeg: Vorschaubilder aus Videos
+	optdepends = python-onnxruntime-cpu: Schlagwörter aus dem Bild
+	optdepends = perl-image-exiftool: Metadaten von Fotos und Videos (noch nicht eingebaut)
+	options = !debug
+	source = wolkenernte-0.4.1.tar.gz::https://github.com/Stephan-Lefty/WOLKENErnte/archive/refs/tags/v0.4.1.tar.gz
+	sha256sums = a8188919c10af2d2f75063796b35e816a5172199f6708d5de271ab727d3964bd
+
+pkgname = wolkenernte

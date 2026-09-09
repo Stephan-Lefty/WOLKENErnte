@@ -39,6 +39,10 @@ dist/
 verpacken/**/*.pkg.tar.zst
 verpacken/**/src/
 verpacken/**/pkg/
+# Das Quellarchiv, das makepkg für das AUR-Paket herunterlädt. Fünf
+# Megabyte, die sich jederzeit wiederherstellen lassen - und beim
+# nächsten Nachziehen läge ohnehin das falsche da.
+verpacken/**/*.tar.gz
 # Der Bauordner des .deb - er entsteht bei jedem Lauf neu.
 verpacken/debian/bau/
 

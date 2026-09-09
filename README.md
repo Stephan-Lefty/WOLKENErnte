@@ -73,6 +73,12 @@ Weitere Befehle: `wolkenernte anbieter` zeigt die Tabelle von oben,
 ähnliche Bilder, `wolkenernte rclone` prüft, ob der Zugang zu den Wolken bereit
 ist, und `wolkenernte zugang` verwaltet die Zugänge.
 
+`wolkenernte neuigkeiten` fragt bei GitHub nach, ob es eine neuere Fassung gibt.
+**Das ist der einzige Netzaufruf, den WOLKENErnte von sich aus an einen fremden
+Server richtet** – und er geschieht nur, wenn Sie ihn ausdrücklich verlangen.
+Kein Aufruf beim Start, keiner im Hintergrund. Übertragen wird nichts als die
+Anfrage: kein Archivinhalt, keine Kennung, keine Zählung.
+
 ## Das Archiv
 
 ```
@@ -119,10 +125,18 @@ den Zwischenspeicher.
 
 ## Einrichten
 
-**Arch und Manjaro**
+**Arch und Manjaro** – aus dem Quelltext:
 
 ```
 cd verpacken/arch && makepkg -si
+```
+
+Sobald das Paket im AUR steht, geht es einfacher, und Aktualisierungen kommen
+dann mit dem Rest des Systems mit (siehe
+[verpacken/aur/](verpacken/aur/README.md)):
+
+```
+pamac install wolkenernte
 ```
 
 **Alle anderen** – der Kern läuft mit Python 3.11 aufwärts ohne Fremdpakete:

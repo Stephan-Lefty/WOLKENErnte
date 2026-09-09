@@ -1,0 +1,83 @@
+# Maintainer: Stephan-Lefty <204562172+Stephan-Lefty@users.noreply.github.com>
+#
+# Die Fassung für das AUR. Der Unterschied zu ../arch/PKGBUILD ist
+# genau einer, und er ist der ganze Zweck: Dieses hier baut aus dem
+# **veröffentlichten Quellarchiv**, jenes aus dem Arbeitsverzeichnis.
+# Ein AUR-Paket, das auf einen Ordner auf einer fremden Platte zeigt,
+# ließe sich nirgends bauen.
+#
+# Die Mailadresse ist die Noreply-Anschrift von GitHub. Sie ist dort
+# öffentlich angelegt, erfüllt die AUR-Konvention und verrät keine
+# echte Adresse - in einem öffentlichen Repository hat keine etwas zu
+# suchen.
+
+pkgname=wolkenernte
+pkgver=0.4.1
+pkgrel=1
+pkgdesc="Bilder und Videos aus den Wolken holen und dort aufräumen"
+arch=('any')
+url="https://github.com/Stephan-Lefty/WOLKENErnte"
+license=('MIT')
+
+depends=('python')
+
+# Alles Weitere ist Kür und wird zur Laufzeit geprüft. rclone bleibt
+# hier, obwohl der Abruf eingebaut ist: Wer nur ein Archiv durchsieht
+# oder aus einem Takeout-Paket erntet, braucht es nicht. Wer in die
+# Wolke will, braucht rclone>=1.75.0 - erst dort gibt es die
+# Schnittstelle, über die ein Programm die Anmelde-Adresse für den
+# Browser erfährt.
+optdepends=(
+    'rclone>=1.75.0: Bilder aus Wolkenspeichern holen und dort aufräumen'
+    'pyside6: die Fensteranwendung (wolkenernte fenster)'
+    'python-pillow: Vorschaubilder, Doppelgängersuche und Aufnahmedatum aus dem Bild'
+    'ffmpeg: Vorschaubilder aus Videos'
+    'python-onnxruntime-cpu: Schlagwörter aus dem Bild'
+    'perl-image-exiftool: Metadaten von Fotos und Videos (noch nicht eingebaut)'
+)
+
+makedepends=('python-build' 'python-installer' 'python-setuptools' 'python-wheel')
+checkdepends=('python-pillow')
+options=(!debug)
+
+# Das Quellarchiv erzeugt GitHub aus der Marke. Der Doppelpunkt-Name
+# davor ist nötig, weil die Datei sonst schlicht "v0.4.1.tar.gz" hieße
+# und im gemeinsamen Zwischenspeicher mit jedem anderen Projekt
+# kollidierte, das eine gleichnamige Marke hat.
+_archiv="WOLKENErnte-${pkgver}"
+source=("${pkgname}-${pkgver}.tar.gz::${url}/archive/refs/tags/v${pkgver}.tar.gz")
+sha256sums=('a8188919c10af2d2f75063796b35e816a5172199f6708d5de271ab727d3964bd')
+
+build() {
+    cd "${_archiv}"
+    python -m build --wheel --no-isolation
+}
+
+check() {
+    cd "${_archiv}"
+    # Die Fenstertests setzen QT_QPA_PLATFORM selbst auf "offscreen"
+    # und brauchen keine Anzeige; ohne PySide6 werden sie übersprungen.
+    python -m unittest discover -s tests -t .
+}
+
+package() {
+    cd "${_archiv}"
+    python -m installer --destdir="${pkgdir}" \
+        "dist/${pkgname}-${pkgver}-py3-none-any.whl"
+
+    install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+    install -Dm644 README.md "${pkgdir}/usr/share/doc/${pkgname}/README.md"
+    install -Dm644 CHANGELOG.md "${pkgdir}/usr/share/doc/${pkgname}/CHANGELOG.md"
+    install -Dm644 docs/anbieter.md "${pkgdir}/usr/share/doc/${pkgname}/anbieter.md"
+    install -Dm644 docs/takeout.md "${pkgdir}/usr/share/doc/${pkgname}/takeout.md"
+
+    # Der Menüeintrag - unter "Grafik" im Anwendungsmenü.
+    install -Dm644 verpacken/wolkenernte.desktop \
+        "${pkgdir}/usr/share/applications/${pkgname}.desktop"
+
+    # Die Symbole an den Ort, an dem Arbeitsumgebungen sie suchen.
+    for groesse in 16 24 32 48 64 128 256 512; do
+        install -Dm644 "assets/icon-${groesse}.png" \
+            "${pkgdir}/usr/share/icons/hicolor/${groesse}x${groesse}/apps/${pkgname}.png"
+    done
+}

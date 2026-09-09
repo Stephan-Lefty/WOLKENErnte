@@ -116,6 +116,18 @@ Weg von dort in die Datenbank und in die Oberflächen.
 **Grundsatz:** Was WOLKENErnte braucht, bringt es mit oder lässt es vom
 Paketverwalter mitbringen. Niemand soll rclone von Hand herunterladen.
 
+- [ ] **Das AUR-Paket hochladen.** Alles liegt fertig unter `verpacken/aur/`;
+  es fehlt nur der AUR-Zugang (SSH-Schlüssel im Konto). Danach kommt jede neue
+  Fassung mit `pamac update` von selbst. **Der Anlass:** Auf dem Rechner des
+  Entwicklers lief 0.3.0, während 0.4.0 und 0.4.1 längst veröffentlicht waren –
+  wer selbst baut, erfährt von einer neuen Fassung sonst gar nichts.
+- [ ] **Auf PyPI veröffentlichen**, damit `pip install -U wolkenernte` geht.
+  Braucht ein Konto und einen Token. Für alle, die kein Arch fahren, ist das
+  der übliche Weg.
+- [ ] **Ein APT-Verzeichnis** wäre das Gegenstück für Debian und Ubuntu – heute
+  ist das `.deb` eine Datei am Release, die niemand aktualisiert. Aufwand:
+  eigene Signierschlüssel und ein Ort zum Ablegen.
+
 - [ ] **rclone unter Linux als Paketabhängigkeit** eintragen, sobald der Abruf
   eingebaut ist – vorher wäre es eine Zusage, die das Programm nicht einlöst.
   **Mindestens 1.75.0.** Arch und Manjaro sind aktuell genug; **bei Debian

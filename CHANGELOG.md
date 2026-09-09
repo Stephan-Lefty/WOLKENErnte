@@ -4,6 +4,30 @@
 
 Alle nennenswerten Änderungen an WOLKENErnte. Neueste zuerst.
 
+## Unveröffentlicht
+
+**`wolkenernte neuigkeiten`** fragt bei GitHub nach, ob es eine neuere
+Fassung gibt. Das ist der **einzige Netzaufruf**, den WOLKENErnte von
+sich aus an einen fremden Server richtet, und er geschieht nur auf
+ausdrückliches Verlangen – kein Aufruf beim Start, keiner im
+Hintergrund. Übertragen wird nichts als die Anfrage.
+
+Anlass war ein Fund am eigenen Rechner: Dort lief 0.3.0, während 0.4.0
+und 0.4.1 längst veröffentlicht waren. Wer selbst baut, erfährt von
+einer neuen Fassung sonst gar nichts.
+
+Verglichen wird über Zahlen, nicht über Text – als Text wäre `0.10.0`
+kleiner als `0.4.1`, und der Hinweis bliebe genau dann aus, wenn er am
+nötigsten ist.
+
+**Ein AUR-Paket** liegt unter `verpacken/aur/` bereit: PKGBUILD aus dem
+veröffentlichten Quellarchiv statt aus dem Arbeitsverzeichnis, dazu
+`.SRCINFO` und `nachziehen.py`, das bei jeder neuen Fassung das Archiv
+holt, die Prüfsumme daraus rechnet und beides einträgt. Von Hand
+vergisst man genau die Prüfsumme – das Paket baut dann trotzdem, aus
+dem alten zwischengespeicherten Archiv, und es fällt erst auf, wenn ein
+fremder Rechner es lädt.
+
 ## 0.4.1 – 2026-09-09
 
 **Vorschaubilder für Videos.** Die 424 Videos zeigten bisher nur ein
