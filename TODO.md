@@ -77,12 +77,18 @@ Weg von dort in die Datenbank und in die Oberflächen.
   und der Lauf ist beliebig wiederholbar. Dabei fiel auf, dass der **Ordner
   nie betroffen war**: `zielordner()` liest `.year`/`.month` des Zeitobjekts,
   und die zeigen die Wanduhr.*
-- [ ] **Den Lauf am eigenen Bestand scharf schalten.** Gemessen ist er:
-  **5.017 von 14.105 Bildern** tragen den Fingerabdruck, verschoben um −1 h
-  oder −2 h je nach Sommerzeit. An einer Kopie von 40 echten Dateien ist der
-  ganze Weg durchgespielt – richtigstellen, zweiter Lauf findet nichts mehr,
-  `--zurueck` stellt den Ausgangsstand byteweise wieder her. Am echten Archiv
-  ist `--wirklich` noch nicht gelaufen.
+- [x] **Den Lauf am eigenen Bestand scharf schalten.** — *Erledigt am
+  2026-09-09: 5.017 von 14.105 Bildern richtiggestellt, Verschiebung −1 h oder
+  −2 h je nach Sommerzeit. Nachgeprüft: Bei allen 5.017 stimmt die Dateizeit
+  jetzt mit der EXIF-Wanduhr überein, der Nachlauf findet 0, und in der
+  Datenbank sind 5.002 Zeilen nachgezogen. Das Protokoll liegt unter
+  `.wolkenernte/uhrzeit-reparatur.jsonl`.*
+- [ ] **51 Dateien im Archiv haben keine Datenbankzeile.** Beim Nachprüfen der
+  Zeitreparatur aufgefallen: 14.821 Dateien, aber nur 14.770 Zeilen mit Pfad.
+  Es sind von Hand hineingelegte oder aus Ordnern geerntete Bilder, über die
+  nie `erfassen` gelaufen ist. Kein Schaden – die Oberfläche zeigt sie, weil
+  das Dateisystem die Wahrheit ist –, aber sie tragen weder Titel noch Album
+  noch Schlagwort. Ein `erfassen` über das Archiv selbst wäre der Weg.
 - [ ] **Videos aus einem gewöhnlichen Ordner haben kein Datum.** EXIF gibt es
   bei ihnen nicht, und das Feld `creation_time` im Container liest niemand.
   Ohne Takeout-JSON daneben landet jedes Video in `ohne-datum`. `ffprobe` kann

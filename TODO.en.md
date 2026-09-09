@@ -72,12 +72,18 @@ from there into the database and the interfaces.
   images dated from a Takeout JSON are left alone and the run can be repeated
   freely. It turned out the **folder was never affected**: `zielordner()` reads
   `.year`/`.month` off the time object, and those show the wall clock.*
-- [ ] **Run it for real against the developer's own archive.** It has been
-  measured: **5,017 of 14,105 images** carry the fingerprint, shifted by −1 h
-  or −2 h depending on daylight saving. The whole path was rehearsed on a copy
-  of 40 real files – put right, second run finds nothing, `--zurueck` restores
-  the starting state byte for byte. On the real archive `--wirklich` has not
-  been run.
+- [x] **Run it for real against the developer's own archive.** — *Done on
+  2026-09-09: 5,017 of 14,105 images put right, shifted by −1 h or −2 h
+  depending on daylight saving. Verified afterwards: for all 5,017 the file
+  time now matches the EXIF wall clock, a second pass finds 0, and 5,002 rows
+  were carried along in the database. The log sits in
+  `.wolkenernte/uhrzeit-reparatur.jsonl`.*
+- [ ] **51 files in the archive have no database row.** Noticed while checking
+  the time repair: 14,821 files but only 14,770 rows with a path. They are
+  images placed by hand or harvested from folders that `erfassen` never ran
+  over. No harm – the interface shows them because the file system is the
+  truth – but they carry neither title nor album nor keyword. Running
+  `erfassen` over the archive itself would be the way.
 - [ ] **Videos from a plain folder have no date.** They carry no EXIF, and
   nobody reads the container's `creation_time` field. Without a Takeout JSON
   beside them every video ends up in `ohne-datum`. `ffprobe` can read it, and

@@ -5,14 +5,38 @@ Landkarte des Repositorys. Ergänzt [README.md](README.md) und
 
 ## Hier war Schluss (Stand 2026-09-09, Mittwoch abends)
 
-**685 Tests grün, 0.4.2 gebaut.** Die Marke `v0.4.2` steht auf GitHub
-noch auf dem **falschen** Stand – auf `90070ec` statt auf der Spitze
-von `main` – und einen Release gibt es noch nicht. Was zu tun bleibt, steht in
-[TODO.md](TODO.md) unter *Ausliefern*; die Befehle dafür sind
-`git tag -f v0.4.2`, `git push -f origin v0.4.2`, dann
-`gh release create` mit den beiden Dateien aus `dist/`, und **danach**
-`python3 verpacken/aur/nachziehen.py` – nicht davor: Die Prüfsumme
-wird aus dem veröffentlichten Archiv gerechnet.
+**703 Tests grün, 0.4.3 veröffentlicht und installiert.** Offen ist nur
+noch das Hochladen ins AUR – dafür fehlt der SSH-Schlüssel im Konto,
+alles andere liegt fertig unter `verpacken/aur/`.
+
+**Die Reihenfolge beim Veröffentlichen, zweimal gelernt:** erst Marke
+setzen und pushen, dann `gh release create`, **dann**
+`python3 verpacken/aur/nachziehen.py` – die Prüfsumme wird aus dem
+veröffentlichten Quellarchiv gerechnet, vorher gibt es das nicht. Und
+das Arch-Paket **vor** dem `.deb` bauen: `makepkg` leert `dist/`.
+
+### Die Zeitreparatur ist gelaufen
+
+`wolkenernte uhrzeit` (0.4.3) hat am echten Bestand **5.017 von 14.105
+Bildern** richtiggestellt. Nachgeprüft: Bei allen 5.017 stimmt die
+Dateizeit jetzt mit der EXIF-Wanduhr überein, der Nachlauf findet 0,
+5.002 Zeilen in der Datenbank sind mitgezogen. Protokoll unter
+`.wolkenernte/uhrzeit-reparatur.jsonl`, `--zurueck` hebt es auf.
+
+**Erkannt wird über den Fingerabdruck der alten Rechnung**, nicht über
+eine Vermutung: Aus dem EXIF *dieser Datei* wird ausgerechnet, was die
+alte Fassung daraus gemacht hätte; nur bei sekundengenauer
+Übereinstimmung wird ersetzt. Daraus folgt von selbst, dass Bilder aus
+Takeout-JSONs unangetastet bleiben, der Lauf wiederholbar ist und auf
+einem UTC-Rechner gar nichts tut.
+
+**Eine Annahme fiel dabei um, und das sparte Code.** Erst stand da eine
+Umzugsmechanik – eine Aufnahme vom 1. Januar 00:30, eine Stunde
+zurückgerechnet, gehöre doch ins Vorjahr. Sie gehört nicht:
+`zielordner()` nimmt `.year` und `.month` des Zeitobjekts, und die
+zeigen die **Wanduhr**, gleich welche Zeitzone daranhängt. Die Datei lag
+von Anfang an im richtigen Ordner. Die Mechanik ist raus, an ihrer
+Stelle steht der Test `DerOrdnerBleibt` und nagelt die Annahme fest.
 
 ### Bildschirmfotos, und was sie aufgedeckt haben
 
