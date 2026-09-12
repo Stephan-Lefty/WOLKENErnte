@@ -388,6 +388,14 @@ class Hauptfenster(QMainWindow):
         self.holen_menue = menue.addMenu("Bilder holen aus")
         self.holen_menue.aboutToShow.connect(self._zugaenge_auffrischen)
 
+        # **Der Takeout steht hier oben, nicht unter den Zugängen.**
+        # Er braucht keinen: Google Fotos ist für fremde Programme
+        # verschlossen, und der Export ist der einzige Weg an den
+        # eigenen Bestand. Ein Anwender, der »Google« sucht, sucht ihn
+        # unter »Bilder holen aus« - und findet dort sonst nichts.
+        eintrag = menue.addAction("Google-Takeout einlesen (ZIP-Dateien) …")
+        eintrag.triggered.connect(self._takeout_einlesen)
+
         menue.addSeparator()
         self.aufraeum_menue = menue.addMenu("In der Cloud aufräumen")
         self.aufraeum_menue.aboutToShow.connect(self._zugaenge_auffrischen)
@@ -472,6 +480,86 @@ class Hauptfenster(QMainWindow):
             else:
                 eintrag.setEnabled(False)
                 eintrag.setText(f"{beschriftung} – dort nur lesbar")
+
+    def _takeout_einlesen(self) -> None:
+        """Google-Takeout: auswählen, prüfen, holen – und dann fragen.
+
+        **Das Löschen der ZIP-Dateien hängt an vier Bedingungen**,
+        dieselbe Strenge wie beim Aufräumen in der Wolke: Der Lauf ist
+        durchgelaufen; `erfassen` ist mitgelaufen, sonst wären Orte,
+        Titel und Alben mit den ZIPs weg; **jedes einzelne** Bild ist im
+        Archiv nachgewiesen, mit für diesen Lauf gerechneten
+        Prüfsummen; und der Anwender bestätigt es, nachdem er die Zahlen
+        gesehen hat. Fehlt eine, bleiben die ZIPs liegen.
+        """
+        from .takeout import TakeoutLauf, TakeoutWaehlen
+
+        dialog = TakeoutWaehlen(self.archiv, self)
+        if not dialog.exec() or not dialog.ausgewaehlt:
+            return
+
+        lauf = TakeoutLauf(self.archiv, dialog.ausgewaehlt, self)
+        if not lauf.exec() or lauf.ergebnis is None:
+            return
+        bilanz, nachweis = lauf.ergebnis
+        self._neu_einlesen()
+
+        if not nachweis.vollstaendig:
+            QMessageBox.warning(
+                self, "WOLKENErnte",
+                f"Geholt:\n\n{bilanz}\n\n"
+                f"**{len(nachweis.fehlend)} von {nachweis.geprueft} Dateien "
+                f"sind im Archiv nicht wiederzufinden.** Die ZIP-Dateien "
+                f"bleiben liegen – nichts löschen, bevor das geklärt ist.")
+            return
+
+        text = (f"Geholt:\n\n{bilanz}\n\n"
+                f"Nachgewiesen: alle {nachweis.geprueft} Dateien des "
+                f"Exports liegen im Archiv.")
+        if not dialog.loeschen_gewuenscht:
+            QMessageBox.information(self, "WOLKENErnte", text)
+            return
+
+        self._takeout_loeschen(dialog.ausgewaehlt, text)
+
+    def _takeout_loeschen(self, teile, was_geschah: str) -> None:
+        """Die ZIP-Dateien wegräumen – nach einer letzten Rückfrage.
+
+        Die Rückfrage nennt Zahl und Umfang und hat **»Behalten« als
+        Vorgabe**. Ein Dialog, bei dem die Eingabetaste löscht, ist
+        keine Rückfrage.
+        """
+        from ..bestandsliste import umfang
+
+        gesamt = sum(p.stat().st_size for p in teile if p.exists())
+        frage = QMessageBox(self)
+        frage.setWindowTitle("WOLKENErnte")
+        frage.setIcon(QMessageBox.Icon.Warning)
+        frage.setText(f"{was_geschah}\n\n"
+                      f"{len(teile)} ZIP-Datei(en) mit {umfang(gesamt)} "
+                      f"jetzt löschen?")
+        frage.setInformativeText(
+            "Danach ist das Archiv die einzige Kopie dieser Bilder.\n"
+            + "\n".join(f"  {p.name}" for p in teile))
+        behalten = frage.addButton("Behalten", QMessageBox.ButtonRole.RejectRole)
+        frage.addButton("Löschen", QMessageBox.ButtonRole.DestructiveRole)
+        frage.setDefaultButton(behalten)
+        frage.exec()
+        if frage.clickedButton() is behalten:
+            return
+
+        geloescht, misslungen = 0, []
+        for pfad in teile:
+            try:
+                pfad.unlink()
+                geloescht += 1
+            except OSError as fehler:
+                misslungen.append(f"{pfad.name}: {fehler}")
+
+        meldung = f"{geloescht} ZIP-Datei(en) gelöscht, {umfang(gesamt)} frei."
+        if misslungen:
+            meldung += "\n\nNicht gelöscht:\n" + "\n".join(misslungen)
+        QMessageBox.information(self, "WOLKENErnte", meldung)
 
     def _durchsehen(self, zugang: str) -> None:
         from .wolken import Ernter, WolkeDurchsehen

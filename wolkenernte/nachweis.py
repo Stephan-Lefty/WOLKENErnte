@@ -19,6 +19,7 @@ import sys
 import time
 import zlib
 from collections.abc import Callable
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from .archiv import medien as archiv_medien
@@ -113,6 +114,100 @@ def im_terminal(nummer: int, gesamt: int) -> None:
         print(f"  Archiv {nummer}/{gesamt}", end="\r", flush=True)
 
 
+def fuehrt_pruefsummen(quelle) -> bool:
+    """Ob die Quelle Prüfsummen mitbringt, ohne dass man liest.
+
+    Ein Takeout tut das – ein ZIP führt zu jeder Datei die CRC-32 in
+    seinem Inhaltsverzeichnis. Ein ausgepackter Ordner tut es nicht.
+    Erkannt an der Art der Quelle, **nicht** an einem Nullwert: Eine
+    leere Datei hat die Prüfsumme Null und ist trotzdem bekannt.
+    """
+    return isinstance(quelle, Takeout)
+
+
+@dataclass
+class Nachweis:
+    """Das Ergebnis einer Prüfung – ohne eine Zeile Ausgabe."""
+
+    geprueft: int = 0
+    fehlend: list[str] = field(default_factory=list)
+
+    @property
+    def vollstaendig(self) -> bool:
+        """Ob **jeder** Inhalt der Quelle im Archiv wiedergefunden wurde.
+
+        Nur dann darf die Quelle weg. Steht als Eigenschaft hier und
+        nicht als ``not fehlend`` an drei Stellen in der Oberfläche:
+        Eine Bedingung fürs Löschen gehört an genau eine Stelle.
+        """
+        return not self.fehlend
+
+
+def nachweis_fuehren(archiv: Path, quelle, name: str = "",
+                     melden: Callable[[int, int], None] | None = None,
+                     *, vorhanden: set[tuple[int, int]] | None = None,
+                     ) -> Nachweis:
+    """Jede Mediendatei der Quelle im Archiv wiederfinden.
+
+    **Die Prüfsummen werden für diesen Lauf gerechnet**, nicht der
+    Datenbank geglaubt – anders als bei der Vorschau in
+    :mod:`wolkenernte.vorpruefung`. Der Unterschied ist der Einsatz:
+    Dort wird eine Zahl angezeigt, hier wird danach etwas gelöscht.
+
+    Bei einem Takeout kostet das nichts, weil ein ZIP seine CRC-32 im
+    Inhaltsverzeichnis führt. Bei einem Ordner auf der Platte wird jede
+    Datei gelesen.
+    """
+    ergebnis = Nachweis()
+    if vorhanden is None:
+        vorhanden = archiv_kennungen(archiv, melden)
+
+    # Ein ZIP führt seine CRC-32 im Inhaltsverzeichnis; ein Ordner auf
+    # der Platte nicht, dort muss gelesen werden.
+    selbst_rechnen = not fuehrt_pruefsummen(quelle)
+    eintraege = [e for e in quelle if _ist_medium(e.pfad.rsplit("/", 1)[-1])]
+    for nummer, eintrag in enumerate(eintraege, 1):
+        if melden:
+            melden(nummer, len(eintraege))
+        ergebnis.geprueft += 1
+
+        summe = eintrag.pruefsumme
+        if selbst_rechnen:
+            # **Nicht an ``pruefsumme == 0`` entscheiden.** Eine leere
+            # Datei hat die CRC-32 Null, und ein ZIP führt sie
+            # trotzdem. Wer daraus »unbekannt« schließt, liest das
+            # ganze Teilarchiv durch, um die Prüfsumme einer nulllangen
+            # Datei zu bilden. Ob eine Quelle Prüfsummen mitbringt,
+            # hängt an ihrer Art, nicht an einem Wert.
+            try:
+                summe = 0
+                with Path(eintrag.quelle).open("rb") as datei:
+                    while brocken := datei.read(1 << 20):
+                        summe = zlib.crc32(brocken, summe)
+            except OSError as fehler:
+                ergebnis.fehlend.append(
+                    f"{name or archiv.name}: {eintrag.pfad} ({fehler})")
+                continue
+
+        if (eintrag.groesse, summe) not in vorhanden:
+            ergebnis.fehlend.append(f"{name or archiv.name}: {eintrag.pfad}")
+    return ergebnis
+
+
+def _quelle_zum_pruefen(pfad: Path):
+    """Ordner voller ZIPs, einzelne ZIP-Datei oder ausgepackter Ordner.
+
+    Dieselben drei Fälle wie in :func:`wolkenernte.ernten.quelle_oeffnen`
+    – ohne den Wolkenzugang, denn geprüft wird gegen etwas, das auf
+    dieser Platte liegt.
+    """
+    if pfad.is_dir() and any(p.suffix.lower() == ".zip" for p in pfad.iterdir()):
+        return Takeout.aus_ordner(pfad)
+    if pfad.is_file() and pfad.suffix.lower() == ".zip":
+        return Takeout.aus_datei(pfad)
+    return Ordner(pfad)
+
+
 def pruefen(archiv: Path, quellen: list[Path]) -> int:
     t0 = time.time()
     print(f"=== Archiv: {archiv} ===")
@@ -124,36 +219,20 @@ def pruefen(archiv: Path, quellen: list[Path]) -> int:
 
     for pfad in quellen:
         print(f"\n=== Quelle: {pfad.name} ===")
-        if pfad.is_dir() and any(p.suffix.lower() == ".zip" for p in pfad.iterdir()):
-            quelle = Takeout.aus_ordner(pfad)
-            eintraege = [e for e in quelle if _ist_medium(e.name)]
-            print(f"  {len(eintraege)} Mediendateien")
-            for e in eintraege:
-                gesamt += 1
-                if (e.groesse, e.pruefsumme) not in vorhanden:
-                    fehlend.append(f"{pfad.name}: {e.pfad}")
+        # Dieselbe Funktion, die auch das Fenster benutzt. Zwei
+        # Umsetzungen derselben Löschbedingung wären die eine, die
+        # irgendwann auseinanderläuft - und zwar unbemerkt, weil beide
+        # in ihrem eigenen Test grün bleiben.
+        quelle = _quelle_zum_pruefen(pfad)
+        eintraege = sum(1 for _ in quelle)
+        print(f"  {eintraege} Einträge, Prüfsummen werden verglichen")
+        ergebnis = nachweis_fuehren(archiv, quelle, pfad.name,
+                                    vorhanden=vorhanden)
+        gesamt += ergebnis.geprueft
+        fehlend.extend(ergebnis.fehlend)
+        if hasattr(quelle, "schliessen"):
             quelle.schliessen()
-        else:
-            ordner = Ordner(pfad)
-            # Alles rechnen, nicht nur Verdächtige: Hier geht es um den
-            # Nachweis, nicht um Doppelgänger.
-            eintraege = [e for e in ordner if _ist_medium(e.pfad)]
-            print(f"  {len(eintraege)} Mediendateien, Prüfsummen werden gerechnet")
-            for nummer, e in enumerate(eintraege, 1):
-                if nummer % 1000 == 0:
-                    print(f"  {nummer}/{len(eintraege)}", end="\r", flush=True)
-                gesamt += 1
-                try:
-                    summe = 0
-                    with e.quelle.open("rb") as datei:
-                        while brocken := datei.read(1 << 20):
-                            summe = zlib.crc32(brocken, summe)
-                except OSError as fehler:
-                    fehlend.append(f"{pfad.name}: {e.pfad} ({fehler})")
-                    continue
-                if (e.groesse, summe) not in vorhanden:
-                    fehlend.append(f"{pfad.name}: {e.pfad}")
-            print(f"  fertig                    ")
+        print("  fertig                    ")
 
     print(f"\n=== Ergebnis nach {(time.time()-t0)/60:.1f} Minuten ===")
     print(f"  {gesamt} Dateien in den Quellen geprüft")

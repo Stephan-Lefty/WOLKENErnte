@@ -43,6 +43,36 @@ def _stamm(datei: Path) -> str:
     return _TEILNUMMER.sub("", datei.stem)
 
 
+def exporte_im_ordner(ordner: Path) -> dict[str, list[Path]]:
+    """Die ZIP-Dateien eines Ordners nach Export gruppiert.
+
+    **Warum nicht einfach alle ZIPs nehmen.** In einem
+    Download-Ordner liegt nicht nur der Takeout. Im Ordner des
+    Entwicklers lagen neben den fünf Teilen eines Exports noch ein
+    Faktura-Programm und ein Spielstand – beide als ZIP. Alle zusammen
+    als einen Export zu lesen ergäbe eine Zählung, die niemand
+    nachvollziehen kann, und im schlimmsten Fall wanderten fremde
+    Grafiken ins Fotoarchiv.
+
+    Gruppiert wird nach dem Namen vor der Teilnummer. Bei Google sieht
+    der so aus: ``takeout-20260912T165849Z-1-001.zip`` bis ``-005.zip``
+    teilen den Stamm ``takeout-20260912T165849Z-1``. Wer zwei Exporte
+    heruntergeladen hat, bekommt zwei Einträge – und die gehören auch
+    nicht zusammengerührt.
+
+    Die Reihenfolge ist die der Namen, damit ``-002`` vor ``-010``
+    steht.
+    """
+    if not ordner.is_dir():
+        raise TakeoutFehler(f"{ordner} ist kein Ordner.")
+
+    gruppen: dict[str, list[Path]] = {}
+    for pfad in sorted(ordner.iterdir(), key=lambda p: p.name):
+        if pfad.is_file() and pfad.suffix.lower() == ".zip":
+            gruppen.setdefault(_stamm(pfad), []).append(pfad)
+    return gruppen
+
+
 @dataclass(frozen=True)
 class Eintrag:
     """Eine Datei irgendwo in den Teilarchiven."""
