@@ -433,9 +433,21 @@ class TakeoutLauf(QDialog):
             self.zeile.setText("")
 
     def _abbrechen(self) -> None:
+        """Anhalten – **nach** dem laufenden Schritt, nicht mitten darin.
+
+        `ernten` kennt keinen Abbruch; es läuft, bis es fertig ist. Der
+        Knopf verspricht deshalb nichts, was er nicht halten kann: Er
+        sagt, dass zwischen den Schritten Schluss ist, und nennt die
+        Folge. Ein »Abbrechen«, das nach dem Holen greift, lässt die
+        Bilder im Archiv, aber ohne Orte und Alben – die stehen in den
+        JSON-Dateien und kommen erst beim Erfassen dazu. Gelöscht wird
+        in diesem Fall nichts.
+        """
         self.arbeit.abbrechen = True
         self.knopf.setEnabled(False)
-        self.phase.setText("Wird angehalten …")
+        self.phase.setText(
+            "Wird angehalten – der laufende Schritt wird zu Ende gebracht.")
+        self.zeile.setText("Die ZIP-Dateien bleiben in jedem Fall liegen.")
 
     def _fertig(self, ergebnis) -> None:
         self.ergebnis = ergebnis
@@ -452,6 +464,27 @@ class TakeoutLauf(QDialog):
         self.faden.wait(10000)
 
     def closeEvent(self, ereignis) -> None:  # noqa: N802
-        self.arbeit.abbrechen = True
+        """Nicht verschwinden, solange geschrieben wird.
+
+        **Der erste Anlauf wartete zehn Sekunden und ging dann
+        trotzdem.** Das Holen von neun Gigabyte dauert länger, und der
+        `QThread` gehört diesem Dialog: Wäre er gegangen, hätte Qt den
+        Faden mitsamt seinem C++-Gegenstück unter der laufenden Arbeit
+        weggeräumt. Ein herrenloser Faden, der weiter in ein Archiv
+        schreibt, das niemand mehr beobachtet – genau das, wovor der
+        Ernter aus der Wolke sich schon hütet.
+
+        Das Fenster zu schließen heißt darum: anmelden, dass Schluss
+        sein soll, und dableiben, bis der Schritt fertig ist.
+        """
+        if self.faden.isRunning():
+            self.arbeit.abbrechen = True
+            self.knopf.setEnabled(False)
+            self.phase.setText(
+                "Wird angehalten – der laufende Schritt wird zu Ende "
+                "gebracht. Das Fenster schließt sich dann von selbst.")
+            self.zeile.setText("Die ZIP-Dateien bleiben in jedem Fall liegen.")
+            ereignis.ignore()
+            return
         self._aufraeumen()
         super().closeEvent(ereignis)

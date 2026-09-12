@@ -4,6 +4,20 @@
 
 Alle nennenswerten Änderungen an WOLKENErnte. Neueste zuerst.
 
+## Unveröffentlicht
+
+**Das Fenster des Takeout-Laufs verschwindet nicht mehr unter der laufenden
+Arbeit.** Es wartete zehn Sekunden und ging dann trotzdem – das Holen von neun
+Gigabyte dauert länger, und der Faden gehört diesem Fenster: Qt hätte ihn
+mitsamt seinem C++-Gegenstück unter der laufenden Arbeit weggeräumt, und ein
+herrenloser Faden hätte weiter in ein Archiv geschrieben, das niemand mehr
+beobachtet. Jetzt bleibt das Fenster stehen, bis der Schritt fertig ist.
+
+Und der Abbruchknopf verspricht nur, was er halten kann: `ernten` kennt keinen
+Abbruch, also greift er **zwischen** den Schritten. Er sagt das jetzt auch –
+samt der Folge, dass die Bilder dann ohne Orte und Alben im Archiv liegen. Die
+ZIP-Dateien bleiben in jedem Fall liegen.
+
 ## 0.4.5 – 2026-09-12
 
 **Der Google-Takeout ist im Fenster angekommen.** Menü *Cloudspeicher →

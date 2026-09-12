@@ -158,6 +158,30 @@ class DerLaufMachtAlleDreiSchritte(unittest.TestCase):
         self.assertFalse(zweiter.vollstaendig)
         self.assertEqual(len(zweiter.fehlend), 1)
 
+    def test_abbrechen_nach_dem_holen_laesst_nichts_loeschen(self) -> None:
+        """**Der Abbruch greift zwischen den Schritten**, denn `ernten`
+        kennt keinen. Wichtig ist nur: Danach darf keine Quelle weg.
+        Die Bilder liegen dann im Archiv, aber ohne Orte und Alben –
+        und die stehen ausschließlich in den ZIP-Dateien.
+        """
+        from wolkenernte.fenster.takeout import TakeoutArbeit
+
+        arbeit = TakeoutArbeit(self.archiv, [self.erstes, self.zweites])
+        arbeit.abbrechen = True
+        gemeldet = {}
+        arbeit.fertig.connect(lambda e: gemeldet.update(werte=e))
+        arbeit.misslungen.connect(lambda t: gemeldet.update(fehler=t))
+
+        import contextlib
+        with contextlib.redirect_stdout(io.StringIO()):
+            arbeit.laufen()
+
+        self.assertIn("fehler", gemeldet)
+        self.assertIn("nichts gelöscht", gemeldet["fehler"])
+        self.assertNotIn("werte", gemeldet)
+        self.assertTrue(self.erstes.exists())
+        self.assertTrue(self.zweites.exists())
+
     def test_die_zip_dateien_bleiben_liegen(self) -> None:
         """Der Lauf selbst löscht **nichts**. Das ist ein eigener
         Schritt mit eigener Rückfrage."""
