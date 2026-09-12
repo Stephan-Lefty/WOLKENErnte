@@ -169,6 +169,27 @@ package manager bring along. Nobody should download rclone by hand.
 - [ ] **rclone in Debian stable is too old** (below 1.75.0). Either ship rclone
   inside the .deb or point at trixie-backports.
 
+### Credentials
+
+From outside feedback (2026-09-09): "I had wondered how you were going to store
+the login credentials securely. rclone answers that, of course." **Only half.**
+rclone does store them, but `obscure` is obfuscation, not encryption – `rclone
+reveal` undoes it in one line. What protects them today is file mode `0600`.
+
+- [ ] **Allow an encrypted rclone configuration.** rclone's own answer is
+  `rclone config password`. Today that does **not** work: `Dienst.starten()`
+  passes `--ask-password=false`, because a daemon has no terminal to ask at.
+  The way would be `RCLONE_CONFIG_PASS` through the process environment – the
+  same reasoning as for `RCLONE_RC_PASS`, since on Linux anyone can read a
+  process's command line in `/proc`. Open is **who asks for the master
+  password** and how often; asking at every start makes the desktop
+  application unusable.
+- [ ] **And answer the question behind it honestly:** as long as the photo
+  archive beside it consists of ordinary files, an encrypted credential
+  protects little – whoever has the machine has the photos. The same reasoning
+  killed the startup password in MailBurg. It is still worth doing, because a
+  credential opens *someone else's* account, not just your own data.
+
 ### Later
 
 - [ ] Actually try Windows and macOS at all. Nothing has run there yet; the

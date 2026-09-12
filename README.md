@@ -182,6 +182,37 @@ Ohne PySide6 gibt es nur die Weboberfläche. Ohne ffmpeg tragen Videos ein
 Symbol statt eines Standbildes. Ohne onnxruntime bleiben die Schlagwörter bei
 dem, was Datum, Dateiname und Bildmaße hergeben.
 
+## Wo die Zugangsdaten liegen
+
+In `~/.config/wolkenernte/rclone.conf`, mit Dateimodus `0600` – **nicht** in der
+`rclone.conf`, die Sie vielleicht selbst pflegen. Wer WOLKENErnte loswird, nimmt
+diese eine Datei mit, und das Programm kann in Ihren eigenen rclone-Zugängen
+nichts anrichten.
+
+**Was dort steht, ist verschleiert, nicht verschlüsselt.** rclone nennt das
+`obscure`; `rclone reveal` dreht es in einer Zeile zurück. Wer die Datei lesen
+kann, kann die Kennwörter lesen. Eine verschlüsselte Konfiguration
+(`rclone config password`) unterstützt WOLKENErnte **noch nicht** – siehe
+[TODO.md](TODO.md).
+
+Drei Dinge mildern das:
+
+* **Bei Nextcloud ein App-Passwort**, nicht das Kontokennwort. Es gilt nur für
+  dieses Programm und lässt sich einzeln zurückziehen; bei eingeschalteter
+  Zwei-Faktor-Anmeldung nimmt Nextcloud das Kontokennwort ohnehin nicht an.
+* **Bei Dropbox, OneDrive, Google Drive, Box und pCloud** läuft die Anmeldung
+  über OAuth. Ein Kennwort erreicht das Programm dabei nie – nur ein Token, das
+  Sie beim Anbieter widerrufen können.
+* **Die rclone-Schnittstelle ist abgedichtet.** Sie ist laut rclones eigener
+  Doku so mächtig wie ein Shell-Zugriff. Deshalb: nur `127.0.0.1`, Benutzer und
+  Kennwort bei jedem Start neu gewürfelt, übergeben über die
+  **Prozessumgebung** – die Kommandozeile kann unter Linux jeder in `/proc`
+  lesen – und `--rc-no-auth` niemals. Drei Tests nageln das fest.
+
+Und die unbequeme Wahrheit dahinter: Solange Ihr Bildarchiv daneben aus
+gewöhnlichen Dateien besteht – und das ist Absicht, siehe oben –, schützt ein
+verschlüsselter Zugangsschlüssel wenig. Wer den Rechner hat, hat die Fotos.
+
 ## Wie es gebaut ist
 
 Der Kern kommt **ohne Fremdpakete** aus. Den Abruf aus den Wolken übernimmt

@@ -177,6 +177,35 @@ Without PySide6 only the web interface is available. Without ffmpeg videos carry
 a symbol instead of a still. Without onnxruntime the keywords stay with what
 date, filename and image dimensions can tell.
 
+## Where the credentials live
+
+In `~/.config/wolkenernte/rclone.conf`, with file mode `0600` – **not** in the
+`rclone.conf` you may maintain yourself. Anyone removing WOLKENErnte takes that
+one file along, and the program cannot disturb your own rclone remotes.
+
+**What sits there is obscured, not encrypted.** rclone calls it `obscure`, and
+`rclone reveal` undoes it in one line. Whoever can read the file can read the
+passwords. An encrypted configuration (`rclone config password`) is **not yet**
+supported – see [TODO.en.md](TODO.en.md).
+
+Three things soften that:
+
+* **For Nextcloud an app password**, not the account password. It applies to
+  this program only and can be revoked on its own; with two-factor
+  authentication enabled Nextcloud refuses the account password anyway.
+* **For Dropbox, OneDrive, Google Drive, Box and pCloud** sign-in goes through
+  OAuth. No password ever reaches the program – only a token you can revoke at
+  the provider.
+* **The rclone interface is sealed off.** By rclone's own documentation it is as
+  powerful as shell access. Hence: `127.0.0.1` only, user and password freshly
+  rolled at every start, handed over through the **process environment** – on
+  Linux anyone can read a process's command line in `/proc` – and never
+  `--rc-no-auth`. Three tests nail this down.
+
+And the uncomfortable truth behind it: as long as your photo archive beside it
+consists of ordinary files – and that is deliberate, see above – an encrypted
+credential protects little. Whoever has the machine has the photos.
+
 ## How it is built
 
 The core needs **no third-party packages**. Cloud access is handled by

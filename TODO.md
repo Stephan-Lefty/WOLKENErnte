@@ -181,6 +181,29 @@ Paketverwalter mitbringen. Niemand soll rclone von Hand herunterladen.
 - [ ] **rclone in Debian stable ist zu alt** (unter 1.75.0). Entweder rclone
   ins .deb legen oder auf trixie-backports verweisen.
 
+### Zugangsdaten
+
+Aus einer Rückmeldung von außen (2026-09-09): »Hatte mich gefragt, wie du die
+Login Credential sicher ablegen willst. Rclone beantwortet das natürlich.«
+**Nur halb.** rclone legt sie ab, aber `obscure` ist Verschleierung, keine
+Verschlüsselung – `rclone reveal` dreht es in einer Zeile zurück. Was heute
+schützt, ist der Dateimodus `0600`.
+
+- [ ] **Eine verschlüsselte rclone-Konfiguration zulassen.** rclones eigene
+  Antwort darauf ist `rclone config password`. Heute geht das **nicht**:
+  `Dienst.starten()` übergibt `--ask-password=false`, weil ein Dienst kein
+  Terminal hat, an dem er fragen könnte. Der Weg wäre `RCLONE_CONFIG_PASS`
+  über die Prozessumgebung – dieselbe Überlegung wie bei `RCLONE_RC_PASS`,
+  denn die Kommandozeile kann unter Linux jeder in `/proc` lesen. Offen ist,
+  **wer nach dem Hauptkennwort fragt** und wie oft; bei jedem Start danach zu
+  fragen macht die Fensteranwendung unbenutzbar.
+- [ ] **Und die Frage dahinter ehrlich beantworten:** Solange das Bildarchiv
+  daneben aus gewöhnlichen Dateien besteht, schützt ein verschlüsselter
+  Zugangsschlüssel wenig – wer den Rechner hat, hat die Fotos. Dieselbe
+  Überlegung hat bei MailBurg das Startpasswort gekippt. Es ist trotzdem
+  sinnvoll, weil ein Zugangsschlüssel *fremde* Konten öffnet, nicht nur die
+  eigenen Daten.
+
 ### Später
 
 - [ ] Windows und macOS überhaupt erst einmal ausprobieren. Bisher ist nichts
