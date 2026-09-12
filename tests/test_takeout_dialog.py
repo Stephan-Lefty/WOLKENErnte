@@ -133,6 +133,28 @@ class DerLaufMachtAlleDreiSchritte(unittest.TestCase):
         assert breite is not None
         self.assertAlmostEqual(breite[0], 53.55, places=2)
 
+    def test_die_neuen_bilder_haben_schlagwoerter(self) -> None:
+        """**Nach dem ersten echten Lauf fehlten sie.**
+
+        29 frisch geholte Bilder trugen kein einziges Schlagwort,
+        während die 14.824 anderen im Archiv welche hatten – über den
+        Schlagwortfilter waren die Neuen damit unsichtbar. Der Lauf
+        vergibt darum die Hälfte, die ohne Modell auskommt:
+        Jahreszeit, Tageszeit, Bildformat, Herkunft.
+        """
+        self._laufen()
+        from wolkenernte.bestand import ORT
+
+        db = sqlite3.connect(self.archiv / ORT)
+        anzahl = db.execute(
+            "SELECT COUNT(*) FROM bild_schlagwort").fetchone()[0]
+        woerter = {z[0] for z in db.execute("SELECT name FROM schlagwort")}
+        db.close()
+        self.assertGreater(anzahl, 0)
+        # Juli 2024, 16:30 Ortszeit - Sommer und Nachmittag stehen im
+        # Datum, nicht im Bild.
+        self.assertIn("Sommer", woerter)
+
     def test_der_nachweis_ist_vollstaendig(self) -> None:
         """Erst das erlaubt das Löschen der ZIP-Dateien."""
         _bilanz, nachweis = self._laufen()

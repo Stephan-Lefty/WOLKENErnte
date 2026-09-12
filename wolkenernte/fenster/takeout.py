@@ -347,6 +347,7 @@ class TakeoutArbeit(QObject):
         from ..erfassung import erfassen
         from ..ernten import ernten
         from ..nachweis import archiv_kennungen, nachweis_fuehren
+        from ..verschlagworten import verschlagworten
 
         try:
             # **Der erste Teil genügt als Angabe** – `aus_datei` holt
@@ -362,6 +363,22 @@ class TakeoutArbeit(QObject):
 
             self.schritt.emit("Orte, Titel und Alben erfassen", 0, 0)
             erfassen(self.archiv, [erstes])
+
+            # **Der vierte Schritt, und er fehlte.** Nach dem ersten
+            # echten Lauf hatten die 29 neuen Bilder kein einziges
+            # Schlagwort - sie waren über den Schlagwortfilter also
+            # unsichtbar, während die 14.824 anderen welche trugen.
+            #
+            # Nur die Hälfte ohne Modell: Jahreszeit, Tageszeit,
+            # Bildformat und Herkunft stehen in Datum, Name und Maßen,
+            # das dauert für ein paar Dutzend Bilder Sekunden und
+            # braucht kein Fremdpaket. Die Hälfte, die ins Bild schaut,
+            # verlangt onnxruntime und ein 335-MB-Modell - die bleibt
+            # ein eigener, ausdrücklicher Schritt.
+            self.schritt.emit("Schlagwörter aus Datum und Namen", 0, 0)
+            verschlagworten(self.archiv, mit_bilderkennung=False,
+                            fortschritt=lambda n, g: self.schritt.emit(
+                                "Schlagwörter aus Datum und Namen", n, g))
 
             # Der Nachweis rechnet die Prüfsummen des Archivs **für
             # diesen Lauf**, nicht aus der Datenbank. Die Vorschau

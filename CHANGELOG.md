@@ -18,6 +18,15 @@ Abbruch, also greift er **zwischen** den Schritten. Er sagt das jetzt auch –
 samt der Folge, dass die Bilder dann ohne Orte und Alben im Archiv liegen. Die
 ZIP-Dateien bleiben in jedem Fall liegen.
 
+**Der Takeout-Lauf vergibt jetzt auch Schlagwörter.** Nach dem ersten echten
+Lauf trugen die 29 frisch geholten Bilder kein einziges – über den
+Schlagwortfilter waren sie unsichtbar, während die 14.824 anderen welche
+hatten. Vergeben wird die Hälfte, die ohne Modell auskommt: Jahreszeit,
+Tageszeit, Bildformat und Herkunft stehen in Datum, Name und Bildmaßen, das
+dauert für ein paar Dutzend Bilder Sekunden und braucht kein Fremdpaket. Die
+Hälfte, die ins Bild schaut, verlangt onnxruntime und ein 335-MB-Modell und
+bleibt ein eigener, ausdrücklicher Schritt.
+
 ## 0.4.5 – 2026-09-12
 
 **Der Google-Takeout ist im Fenster angekommen.** Menü *Cloudspeicher →
