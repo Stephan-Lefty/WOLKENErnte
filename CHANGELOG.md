@@ -4,7 +4,34 @@
 
 Alle nennenswerten Änderungen an WOLKENErnte. Neueste zuerst.
 
-## Unveröffentlicht
+## 0.4.6 – 2026-09-12
+
+**Ein Hilfemenü, und darin die Anleitung, die bisher fehlte.**
+*Hilfe → Google-Bilder holen* erklärt in vier Schritten, wie man seinen
+Bestand bei Google anfordert, herunterlädt und hier einliest. Ohne sie war der
+Einleseknopf ein Knopf für etwas, das niemand hat: Google Fotos ist für fremde
+Programme verschlossen, der Export ist der einzige Weg – und anfordern muss ihn
+der Anwender selbst, in einem Browser, den dieses Programm nicht steuert.
+
+**Keine nachgemalten Klickwege.** »Auf ›Weiter‹ klicken, dann unten links auf
+›Export erstellen‹« ist nach dem nächsten Umbau von Googles Seite falsch, und
+eine falsche Anleitung kostet mehr Zeit als keine. Beschrieben wird das **Ziel**
+jedes Schrittes – nur Google Fotos auswählen, ZIP statt TGZ, große Teile –,
+verlinkt wird Googles eigene Hilfe, die sich mit der Seite ändert.
+
+Drin stehen dafür die Dinge, die man vorher wissen muss und die nirgends
+auffallen: Das Archiv **läuft nach etwa sieben Tagen ab** und lässt sich
+**fünfmal** herunterladen. **Jedes Teil zählt** – ein Bild liegt in `…-001.zip`,
+seine Aufnahmedaten in `…-002.zip`; fehlt ein Teil, sind die Bilder der
+Nachbarteile da, aber ohne Datum und Ort, und es fällt nicht auf. Und
+**WOLKENErnte liest nur ZIP**: Ein erster Entwurf dieser Seite schrieb, es lese
+»beides nicht gleich gut« – es liest TGZ gar nicht.
+
+Dazu *Hilfe → Über WOLKENErnte* mit Fassung, Lizenz und dem, was das Programm
+über sich zusagt: läuft nur auf diesem Rechner, Bilder bleiben gewöhnliche
+Dateien.
+
+### Nachgezogen aus dem ersten echten Lauf
 
 **Das Fenster des Takeout-Laufs verschwindet nicht mehr unter der laufenden
 Arbeit.** Es wartete zehn Sekunden und ging dann trotzdem – das Holen von neun
