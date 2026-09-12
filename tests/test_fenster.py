@@ -161,6 +161,41 @@ class DasHauptfenster(unittest.TestCase):
     def test_zeigt_alle_bilder(self) -> None:
         self.assertEqual(self.fenster.modell.rowCount(), 3)
 
+    def test_jeder_kasten_hat_einen_namen(self) -> None:
+        """**Die Aufschriften »Jahr«, »Album« und »Schlagwort« sind
+        weg**, weil der erste Eintrag dasselbe schon sagt – »Alle
+        Jahre«, »Alle Alben«, »Alle Schlagwörter« – und weil das
+        Suchfeld die Breite brauchte.
+
+        Wer nicht hinsieht, hörte danach aber dreimal
+        »Kombinationsfeld« hintereinander. Der Name bleibt deshalb, er
+        steht nur nicht mehr auf dem Bildschirm. Fällt er beim nächsten
+        Umbau still heraus, merkt das niemand mit Augen – dieser Test
+        schon.
+        """
+        erwartet = (
+            (self.fenster.jahrwahl, "Jahr"),
+            (self.fenster.albumwahl, "Album"),
+            (self.fenster.schlagwortwahl, "Schlagwort"),
+            (self.fenster.suchfeld, "Suchen"),
+            (self.fenster.von_feld, "Zeitraum von"),
+            (self.fenster.bis_feld, "Zeitraum bis"),
+        )
+        for teil, name in erwartet:
+            with self.subTest(name):
+                self.assertEqual(teil.accessibleName(), name)
+
+    def test_keine_aufschrift_wiederholt_den_ersten_eintrag(self) -> None:
+        """Gegenprobe zum vorigen: Die Aufschriften sind wirklich
+        verschwunden und nicht bloß verschoben."""
+        from PySide6.QtWidgets import QLabel
+
+        aufschriften = {b.text().strip()
+                        for b in self.fenster.findChildren(QLabel)}
+        for wort in ("Jahr", "Album", "Schlagwort"):
+            with self.subTest(wort):
+                self.assertNotIn(wort, aufschriften)
+
     def test_statusleiste_nennt_die_zahl(self) -> None:
         self.assertIn("3", self.fenster.statusBar().currentMessage())
 

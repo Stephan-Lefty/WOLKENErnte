@@ -113,6 +113,20 @@ def _wochenende_faerben(kalender) -> None:
         kalender.setWeekdayTextFormat(tag, fett)
 
 
+def _benennen(teil, name: str) -> None:
+    """Einem Bedienteil ohne sichtbare Aufschrift einen Namen geben.
+
+    **Eine Aufschrift wegzunehmen heißt nicht, die Auskunft
+    wegzunehmen.** Wer nicht hinsieht, hört sonst dreimal
+    »Kombinationsfeld« hintereinander und muss aus dem Inhalt raten,
+    welches davon die Alben sind. `accessibleName` ist das, was
+    Vorlesesoftware liest; `toolTip` das, was beim Verweilen mit der
+    Maus erscheint.
+    """
+    teil.setAccessibleName(name)
+    teil.setToolTip(name)
+
+
 class Hauptfenster(QMainWindow):
     def __init__(self, archiv: Path) -> None:
         super().__init__()
@@ -168,6 +182,22 @@ class Hauptfenster(QMainWindow):
         self.raster.customContextMenuRequested.connect(self._menue_zeigen)
 
     def _leiste_bauen(self) -> None:
+        """Jahr, Album, Schlagwort, Suche – in einer Zeile.
+
+        **Ohne Aufschriften davor.** Der erste Eintrag jedes Kastens
+        sagt bereits, worum es geht: »Alle Jahre«, »Alle Alben«, »Alle
+        Schlagwörter«. Ein »Jahr« daneben wiederholt das nur und nimmt
+        dem Suchfeld die Breite, die dessen Platzhalter braucht – der
+        war abgeschnitten.
+
+        **Stattdessen ein Name für die Vorlesesoftware.** Eine
+        Aufschrift wegzunehmen heißt nicht, die Auskunft wegzunehmen:
+        `setAccessibleName` sagt Orca und den Werkzeugen der
+        Arbeitsumgebung weiterhin, welcher Kasten das ist – sonst hörte
+        jemand, der nicht hinsieht, dreimal »Kombinationsfeld« und
+        müsste den Inhalt raten. Und `setToolTip` gibt sie dem zurück,
+        der mit der Maus darüber verweilt.
+        """
         leiste = QToolBar()
         leiste.setMovable(False)
         self.addToolBar(leiste)
@@ -180,7 +210,8 @@ class Hauptfenster(QMainWindow):
             self.jahrwahl.addItem(
                 f"ohne Datum  ({len(self.liste.ohne_datum)})", "ohne")
         self.jahrwahl.currentIndexChanged.connect(self._auswahl_anwenden)
-        leiste.addWidget(QLabel("  Jahr "))
+        _benennen(self.jahrwahl, "Jahr")
+        leiste.addWidget(QLabel("  "))
         leiste.addWidget(self.jahrwahl)
 
         self.albumwahl = QComboBox()
@@ -188,7 +219,8 @@ class Hauptfenster(QMainWindow):
         for name, anzahl in self.liste.alben():
             self.albumwahl.addItem(f"{name}  ({anzahl})", name)
         self.albumwahl.currentIndexChanged.connect(self._auswahl_anwenden)
-        leiste.addWidget(QLabel("  Album "))
+        _benennen(self.albumwahl, "Album")
+        leiste.addWidget(QLabel("  "))
         leiste.addWidget(self.albumwahl)
 
         # Der Kasten erscheint nur, wenn es Schlagwörter gibt. Eine
@@ -200,8 +232,9 @@ class Hauptfenster(QMainWindow):
         for name, anzahl in vergebene:
             self.schlagwortwahl.addItem(f"{name}  ({anzahl})", name)
         self.schlagwortwahl.currentIndexChanged.connect(self._auswahl_anwenden)
+        _benennen(self.schlagwortwahl, "Schlagwort")
         if vergebene:
-            leiste.addWidget(QLabel("  Schlagwort "))
+            leiste.addWidget(QLabel("  "))
             leiste.addWidget(self.schlagwortwahl)
 
         self.suchfeld = QLineEdit()
@@ -209,6 +242,9 @@ class Hauptfenster(QMainWindow):
             "Suchen in Namen, Titeln, Alben, Schlagwörtern und Datum …  "
             "(Strg+F)")
         self.suchfeld.setClearButtonEnabled(True)
+        # Ein Platzhalter ist keine Aufschrift: Er verschwindet beim
+        # ersten Buchstaben, und nicht jede Vorlesesoftware liest ihn.
+        self.suchfeld.setAccessibleName("Suchen")
         # Erst beim Eingabeende suchen, nicht bei jedem Tastendruck:
         # Ein Durchlauf über 14.770 Einträge bei jedem Buchstaben
         # machte das Tippen zäh.
@@ -250,6 +286,11 @@ class Hauptfenster(QMainWindow):
 
         erste, letzte = self._spanne()
         self.von_feld, self.bis_feld = QDateEdit(), QDateEdit()
+        # Die Aufschriften »von« und »bis« stehen daneben, aber Qt
+        # verbindet einen QLabel nicht von selbst mit dem Feld danach –
+        # eine Vorlesesoftware hörte zweimal dasselbe leere »Datum«.
+        _benennen(self.von_feld, "Zeitraum von")
+        _benennen(self.bis_feld, "Zeitraum bis")
         for feld, tag in ((self.von_feld, erste), (self.bis_feld, letzte)):
             feld.setCalendarPopup(True)
             feld.setDisplayFormat("dd.MM.yyyy")
