@@ -191,10 +191,10 @@ class DieAuswahl(unittest.TestCase):
     def _dialog(self):
         from wolkenernte.fenster.takeout import TakeoutWaehlen
 
-        dialog = TakeoutWaehlen(self.archiv)
-        dialog.ordner = self.quelle
-        dialog._ordner_lesen()
-        return dialog
+        # **Den Ordner mitgeben, nicht nachträglich setzen.** Sonst
+        # durchsucht der Aufbau den gemerkten Ordner des Anwenders –
+        # und der Test hängt daran, was auf diesem Rechner steht.
+        return TakeoutWaehlen(self.archiv, ordner=self.quelle)
 
     def test_fremde_zips_bilden_einen_eigenen_eintrag(self) -> None:
         """**Im Download-Ordner liegt nicht nur der Takeout.** Alles
@@ -232,6 +232,16 @@ class DieAuswahl(unittest.TestCase):
             dialog.knoepfe.button(
                 QDialogButtonBox.StandardButton.Ok).isEnabled())
 
+    def test_die_knoepfe_sind_deutsch(self) -> None:
+        """Qt übersetzt seine Standardknöpfe nur mit geladenem
+        QTranslator – sonst steht »Cancel« mitten im deutschen Dialog."""
+        from PySide6.QtWidgets import QDialogButtonBox
+
+        dialog = self._dialog()
+        self.assertEqual(
+            dialog.knoepfe.button(
+                QDialogButtonBox.StandardButton.Cancel).text(), "Abbrechen")
+
     def test_loeschen_ist_nicht_voreingestellt(self) -> None:
         """Ein Haken, der beim Öffnen schon sitzt, ist keine
         Entscheidung des Anwenders.
@@ -245,6 +255,46 @@ class DieAuswahl(unittest.TestCase):
         """
         dialog = self._dialog()
         self.assertFalse(dialog.loeschen.isChecked())
+
+    def test_ein_eingetippter_pfad_wird_uebernommen(self) -> None:
+        """**Der schnellste Weg zum richtigen Laufwerk** ist oft, den
+        Pfad aus dem Dateimanager einzufügen. Vorher gab es nur einen
+        Ordnerwähler, der in ``~/Downloads`` startete."""
+        anderswo = self.tmp / "Platte"
+        anderswo.mkdir()
+        with zipfile.ZipFile(anderswo / "takeout-B-1-001.zip", "w") as z:
+            z.writestr("Takeout/Google Fotos/2024/IMG_9.jpg", _jpeg((9, 9, 9)))
+
+        dialog = self._dialog()
+        dialog.pfadfeld.setText(str(anderswo))
+        dialog._pfad_eingetippt()
+        self.assertEqual(dialog.ordner, anderswo)
+        namen = {dialog.baum.topLevelItem(i).text(0)
+                 for i in range(dialog.baum.topLevelItemCount())}
+        self.assertEqual(namen, {"takeout-B-1"})
+
+    def test_ein_falscher_pfad_wird_gesagt(self) -> None:
+        """Stillschweigend auf den alten zurückzufallen wäre schlimmer:
+        Dann sucht jemand den Fehler im Export."""
+        dialog = self._dialog()
+        dialog.pfadfeld.setText(str(self.tmp / "gibtsnicht"))
+        dialog._pfad_eingetippt()
+        self.assertIn("gibt es nicht", dialog.vorschau.text())
+        self.assertEqual(dialog.ordner, self.quelle)
+
+    def test_ein_angeklicktes_teil_hakt_den_ganzen_export_an(self) -> None:
+        """**Die wichtigste Regel dieses Dialogs.** Im Dateiwähler
+        klickt man Dateien an – gemeint ist aber der Export. Wer nur
+        ``-002.zip`` erwischt, bekommt beide Teile, denn sonst fehlten
+        an der Nahtstelle die Metadaten.
+        """
+        dialog = self._dialog()
+        from wolkenernte.takeout import stamm
+
+        dialog._anhaken({stamm(self.quelle / "takeout-A-1-002.zip")})
+        dialog._weiter()
+        self.assertEqual([p.name for p in dialog.ausgewaehlt],
+                         ["takeout-A-1-001.zip", "takeout-A-1-002.zip"])
 
     def test_die_teile_eines_exports_kommen_zusammen_heraus(self) -> None:
         dialog = self._dialog()

@@ -38,8 +38,14 @@ class TakeoutFehler(Exception):
 _TEILNUMMER = re.compile(r"-\d+$")
 
 
-def _stamm(datei: Path) -> str:
-    """Der Name ohne die Teilnummer – Geschwister teilen ihn."""
+def stamm(datei: Path) -> str:
+    """Der Name ohne die Teilnummer – zu welchem Export eine Datei gehört.
+
+    ``takeout-20260912T165849Z-1-003.zip`` gehört zum Export
+    ``takeout-20260912T165849Z-1``. Öffentlich, weil auch die
+    Oberfläche das wissen muss: Wer im Dateiwähler drei von fünf
+    Teilen anklickt, hat *den Export* gemeint.
+    """
     return _TEILNUMMER.sub("", datei.stem)
 
 
@@ -69,7 +75,7 @@ def exporte_im_ordner(ordner: Path) -> dict[str, list[Path]]:
     gruppen: dict[str, list[Path]] = {}
     for pfad in sorted(ordner.iterdir(), key=lambda p: p.name):
         if pfad.is_file() and pfad.suffix.lower() == ".zip":
-            gruppen.setdefault(_stamm(pfad), []).append(pfad)
+            gruppen.setdefault(stamm(pfad), []).append(pfad)
     return gruppen
 
 
@@ -193,10 +199,10 @@ class Archiv:
         if not datei.is_file():
             raise TakeoutFehler(f"{datei} ist keine Datei.")
 
-        stamm = _stamm(datei)
+        eigener = stamm(datei)
         geschwister = sorted(
             (p for p in datei.parent.iterdir()
-             if p.suffix.lower() == ".zip" and _stamm(p) == stamm),
+             if p.suffix.lower() == ".zip" and stamm(p) == eigener),
             key=lambda p: p.name,
         )
         return cls(geschwister or [datei])

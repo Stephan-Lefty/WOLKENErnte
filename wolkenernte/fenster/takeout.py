@@ -46,6 +46,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QMessageBox,
     QProgressBar,
     QPushButton,
@@ -56,9 +57,11 @@ from PySide6.QtWidgets import (
 )
 
 from ..bestandsliste import umfang
+from ..einstellungen import letzter_takeout_ordner, takeout_ordner_merken
 from ..farben import GRAU_MITTE, ROT_HELL
 from ..takeout import Archiv as Takeout
 from ..takeout import TakeoutFehler, exporte_im_ordner
+from ..takeout import stamm as _stamm_von
 from ..vorpruefung import in_worten, voransehen
 
 
@@ -70,7 +73,8 @@ def _einblenden(teil, name: str) -> None:
 class TakeoutWaehlen(QDialog):
     """Ordner aussuchen, Exporte anhaken, Vorschau lesen, losschicken."""
 
-    def __init__(self, archiv: Path, eltern: QWidget | None = None) -> None:
+    def __init__(self, archiv: Path, eltern: QWidget | None = None, *,
+                 ordner: Path | None = None) -> None:
         super().__init__(eltern)
         self.archiv = archiv
         self.ausgewaehlt: list[Path] = []
@@ -79,15 +83,44 @@ class TakeoutWaehlen(QDialog):
         self.setWindowTitle("Google-Takeout einlesen")
         self.setMinimumSize(680, 520)
 
-        self.ordner = Path.home() / "Downloads"
+        # ``ordner`` gibt es für die Tests: Ohne diesen Weg läse der
+        # Aufbau den gemerkten Ordner des Anwenders und durchsuchte
+        # ihn – ein Test, der auf einem anderen Rechner etwas anderes
+        # prüft, prüft nichts.
+        self.ordner = (ordner or letzter_takeout_ordner()
+                       or Path.home() / "Downloads")
 
-        self.ordnerzeile = QLabel()
-        self.ordnerzeile.setWordWrap(True)
-        durchsuchen = QPushButton("Ordner wählen …")
-        durchsuchen.clicked.connect(self._ordner_waehlen)
+        # **Drei Wege zum selben Ziel, weil neun Gigabyte selten dort
+        # liegen, wo man rät.** Ein Export landet auf der Platte, auf
+        # der Platz ist: `/mnt/raid/…`, ein USB-Anschluss, ein
+        # Netzlaufwerk. Wer nur einen Ordnerwähler bekommt, der in
+        # `~/Downloads` startet, klickt sich dorthin jedes Mal neu
+        # durch – und ein Pfad, den man aus dem Dateimanager kopiert
+        # hat, ließe sich gar nicht einsetzen.
+        self.pfadfeld = QLineEdit(str(self.ordner))
+        self.pfadfeld.setPlaceholderText(
+            "Pfad zum Ordner mit den ZIP-Dateien – auch einfügbar")
+        self.pfadfeld.editingFinished.connect(self._pfad_eingetippt)
+        self.pfadfeld.returnPressed.connect(self._pfad_eingetippt)
+        _einblenden(self.pfadfeld, "Ordner mit den Takeout-Dateien")
+
+        ordner_knopf = QPushButton("Ordner …")
+        ordner_knopf.setToolTip(
+            "Einen Ordner aussuchen – dort werden alle ZIP-Dateien "
+            "gefunden und nach Export gruppiert.")
+        ordner_knopf.clicked.connect(self._ordner_waehlen)
+
+        dateien_knopf = QPushButton("ZIP-Dateien …")
+        dateien_knopf.setToolTip(
+            "Einzelne Dateien aussuchen – hier kommen Sie an jedes "
+            "Laufwerk, auch an angesteckte.")
+        dateien_knopf.clicked.connect(self._dateien_waehlen)
+
         oben = QHBoxLayout()
-        oben.addWidget(self.ordnerzeile, 1)
-        oben.addWidget(durchsuchen)
+        oben.addWidget(QLabel("Ordner:"))
+        oben.addWidget(self.pfadfeld, 1)
+        oben.addWidget(ordner_knopf)
+        oben.addWidget(dateien_knopf)
 
         self.baum = QTreeWidget()
         self.baum.setHeaderLabels(["Export", "Teile", "Größe"])
@@ -109,8 +142,14 @@ class TakeoutWaehlen(QDialog):
         self.knoepfe = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok
             | QDialogButtonBox.StandardButton.Cancel)
+        # **Beide Aufschriften selbst setzen.** Qt liefert für seine
+        # Standardknöpfe eine Übersetzung mit, aber nur, wenn die
+        # Anwendung einen QTranslator lädt – und das tut sie nicht.
+        # Sonst steht mitten im deutschen Dialog »Cancel«.
         self.knoepfe.button(
             QDialogButtonBox.StandardButton.Ok).setText("Einlesen")
+        self.knoepfe.button(
+            QDialogButtonBox.StandardButton.Cancel).setText("Abbrechen")
         self.knoepfe.accepted.connect(self._weiter)
         self.knoepfe.rejected.connect(self.reject)
 
@@ -129,8 +168,59 @@ class TakeoutWaehlen(QDialog):
         gewaehlt = QFileDialog.getExistingDirectory(
             self, "Ordner mit den Takeout-Dateien", str(self.ordner))
         if gewaehlt:
-            self.ordner = Path(gewaehlt)
-            self._ordner_lesen()
+            self._ordner_setzen(Path(gewaehlt))
+
+    def _dateien_waehlen(self) -> None:
+        """Einzelne ZIP-Dateien aussuchen – über jeden Datenträger.
+
+        **Der Dateiwähler ist der Weg zum richtigen Laufwerk.** Er
+        zeigt die angeschlossenen Datenträger in seiner Seitenleiste;
+        ein Ordnerwähler, der in ``~/Downloads`` startet, tut das auch,
+        aber niemand sucht dort eine Platte.
+
+        Ausgesucht werden Dateien, angehakt werden **Exporte**: Wer
+        drei von fünf Teilen anklickt, bekommt trotzdem alle fünf,
+        denn sonst fehlten an den Nahtstellen die Metadaten. Was er
+        angeklickt hat, entscheidet nur, *welcher* Export gemeint war.
+        """
+        gewaehlt, _filter = QFileDialog.getOpenFileNames(
+            self, "Takeout-Dateien auswählen", str(self.ordner),
+            "Takeout-Archive (*.zip *.ZIP);;Alle Dateien (*)")
+        if not gewaehlt:
+            return
+
+        pfade = [Path(p) for p in gewaehlt]
+        self._ordner_setzen(pfade[0].parent)
+        gewuenscht = {_stamm_von(p) for p in pfade}
+        self._anhaken(gewuenscht)
+
+    def _pfad_eingetippt(self) -> None:
+        """Einen eingefügten Pfad übernehmen – oder sagen, dass er
+        nicht stimmt. Stillschweigend auf den alten zurückzufallen wäre
+        die schlechtere Antwort: Dann sucht jemand den Fehler im
+        Export."""
+        getippt = Path(self.pfadfeld.text().strip()).expanduser()
+        if getippt == self.ordner:
+            return
+        if not getippt.is_dir():
+            self.vorschau.setText(
+                f"<span style='color:{ROT_HELL}'>Diesen Ordner gibt es "
+                f"nicht: {getippt}</span>")
+            self._knopf_setzen(False)
+            return
+        self._ordner_setzen(getippt)
+
+    def _ordner_setzen(self, pfad: Path) -> None:
+        self.ordner = pfad
+        self.pfadfeld.setText(str(pfad))
+        takeout_ordner_merken(pfad)
+        self._ordner_lesen()
+
+    def _anhaken(self, staemme: set[str]) -> None:
+        for nummer in range(self.baum.topLevelItemCount()):
+            zeile = self.baum.topLevelItem(nummer)
+            if zeile.text(0) in staemme:
+                zeile.setCheckState(0, Qt.CheckState.Checked)
 
     def _ordner_lesen(self) -> None:
         """Die ZIPs des Ordners nach Export gruppiert anzeigen.
@@ -140,7 +230,7 @@ class TakeoutWaehlen(QDialog):
         Faktura-Programm und ein Spielstand. Alle zusammen zu lesen
         ergäbe eine Zählung, die niemand nachvollziehen kann.
         """
-        self.ordnerzeile.setText(f"<b>Ordner:</b> {self.ordner}")
+        self.pfadfeld.setText(str(self.ordner))
         self.baum.clear()
         try:
             gruppen = exporte_im_ordner(self.ordner)
