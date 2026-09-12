@@ -21,6 +21,7 @@ Klasse legt deshalb einen gemeinsamen Namensraum über alle Teile.
 
 from __future__ import annotations
 
+import re
 import zipfile
 from collections.abc import Iterator
 from dataclasses import dataclass
@@ -30,6 +31,16 @@ from types import TracebackType
 
 class TakeoutFehler(Exception):
     """Das Archiv ließ sich nicht öffnen oder ergibt keinen Sinn."""
+
+
+#: Die Teilnummer am Ende eines Takeout-Namens:
+#: ``takeout-20260910T…-001`` → ``takeout-20260910T…``
+_TEILNUMMER = re.compile(r"-\d+$")
+
+
+def _stamm(datei: Path) -> str:
+    """Der Name ohne die Teilnummer – Geschwister teilen ihn."""
+    return _TEILNUMMER.sub("", datei.stem)
 
 
 @dataclass(frozen=True)
@@ -133,6 +144,32 @@ class Archiv:
         if not teile:
             raise TakeoutFehler(f"In {ordner} liegt keine ZIP-Datei.")
         return cls(teile)
+
+    @classmethod
+    def aus_datei(cls, datei: Path) -> Archiv:
+        """Ein Takeout, auf eine einzelne ZIP-Datei gezeigt.
+
+        **Die Geschwisterteile kommen mit.** Wer ``…-001.zip`` angibt,
+        meint den Export, nicht das erste Zwanzigstel davon – und läse
+        man nur dieses eine Teil, fehlten an jeder Nahtstelle die
+        Metadaten: Ein Bild liegt im einen Archiv, seine JSON im
+        nächsten. Die Bilder wären da, Datum und Ort weg, und niemand
+        merkte es. Genau deswegen gibt es diese Klasse.
+
+        Erkannt wird die Teilung am Namen: Alles bis zu einer
+        abschließenden ``-<Ziffern>`` ist der gemeinsame Stamm. Passt
+        kein Geschwister dazu, bleibt es bei dieser einen Datei.
+        """
+        if not datei.is_file():
+            raise TakeoutFehler(f"{datei} ist keine Datei.")
+
+        stamm = _stamm(datei)
+        geschwister = sorted(
+            (p for p in datei.parent.iterdir()
+             if p.suffix.lower() == ".zip" and _stamm(p) == stamm),
+            key=lambda p: p.name,
+        )
+        return cls(geschwister or [datei])
 
     # -- Lesen -------------------------------------------------------------
 

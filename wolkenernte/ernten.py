@@ -73,6 +73,12 @@ def quelle_oeffnen(angabe: str | Path, dienst=None, *,
     pfad = Path(angabe)
     if pfad.is_dir() and any(p.suffix.lower() == ".zip" for p in pfad.iterdir()):
         return Takeout.aus_ordner(pfad), "Takeout-Archive"
+    # **Auch eine einzelne ZIP-Datei.** Das ist das Erste, was man
+    # probiert, und vorher fiel der Pfad bis hierher durch und endete
+    # in »ist kein Ordner« – einer Meldung, die etwas Falsches behauptet.
+    # Die Geschwisterteile holt `aus_datei` selbst dazu.
+    if pfad.is_file() and pfad.suffix.lower() == ".zip":
+        return Takeout.aus_datei(pfad), "Takeout-Archive"
     return Ordner(pfad), "ausgepackter Ordner"
 
 

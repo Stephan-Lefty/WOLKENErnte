@@ -67,6 +67,21 @@ wolkenernte pruefen  ~/Bilder/Archiv  ~/Downloads/takeout-Ordner
 wolkenernte fenster  ~/Bilder/Archiv
 ```
 
+**Die ZIP-Dateien von Google bleiben gepackt.** Ein Takeout kann hunderte
+Gigabyte umfassen; es auszupacken hieße, denselben Bestand zweimal auf der
+Platte zu haben – genau dann, wenn der Platz knapp ist. Sie können auf den
+Ordner mit den ZIPs zeigen oder auf eine einzelne Datei; die übrigen Teile
+desselben Exports holt WOLKENErnte selbst dazu:
+
+```
+wolkenernte ernten ~/Bilder/Archiv ~/Downloads/takeout-20260910T084500Z-001.zip
+```
+
+**Das ist nicht bloß bequem.** Google zerlegt den Export ohne Rücksicht auf
+Zusammengehöriges: Ein Bild liegt im einen Teilarchiv, seine Metadaten im
+nächsten. Wer die Teile einzeln einliest, verliert an jeder Nahtstelle
+Aufnahmedatum und Ortsangabe – und merkt es nicht, weil die Bilder ja da sind.
+
 **Die Reihenfolge ist keine Geschmackssache.** Erst *ernten* – die Bilder ins
 Archiv. Dann *erfassen* – Orte, Titel und Alben in die Datenbank, denn die
 stehen nur in den Quellen und wären beim Löschen verloren. Dann *pruefen* – der

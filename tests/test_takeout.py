@@ -115,6 +115,133 @@ class UeberTeilarchiveHinweg(unittest.TestCase):
             )
 
 
+class AufEineEinzelneZipDateiGezeigt(unittest.TestCase):
+    """`…-001.zip` angeben und den ganzen Export meinen.
+
+    **Das ist das Erste, was man probiert**, und es endete vorher in
+    »ist kein Ordner« – einer Meldung, die etwas Falsches behauptet,
+    denn es *ist* ein Takeout-Archiv.
+
+    Gefährlich wäre die naheliegende Abkürzung: nur die genannte Datei
+    zu lesen. Dann fehlten an jeder Nahtstelle die Metadaten, die
+    Bilder wären aber da – genau der Fehler, für den es dieses Modul
+    überhaupt gibt.
+    """
+
+    def setUp(self) -> None:
+        self.ordner = Path(tempfile.mkdtemp())
+        _zip_bauen(
+            self.ordner / "takeout-20260910T084500Z-001.zip",
+            {"Takeout/Google Fotos/2024/IMG_0001.jpg": b"bild"},
+        )
+        _zip_bauen(
+            self.ordner / "takeout-20260910T084500Z-002.zip",
+            {"Takeout/Google Fotos/2024/IMG_0001.jpg.json": b'{"title": "eins"}'},
+        )
+        self.erstes = self.ordner / "takeout-20260910T084500Z-001.zip"
+
+    def test_die_geschwisterteile_kommen_mit(self) -> None:
+        """Der Kern. Ohne das Geschwisterteil wäre ``len`` eins."""
+        with Archiv.aus_datei(self.erstes) as archiv:
+            self.assertEqual(len(archiv), 2)
+            self.assertIn("Takeout/Google Fotos/2024/IMG_0001.jpg.json", archiv)
+
+    def test_auch_wenn_man_das_zweite_teil_nennt(self) -> None:
+        """Niemand muss wissen, dass ``-001`` das erste ist."""
+        zweites = self.ordner / "takeout-20260910T084500Z-002.zip"
+        with Archiv.aus_datei(zweites) as archiv:
+            self.assertEqual(len(archiv), 2)
+
+    def test_ein_fremder_export_daneben_bleibt_draussen(self) -> None:
+        """**Sonst wäre es zu viel geholt.** Zwei Exporte in einem
+        Ordner gehören nicht zusammengerührt; ihre Namen unterscheiden
+        sich vor der Teilnummer."""
+        _zip_bauen(
+            self.ordner / "takeout-20251231T120000Z-001.zip",
+            {"Takeout/Google Fotos/2019/ALT_0001.jpg": b"alt"},
+        )
+        with Archiv.aus_datei(self.erstes) as archiv:
+            self.assertEqual(len(archiv), 2)
+            self.assertNotIn("Takeout/Google Fotos/2019/ALT_0001.jpg", archiv)
+
+    def test_eine_zip_ohne_teilnummer_geht_auch(self) -> None:
+        einzeln = self.ordner / "export.zip"
+        _zip_bauen(einzeln, {"Takeout/Google Fotos/2024/X.jpg": b"x"})
+        with Archiv.aus_datei(einzeln) as archiv:
+            self.assertEqual(len(archiv), 1)
+
+    def test_ein_ordner_ist_keine_datei(self) -> None:
+        with self.assertRaises(TakeoutFehler):
+            Archiv.aus_datei(self.ordner)
+
+
+class DerWegVonDerKommandozeile(unittest.TestCase):
+    """Was `quelle_oeffnen` aus einer Angabe macht.
+
+    **Dass eine Klasse etwas kann, heißt nicht, dass jemand sie ruft.**
+    Fünf Fehler am echten Bestand hatten diese Form: angelegt,
+    beschrieben, und nirgends angeschlossen. `Archiv.aus_datei` wäre
+    ohne diesen Test genau so ein Fall.
+    """
+
+    def setUp(self) -> None:
+        self.ordner = Path(tempfile.mkdtemp())
+        self.zip = _zip_bauen(
+            self.ordner / "takeout-001.zip",
+            {"Takeout/Google Fotos/2024/IMG_0001.jpg": b"bild"},
+        )
+
+    def test_ein_ordner_voller_zips(self) -> None:
+        from wolkenernte.ernten import quelle_oeffnen
+
+        quelle, art = quelle_oeffnen(self.ordner)
+        try:
+            self.assertEqual(art, "Takeout-Archive")
+        finally:
+            quelle.schliessen()
+
+    def test_eine_einzelne_zip_datei(self) -> None:
+        """Vorher landete das bei ``Ordner`` und endete in
+        »ist kein Ordner«."""
+        from wolkenernte.ernten import quelle_oeffnen
+
+        quelle, art = quelle_oeffnen(self.zip)
+        try:
+            self.assertEqual(art, "Takeout-Archive")
+            self.assertEqual(len(quelle), 1)
+        finally:
+            quelle.schliessen()
+
+    def test_auch_als_zeichenkette(self) -> None:
+        """Von der Kommandozeile kommt ein `str`, kein `Path`."""
+        from wolkenernte.ernten import quelle_oeffnen
+
+        quelle, art = quelle_oeffnen(str(self.zip))
+        try:
+            self.assertEqual(art, "Takeout-Archive")
+        finally:
+            quelle.schliessen()
+
+    def test_grossschreibung_stoert_nicht(self) -> None:
+        from wolkenernte.ernten import quelle_oeffnen
+
+        gross = self.ordner / "Takeout-002.ZIP"
+        _zip_bauen(gross, {"Takeout/Google Fotos/2024/IMG_0002.jpg": b"zwei"})
+        quelle, art = quelle_oeffnen(gross)
+        try:
+            self.assertEqual(art, "Takeout-Archive")
+        finally:
+            quelle.schliessen()
+
+    def test_ein_ausgepackter_ordner_bleibt_ein_ordner(self) -> None:
+        from wolkenernte.ernten import quelle_oeffnen
+
+        ausgepackt = Path(tempfile.mkdtemp())
+        (ausgepackt / "IMG_1.jpg").write_bytes(b"bild")
+        quelle, art = quelle_oeffnen(ausgepackt)
+        self.assertEqual(art, "ausgepackter Ordner")
+
+
 class WennEtwasNichtStimmt(unittest.TestCase):
     def setUp(self) -> None:
         self.ordner = Path(tempfile.mkdtemp())

@@ -4,6 +4,31 @@
 
 Alle nennenswerten Änderungen an WOLKENErnte. Neueste zuerst.
 
+## Unveröffentlicht
+
+**Eine einzelne Takeout-ZIP-Datei geht jetzt auch.** Bisher musste man auf den
+*Ordner* mit den ZIPs zeigen; wer die Datei selbst angab – das Erste, was man
+probiert –, bekam einen Stapelabzug und die Meldung »ist kein Ordner«, obwohl es
+sehr wohl ein Takeout-Archiv war.
+
+**Die Geschwisterteile kommen dabei mit.** Wer `…-001.zip` nennt, meint den
+Export, nicht das erste Zwanzigstel davon. Läse man nur dieses eine Teil,
+fehlten an jeder Nahtstelle die Metadaten – Google zerlegt den Export ohne
+Rücksicht auf Zusammengehöriges, ein Bild liegt im einen Archiv und seine JSON
+im nächsten. Die Bilder wären da, Datum und Ort weg, und niemand merkte es.
+Erkannt wird die Teilung am Namen; ein *anderer* Export im selben Ordner bleibt
+draußen.
+
+**Die Aufschriften »Jahr«, »Album« und »Schlagwort«** sind aus der
+Fensterleiste verschwunden – der erste Eintrag jedes Kastens sagt dasselbe
+(»Alle Jahre«, »Alle Alben«, »Alle Schlagwörter«), und das Suchfeld brauchte die
+Breite: Sein Platzhalter war abgeschnitten. **Weggenommen ist nur das
+Sichtbare.** Vorlesesoftware hörte sonst dreimal »Kombinationsfeld«
+hintereinander; die Namen stehen jetzt in `accessibleName` und als Einblendung
+unter dem Mauszeiger. Dieselben Namen bekamen auch das Suchfeld und die beiden
+Datumsfelder – Qt verbindet eine Aufschrift nicht von selbst mit dem Feld
+daneben.
+
 ## 0.4.4 – 2026-09-09
 
 **Der eigene Zwischenspeicher zählt nicht mehr als Bestand.** In

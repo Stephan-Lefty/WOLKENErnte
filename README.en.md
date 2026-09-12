@@ -68,6 +68,20 @@ wolkenernte pruefen  ~/Pictures/Archive  ~/Downloads/takeout-folder
 wolkenernte fenster  ~/Pictures/Archive
 ```
 
+**Google's ZIP files stay packed.** A Takeout can run to hundreds of gigabytes;
+unpacking it would mean holding the same collection twice on disk – exactly
+when space is short. Point either at the folder holding the ZIPs or at a single
+file; WOLKENErnte pulls in the remaining parts of the same export itself:
+
+```
+wolkenernte ernten ~/Pictures/Archive ~/Downloads/takeout-20260910T084500Z-001.zip
+```
+
+**That is not merely convenient.** Google splits the export with no regard for
+what belongs together: an image sits in one part archive, its metadata in the
+next. Read the parts separately and you lose capture date and location at every
+seam – and you will not notice, because the images are there.
+
 **The order is not a matter of taste.** First *ernten* (harvest) – images into
 the archive. Then *erfassen* (record) – places, titles and albums into the
 database, because those exist only in the sources and would be lost. Then
