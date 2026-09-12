@@ -151,6 +151,12 @@ und wäre eine falsche Antwort.
 **`wolkenernte fenster`** öffnet ein richtiges Fenster. Blättern mit den
 Pfeiltasten, zurück mit Escape. Braucht **PySide6** – rund hundert Megabyte.
 
+**Die Anleitung steckt im Programm.** *Hilfe → Google-Bilder holen* erklärt in
+vier Schritten, wie Sie Ihren Bestand bei Google anfordern, herunterladen und
+hier einlesen – samt der Dinge, die man vorher wissen muss: Das Archiv läuft
+nach etwa sieben Tagen ab, lässt sich fünfmal herunterladen, und jedes Teil
+zählt.
+
 **`wolkenernte oberflaeche`** startet einen Dienst und öffnet den Browser. Der
 kann Bilder und Videos ohnehin anzeigen, es kommt also nichts dazu. **Der Dienst
 hört ausschließlich auf 127.0.0.1** und ist von außen nicht erreichbar – er

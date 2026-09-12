@@ -10,6 +10,11 @@
   Google Fotos ist das der einzige Weg an den eigenen Bestand.
 - [Bildschirmfotos](bilder/README.md) – wie beide Oberflächen aussehen.
 
+**Im Fenster selbst** steht die Anleitung zum Google-Takeout unter *Hilfe →
+Google-Bilder holen*: anfordern, herunterladen, einlesen. Sie beschreibt das
+Ziel jedes Schrittes und verlinkt Googles eigene Hilfe – abgetippte Klickwege
+durch fremde Netzseiten sind nach dem nächsten Umbau falsch.
+
 ## Die Befehle im Überblick
 
 | Befehl | wofür |

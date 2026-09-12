@@ -147,6 +147,11 @@ their timestamp is when they were imported, which would be a wrong answer.
 **`wolkenernte fenster`** opens a real window. Arrow keys to browse, Escape to
 go back. Requires **PySide6** – around a hundred megabytes.
 
+**The guide is inside the program.** *Hilfe → Google-Bilder holen* explains in
+four steps how to request your collection from Google, download it and read it
+in here – including what you need to know beforehand: the archive expires after
+about seven days, can be downloaded five times, and every part counts.
+
 **`wolkenernte oberflaeche`** starts a service and opens the browser, which can
 display images and videos anyway, so nothing is added. **The service listens on
 127.0.0.1 only** and cannot be reached from outside – it shows private photos

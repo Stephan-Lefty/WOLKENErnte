@@ -404,6 +404,55 @@ class Hauptfenster(QMainWindow):
         eintrag = menue.addAction("Zugänge auffrischen")
         eintrag.triggered.connect(self._zugaenge_auffrischen)
 
+        self._hilfe_menue_bauen()
+
+    def _hilfe_menue_bauen(self) -> None:
+        """Das Hilfemenü – ganz rechts, wie überall.
+
+        **Der erste Eintrag ist der wichtigste**, und er steht deshalb
+        oben: Google Fotos ist für fremde Programme verschlossen, der
+        Export ist der einzige Weg an den eigenen Bestand – und
+        anfordern muss ihn der Anwender selbst, in einem Browser, den
+        dieses Programm nicht steuert. Ohne diese Erklärung ist der
+        Einleseknopf ein Knopf für etwas, das niemand hat.
+        """
+        menue = self.menuBar().addMenu("&Hilfe")
+        self._hilfeseiten: list = []
+
+        eintrag = menue.addAction("Google-Bilder holen – Anleitung …")
+        eintrag.triggered.connect(self._takeout_hilfe_zeigen)
+
+        menue.addSeparator()
+        eintrag = menue.addAction("Über WOLKENErnte …")
+        eintrag.triggered.connect(self._ueber_zeigen)
+
+    def _hilfeseite_zeigen(self, bauen) -> None:
+        """Eine Hilfeseite öffnen und **festhalten**.
+
+        Ein nicht modaler Dialog ohne Verweis aus Python heraus wird
+        vom Speicherverwalter eingesammelt, sobald die Methode endet –
+        das Fenster erscheint und verschwindet im selben Augenblick.
+        Ein früherer Anlauf sah nach einem Fehler in Qt aus und war
+        eine fehlende Variable.
+        """
+        seite = bauen(self)
+        self._hilfeseiten.append(seite)
+        seite.finished.connect(
+            lambda _=0, s=seite: self._hilfeseiten.remove(s)
+            if s in self._hilfeseiten else None)
+        seite.show()
+        seite.raise_()
+
+    def _takeout_hilfe_zeigen(self) -> None:
+        from .hilfe import takeout_hilfe
+
+        self._hilfeseite_zeigen(takeout_hilfe)
+
+    def _ueber_zeigen(self) -> None:
+        from .hilfe import ueber
+
+        self._hilfeseite_zeigen(ueber)
+
     def _dienst(self):
         """Den rclone-Dienst starten, wenn er gebraucht wird.
 
