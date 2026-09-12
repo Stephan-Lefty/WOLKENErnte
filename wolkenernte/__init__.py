@@ -6,5 +6,5 @@ während das Programm längst 0.9.0 meldete – und pip installierte
 folglich eine Fassung, die es nicht mehr gab.
 """
 
-__version__ = "0.4.4"
+__version__ = "0.4.5"
 __all__ = ["__version__"]

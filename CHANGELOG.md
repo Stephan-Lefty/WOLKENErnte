@@ -4,7 +4,62 @@
 
 Alle nennenswerten Änderungen an WOLKENErnte. Neueste zuerst.
 
-## Unveröffentlicht
+## 0.4.5 – 2026-09-12
+
+**Der Google-Takeout ist im Fenster angekommen.** Menü *Cloudspeicher →
+Google-Takeout einlesen (ZIP-Dateien)*. Bis hierher war ausgerechnet der
+wichtigste Anbieter derjenige, für den das Fenster nichts anzubieten hatte:
+Google Fotos ist für fremde Programme verschlossen, der Export ist der einzige
+Weg an den eigenen Bestand – und er ging nur auf der Kommandozeile.
+
+**Erst nachsehen, dann anfassen.** Der Dialog sagt vor dem Lauf, was er bringt,
+und das kostet fast nichts: Ein ZIP führt Größe und CRC-32 in seinem
+Inhaltsverzeichnis, das Archiv hat dieselben Angaben in seiner Datenbank – und
+die CRC-32 im ZIP ist bitgleich mit der, die WOLKENErnte selbst rechnet
+(nachgemessen, nicht angenommen). Am echten Export:
+
+```
+• 6.587 Bilder und Videos in der Quelle, 5.939 davon verschieden
+• 648 liegen in der Quelle doppelt – Google legt jedes Bild in einem Album zweimal ab
+• 5.910 liegen schon im Archiv und werden übergangen
+• 29 kämen hinzu (724 MB)
+```
+
+Neun Gigabyte, fünf Teilarchive, Antwort in **0,2 Sekunden**. Über die Dateien
+gerechnet dauert dasselbe **130 Sekunden** – bei identischem Ergebnis; beide
+Wege sind gegeneinander geprüft. Der Knopf heißt danach »29 holen«, nicht
+»Einlesen«.
+
+**Drei Wege zur Quelle**, weil neun Gigabyte selten dort liegen, wo man rät: ein
+Pfadfeld, in das sich ein Pfad aus dem Dateimanager einfügen lässt, ein
+Ordnerwähler, und ein Dateiwähler – der zeigt die angeschlossenen Datenträger
+in seiner Seitenleiste und ist damit der Weg zu `/mnt/raid`, einer USB-Platte
+oder einem Netzlaufwerk. Der Ordner wird gemerkt.
+
+**Angehakt werden Exporte, nicht einzelne Teildateien.** Die wichtigste
+Entscheidung in diesem Dialog. Google zerlegt den Export ohne Rücksicht auf
+Zusammengehöriges; wer drei von fünf Teilen nimmt, verliert an jeder Nahtstelle
+Datum und Ort – und merkt es nicht, weil die Bilder ja da sind. Die Teile
+stehen aufklappbar darunter. Fremde ZIP-Dateien im selben Ordner bleiben
+getrennt: Im Download-Ordner lag neben dem Takeout ein Faktura-Programm und ein
+Spielstand.
+
+**Der Lauf macht drei Schritte, nicht einen:** holen, **erfassen**, nachweisen.
+Das Erfassen ist keine Kür – Orte, Titel und Albumzugehörigkeiten stehen
+ausschließlich in den JSON-Dateien des Takeouts. Wer holt und die ZIPs dann
+wegwirft, hat die Bilder und sonst nichts.
+
+**Und die ZIP-Dateien dürfen danach weg** – unter vier Bedingungen, alle vier
+müssen gelten, dieselbe Strenge wie beim Aufräumen in der Wolke: Der Lauf ist
+durch; `erfassen` ist mitgelaufen; **jedes einzelne** Bild ist im Archiv
+nachgewiesen, mit für diesen Lauf gerechneten Prüfsummen statt aus der
+Datenbank geglaubten; und es gibt eine Rückfrage, bei der **»Behalten« die
+Vorgabe** ist. Fehlt eine, bleiben die ZIPs liegen.
+
+Dabei gefunden: **`ernten` schreibt keine Datenbankzeile**, das tut erst
+`erfassen`. Die Vorschau meldet darum, wie viele Archivdateien sie nicht
+berücksichtigen kann – sie irrt dann zur sicheren Seite und verspricht eher zu
+viel Zuwachs, als ein Bild unterzuschlagen.
 
 **Eine einzelne Takeout-ZIP-Datei geht jetzt auch.** Bisher musste man auf den
 *Ordner* mit den ZIPs zeigen; wer die Datei selbst angab – das Erste, was man
