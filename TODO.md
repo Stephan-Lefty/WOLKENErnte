@@ -133,8 +133,10 @@ Weg von dort in die Datenbank und in die Oberflächen.
 
 ### Google Takeout
 
-- [ ] Beim Löschen ehrlich sein: Anleitung anzeigen, wie im Browser aufgeräumt
-  wird. **Keine Browser-Steuerung.** Sie sitzt auf undokumentierten internen
+- [x] Beim Löschen ehrlich sein: sagen, dass im Browser von Hand aufgeräumt
+  werden muss. — *Erledigt am 2026-09-12: steht in der Hilfeseite
+  (*Hilfe → Google-Bilder holen*), samt dem Grund.* **Keine
+  Browser-Steuerung.** Sie sitzt auf undokumentierten internen
   Schnittstellen, bricht ohne Vorwarnung, und bei Apple verstößt sie
   ausdrücklich gegen die Nutzungsbedingungen.
 
@@ -143,16 +145,22 @@ Weg von dort in die Datenbank und in die Oberflächen.
 **Grundsatz:** Was WOLKENErnte braucht, bringt es mit oder lässt es vom
 Paketverwalter mitbringen. Niemand soll rclone von Hand herunterladen.
 
-- [ ] **Das AUR-Paket hochladen.** *Zurückgestellt am 2026-09-09.* Alles liegt
-  fertig unter `verpacken/aur/` und steht auf 0.4.2: PKGBUILD und `.SRCINFO`
-  sind nachgezogen, die Prüfsumme ist aus dem veröffentlichten Quellarchiv
-  gerechnet, und `makepkg -f` baut daraus sauber durch. Es fehlt **nur** der
-  AUR-Zugang: der öffentliche SSH-Schlüssel im Konto auf aur.archlinux.org,
-  dann `git clone ssh://aur@aur.archlinux.org/wolkenernte.git`, die beiden
-  Dateien hineinkopieren und pushen. Danach kommt jede neue Fassung mit
-  `pamac update` von selbst. **Der Anlass:** Auf dem Rechner des Entwicklers
-  lief 0.3.0, während 0.4.0 und 0.4.1 längst veröffentlicht waren – wer selbst
-  baut, erfährt von einer neuen Fassung sonst gar nichts.
+- [ ] **Das AUR-Paket hochladen.** **Bewusst zurückgestellt – Stephan macht das
+  in einigen Wochen (entschieden am 2026-09-12).** Bis dahin ist hier nichts zu
+  tun; wer nachfragt, fragt zum vierten Mal.
+
+  Das Paket selbst ist nicht der offene Punkt: `verpacken/aur/` steht auf der
+  jeweils neuesten Fassung, `nachziehen.py` holt bei jedem Release das
+  Quellarchiv und rechnet die Prüfsumme daraus, und `makepkg -f` baut sauber
+  durch. Es fehlt **nur** der Zugang – der öffentliche SSH-Schlüssel im Konto
+  auf aur.archlinux.org, dann `git clone
+  ssh://aur@aur.archlinux.org/wolkenernte.git`, die beiden Dateien
+  hineinkopieren und pushen.
+
+  **Der Anlass, falls er in Vergessenheit gerät:** Auf dem Rechner des
+  Entwicklers lief 0.3.0, während 0.4.0 und 0.4.1 längst veröffentlicht waren –
+  wer selbst baut, erfährt von einer neuen Fassung sonst gar nichts. Bis zum
+  AUR schließt `wolkenernte neuigkeiten` diese Lücke.
 - [ ] **Auf PyPI veröffentlichen**, damit `pip install -U wolkenernte` geht.
   Braucht ein Konto und einen Token. Für alle, die kein Arch fahren, ist das
   der übliche Weg.
