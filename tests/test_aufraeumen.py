@@ -322,3 +322,97 @@ class DerDurchgang(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+@unittest.skipUnless(ECHTES_RCLONE, "rclone ab 1.75.0 nicht vorhanden")
+class DieLeerenOrdner(unittest.TestCase):
+    """Was nach dem Löschen an leeren Ordnern zurückbleibt.
+
+    **Der Anlass, am echten Bestand:** Nach dem ersten scharfen Lauf
+    waren die elf Bilder aus ``GuideOS:Photos/TEST`` weg – der Ordner
+    stand leer da. Dateien löschte das Programm, Ordner nie.
+
+    Gelöscht wird nur mit ``--leere-ordner``, denn Ordner sind eine
+    andere Art von Löschen: In einem kann liegen, was WOLKENErnte
+    absichtlich nie anfasst – Schriftstücke, Musik, Sonstiges.
+    """
+
+    def setUp(self) -> None:
+        self.tmp = Path(tempfile.mkdtemp())
+        (self.tmp / "konf.conf").write_text("")
+        self.wolkenordner = self.tmp / "wolke" / "TEST"
+        (self.wolkenordner / "Screenshot").mkdir(parents=True)
+        (self.wolkenordner / "Papiere").mkdir(parents=True)
+
+        self.bild = b"ein Bild, das auch im Archiv liegt"
+        (self.wolkenordner / "Screenshot" / "IMG_1.jpg").write_bytes(self.bild)
+        (self.wolkenordner / "Papiere" / "rechnung.pdf").write_bytes(
+            b"%PDF-1.4 kein Bild")
+
+        self.archiv = self.tmp / "archiv" / "2024"
+        self.archiv.mkdir(parents=True)
+        (self.archiv / "anders.jpg").write_bytes(self.bild)
+
+        self.dienst = Dienst.starten(self.tmp / "konf.conf")
+        einrichten(self.dienst, "probe", "local")
+
+    def tearDown(self) -> None:
+        self.dienst.beenden()
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _laufen(self, **werte):
+        with Wolke(self.dienst, "probe", str(self.wolkenordner)) as wolke:
+            return durchgehen(self.tmp / "archiv", wolke, **werte)
+
+    def test_ohne_schalter_bleiben_die_ordner_stehen(self) -> None:
+        """Der Zustand, der die Frage ausgelöst hat."""
+        self._laufen(wirklich=True)
+        self.assertTrue((self.wolkenordner / "Screenshot").is_dir())
+
+    def test_mit_schalter_geht_der_leere_ordner_weg(self) -> None:
+        bilanz = self._laufen(wirklich=True, leere_ordner=True)
+        self.assertFalse((self.wolkenordner / "Screenshot").exists())
+        self.assertGreaterEqual(bilanz.ordner_weg, 1)
+
+    def test_ein_ordner_mit_einem_schriftstueck_bleibt(self) -> None:
+        """**Die eigentliche Sicherung.** In ``Papiere`` liegt ein PDF,
+        das WOLKENErnte nie anfasst. rclone lehnt ``rmdir`` auf einen
+        nicht leeren Ordner ab – deshalb kann er gar nicht
+        verschwinden, ohne dass das Programm selbst zählen müsste."""
+        self._laufen(wirklich=True, leere_ordner=True)
+        self.assertTrue((self.wolkenordner / "Papiere" / "rechnung.pdf").is_file())
+        self.assertTrue((self.wolkenordner / "Papiere").is_dir())
+
+    def test_und_deshalb_bleibt_auch_die_wurzel(self) -> None:
+        """Solange ein Kind steht, kann der Elternordner nicht weg."""
+        self._laufen(wirklich=True, leere_ordner=True)
+        self.assertTrue(self.wolkenordner.is_dir())
+
+    def test_ein_ganz_leerer_baum_verschwindet_samt_wurzel(self) -> None:
+        """**Der Fall aus der Wirklichkeit.**
+
+        Wer schon einmal ohne den Schalter aufgeräumt hat, steht vor
+        leeren Ordnern – und dann gibt es **keine Datei mehr**, aus
+        deren Pfad sich ein Ordnername ableiten ließe. Genau so war es
+        am echten Bestand: elf Bilder gelöscht, der TEST-Ordner leer
+        und trotzdem da.
+
+        Ein erster Anlauf leitete die Ordnerliste aus den Dateipfaden
+        ab und fand deshalb nichts zu tun – lautlos. Jetzt wird rclone
+        selbst nach den Ordnern gefragt.
+        """
+        (self.wolkenordner / "Papiere" / "rechnung.pdf").unlink()
+        (self.wolkenordner / "Screenshot" / "IMG_1.jpg").unlink()
+        # Ab hier steht genau das da, was Stephan vor sich hatte: ein
+        # Baum aus leeren Ordnern, kein einziges Bild mehr.
+
+        bilanz = self._laufen(wirklich=True, leere_ordner=True)
+        self.assertEqual(bilanz.gesehen, 0)
+        self.assertFalse(self.wolkenordner.exists(),
+                         "der leere Baum muss samt Wurzel verschwinden")
+        self.assertGreaterEqual(bilanz.ordner_weg, 3)
+
+    def test_ohne_wirklich_wird_kein_ordner_angefasst(self) -> None:
+        """Der Probelauf bleibt ein Probelauf."""
+        self._laufen(leere_ordner=True)
+        self.assertTrue((self.wolkenordner / "Screenshot").is_dir())

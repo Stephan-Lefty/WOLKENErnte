@@ -183,6 +183,14 @@ def main(argv: list[str] | None = None) -> int:
                    help="tatsächlich löschen statt nur zu zählen")
     p.add_argument("--ohne-unterordner", action="store_true",
                    help="nur in genau diesem Ordner aufräumen")
+    # **Ein eigener Schalter, nicht nebenbei.** Ordner sind eine andere
+    # Art von Löschen als Dateien: In einem kann etwas liegen, das
+    # WOLKENErnte absichtlich nie anfasst. rclone lehnt nicht leere
+    # Ordner zwar von sich aus ab - aber wer den genannten Ordner
+    # danach vermisst, soll ihn selbst angefordert haben.
+    p.add_argument("--leere-ordner", action="store_true",
+                   help="danach die leer gewordenen Ordner entfernen, "
+                        "einschließlich des genannten")
 
     p = unter.add_parser(
         "verschlagworten", help="Schlagwörter vergeben und in die Datenbank "
@@ -273,7 +281,8 @@ def main(argv: list[str] | None = None) -> int:
     if werte.befehl == "aufraeumen":
         from .aufraeumen import bericht
         return bericht(archiv, werte.zugang, wirklich=werte.wirklich,
-                       mit_unterordnern=not werte.ohne_unterordner)
+                       mit_unterordnern=not werte.ohne_unterordner,
+                       leere_ordner=werte.leere_ordner)
 
     if werte.befehl == "verschlagworten":
         from .verschlagworten import bericht

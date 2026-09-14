@@ -84,6 +84,8 @@ class Bilanz:
     fehlt: int = 0
     gescheitert: int = 0
     geloescht: int = 0
+    ordner_weg: int = 0
+    ordner_fehler: list[str] = field(default_factory=list)
     bytes_frei: int = 0
     sekunden: float = 0.0
     urteile: list[Urteil] = field(default_factory=list)
@@ -98,6 +100,8 @@ class Bilanz:
         if self.geloescht:
             teile.append(f"{self.geloescht} gelöscht "
                          f"({self.bytes_frei / 1e9:.2f} GB frei)")
+        if self.ordner_weg:
+            teile.append(f"{self.ordner_weg} leere Ordner entfernt")
         return ", ".join(teile)
 
 
@@ -135,6 +139,7 @@ def durchgehen(
     wolke: Wolke,
     *,
     wirklich: bool = False,
+    leere_ordner: bool = False,
     kennungen: set[tuple[int, int]] | None = None,
     fortschritt: Callable[[int, int, str], None] | None = None,
     vorbereitung: Callable[[int, int], None] | None = None,
@@ -151,6 +156,13 @@ def durchgehen(
     """
     begonnen = time.monotonic()
     bilanz = Bilanz()
+
+    # **Jetzt merken, nicht später.** `Wolke.loeschen` nimmt jede
+    # gelöschte Datei aus ihrem Verzeichnis; nach dem Durchgang kennt
+    # die Wolke keinen Ordner mehr, und ein `wolke.ordner()` am Ende
+    # lieferte eine leere Liste. Genau daran scheiterte der erste
+    # Anlauf – lautlos, denn es gab dann nichts zu tun.
+    ordner_vorher = wolke.ordner() if leere_ordner else []
 
     medien = wolke.medien()
     if kennungen is None and archiv_ist_leer(archiv):
@@ -211,12 +223,57 @@ def durchgehen(
 
         bilanz.urteile.append(urteil)
 
+    if wirklich and leere_ordner:
+        _leere_ordner_entfernen(wolke, bilanz, ordner_vorher)
+
     bilanz.sekunden = time.monotonic() - begonnen
     return bilanz
 
 
+def _leere_ordner_entfernen(wolke, bilanz: Bilanz,
+                            ordner: list[str]) -> None:
+    """Was nach dem Löschen leer zurückbleibt, abräumen.
+
+    **Von unten nach oben**, sonst scheitert es an sich selbst: Ein
+    Elternordner ist nicht leer, solange sein Kind noch steht. Die
+    Wurzel kommt zuletzt – der Ordner, den der Anwender genannt hat,
+    geht also mit, wenn nichts mehr darin ist.
+
+    **Die Liste kommt von außen, weil sie hinterher leer wäre.**
+    ``Wolke.loeschen`` nimmt jede gelöschte Datei aus ihrem
+    Verzeichnis; nach dem Durchgang kennt die Wolke keinen einzigen
+    Ordner mehr, und ein ``wolke.ordner()`` an dieser Stelle lieferte
+    nichts. Beim ersten Anlauf blieb deshalb alles stehen – ohne
+    Fehlermeldung, denn es gab schlicht nichts zu tun.
+
+    **Geprüft wird nicht, ob ein Ordner leer ist – rclone lehnt ab.**
+    ``operations/rmdir`` antwortet auf einen nicht leeren Ordner mit
+    »directory not empty«. Das ist die zweite Sicherung und eine
+    bessere als jede eigene Zählung: Ein Ordner, in dem noch ein
+    Schriftstück oder eine Musikdatei liegt – Dinge, die WOLKENErnte
+    absichtlich nie anfasst –, kann dadurch gar nicht verschwinden.
+    Ein Fehlschlag ist hier deshalb kein Fehler, sondern die Antwort
+    »der ist nicht leer«.
+    """
+    for pfad in list(ordner) + [""]:
+        try:
+            wolke.ordner_loeschen(pfad)
+        except Exception as fehler:      # noqa: BLE001
+            # **»Nicht leer« ist eine Antwort, kein Fehler.** Alles
+            # andere aber schon – ein blindes `continue` verschwiege,
+            # dass das Entfernen aus einem ganz anderen Grund
+            # scheiterte, und der Anwender wunderte sich über Ordner,
+            # die stehen bleiben.
+            text = str(fehler)
+            if "not empty" not in text and "nicht leer" not in text:
+                bilanz.ordner_fehler.append(f"{pfad or wolke.wurzel}: {text}")
+            continue
+        bilanz.ordner_weg += 1
+
+
 def bericht(archiv: Path, zugang: str, *, wirklich: bool = False,
-            mit_unterordnern: bool = True) -> int:
+            mit_unterordnern: bool = True,
+            leere_ordner: bool = False) -> int:
     """Das Aufräumen von der Kommandozeile aus."""
     from .ernten import ist_wolke
     from .rclone import Dienst
@@ -262,6 +319,7 @@ def bericht(archiv: Path, zugang: str, *, wirklich: bool = False,
             try:
                 bilanz = durchgehen(
                     archiv, wolke, wirklich=wirklich,
+                    leere_ordner=leere_ordner,
                     vorbereitung=lambda n, g: (
                         print(f"  Archiv {n}/{g}", end="\r", flush=True)
                         if g else print("Passende Dateien im Archiv werden "

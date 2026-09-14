@@ -23,6 +23,27 @@ bleiben und etwas Falsches zu behaupten. Auf der Kommandozeile ändert sich
 nichts; dort liefen die Zeilen immer schon durch, und genau deshalb ist es dort
 nie aufgefallen.
 
+**Leere Ordner in der Wolke abräumen – mit `--leere-ordner`.** Nach dem
+Aufräumen waren die Dateien weg und die Ordner standen leer da; Ordner hat das
+Programm nie angefasst. Jetzt auf Wunsch doch, **einschließlich des genannten
+Ordners**.
+
+**Ein eigener Schalter, weil Ordner eine andere Art von Löschen sind.** In einem
+kann liegen, was WOLKENErnte absichtlich nie anfasst – Schriftstücke, Musik,
+Sonstiges. Die Sicherung dagegen kommt von rclone selbst: `operations/rmdir`
+antwortet auf einen nicht leeren Ordner mit »directory not empty«. Ein Ordner
+mit einer Rechnung darin kann deshalb gar nicht verschwinden, ohne dass das
+Programm selbst zählen müsste – und weil ein Elternordner nicht leer ist,
+solange sein Kind steht, bleibt auch der stehen.
+
+Zwei eigene Fehler steckten auf dem Weg dahin, beide nur am echten Ablauf
+sichtbar: Die Ordnerliste wurde **nach** dem Löschen abgefragt – da hatte
+`Wolke.loeschen` aber schon jeden Eintrag aus ihrem Verzeichnis genommen, und
+es gab nichts mehr zu tun. Und sie wurde aus den **Dateipfaden** abgeleitet,
+übersah damit also genau die Ordner, um die es geht: Ein Ordner, in dem schon
+nichts mehr liegt, kommt in keinem Dateipfad vor. Jetzt wird rclone selbst nach
+den Ordnern gefragt, vor dem Löschen.
+
 ## 0.4.9 – 2026-09-14
 
 **Eine Sicherung auf eine zweite Platte – als Menüpunkt, freiwillig.**

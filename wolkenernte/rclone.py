@@ -405,6 +405,22 @@ class Dienst:
             ordner += ":"
         self.rufen("operations/deletefile", {"fs": ordner, "remote": datei})
 
+    def ordner_loeschen(self, pfad: str) -> None:
+        """Einen **leeren** Ordner entfernen.
+
+        ``operations/rmdir`` weigert sich, wenn noch etwas darin liegt –
+        »directory not empty«. Das ist hier kein Ärgernis, sondern die
+        zweite Sicherung: Ein Ordner, in dem noch ein Schriftstück oder
+        eine Musikdatei liegt, die WOLKENErnte absichtlich nicht
+        anfasst, kann damit gar nicht verschwinden. Der Aufrufer muss
+        nicht raten, ob er leer ist; rclone weiß es besser.
+        """
+        ordner, _, name = pfad.rpartition("/")
+        if not ordner:
+            ordner, _, name = pfad.rpartition(":")
+            ordner += ":"
+        self.rufen("operations/rmdir", {"fs": ordner, "remote": name})
+
     def zahlen(self) -> dict:
         """Fortschritt und Durchsatz des laufenden Betriebs."""
         return self.rufen("core/stats")

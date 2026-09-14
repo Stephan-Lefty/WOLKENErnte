@@ -177,6 +177,40 @@ class Wolke:
             self._geholt[pfad] = ziel
         return ziel
 
+    def ordner(self) -> list[str]:
+        """Alle Ordner unterhalb der Wurzel, die tiefsten zuerst.
+
+        **Bei rclone erfragt, nicht aus den Dateien abgeleitet.** Ein
+        erster Anlauf las die Ordnernamen aus den Pfaden der gefundenen
+        Dateien – und übersah damit genau die, um die es geht: Ein
+        Ordner, in dem schon nichts mehr liegt, kommt in keinem
+        Dateipfad vor. Wer ein zweites Mal aufräumt, fände nichts zu
+        tun, obwohl der leere Ordner sichtbar dasteht.
+
+        **Von unten nach oben**, sonst scheitert das Abräumen an sich
+        selbst: Ein Elternordner ist nicht leer, solange sein Kind noch
+        steht.
+        """
+        try:
+            eintraege = self.dienst.rufen("operations/list", {
+                "fs": self.wurzel, "remote": "",
+                "opt": {"dirsOnly": True, "recurse": True},
+            }).get("list") or []
+        except RcloneFehler:
+            return []
+        gefunden = {e.get("Path") or "" for e in eintraege}
+        gefunden.discard("")
+        return sorted(gefunden, key=lambda p: (-p.count("/"), p))
+
+    def ordner_loeschen(self, pfad: str) -> None:
+        """Einen leeren Ordner in der Wolke entfernen.
+
+        Wie :meth:`loeschen` prüft auch das hier nichts – außer dass
+        rclone selbst ablehnt, was nicht leer ist.
+        """
+        ganz = f"{self.wurzel}/{pfad}" if pfad else self.wurzel
+        self.dienst.ordner_loeschen(ganz)
+
     def loeschen(self, pfad: str) -> None:
         """Eine Datei in der Wolke löschen. Endgültig.
 
