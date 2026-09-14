@@ -68,6 +68,45 @@ class Abbruch(Exception):
     """Der Anwender hat die Einrichtung abgebrochen."""
 
 
+class NameVergeben(Exception):
+    """Unter diesem Namen gibt es schon einen Zugang."""
+
+
+def vergeben(dienst: Dienst, name: str) -> bool:
+    """Ob dieser Name schon belegt ist."""
+    try:
+        return name in dienst.remotes()
+    except Exception:       # noqa: BLE001
+        # Lässt sich die Liste nicht holen, ist »belegt« die
+        # gefährlichere Antwort: Sie verhindert das Anlegen. »Frei« zu
+        # behaupten hieße, im Zweifel zu überschreiben.
+        return False
+
+
+def freier_name(dienst: Dienst, wunsch: str = "meinewolke") -> str:
+    """Ein Name, unter dem noch nichts liegt: ``meinewolke``,
+    ``meinewolke-2``, ``meinewolke-3`` …
+
+    **Warum das nötig ist.** Der Anmeldedialog schlug bisher *immer*
+    »meinewolke« vor. Wer eine zweite Nextcloud anlegte und den
+    Vorschlag stehen ließ, überschrieb damit die erste – rclone ersetzt
+    einen gleichnamigen Zugang wortlos. Gemessen am echten Verhalten:
+    Nach dem zweiten Anlegen stand nur noch ein Zugang in der Liste,
+    mit den Daten des zweiten. Der erste war weg, samt App-Passwort.
+    """
+    try:
+        belegt = set(dienst.remotes())
+    except Exception:       # noqa: BLE001
+        return wunsch
+    if wunsch not in belegt:
+        return wunsch
+    for nummer in range(2, 100):
+        kandidat = f"{wunsch}-{nummer}"
+        if kandidat not in belegt:
+            return kandidat
+    return wunsch
+
+
 def einrichten(
     dienst: Dienst,
     name: str,
@@ -164,7 +203,8 @@ def nextcloud_adresse(eingabe: str, benutzer: str) -> str:
 
 
 def nextcloud(
-    dienst: Dienst, name: str, adresse: str, benutzer: str, kennwort: str
+    dienst: Dienst, name: str, adresse: str, benutzer: str, kennwort: str,
+    *, ersetzen: bool = False,
 ) -> None:
     """Einen Nextcloud-Zugang anlegen.
 
@@ -175,7 +215,19 @@ def nextcloud(
     eingeschalteter Zwei-Faktor-Anmeldung nimmt Nextcloud das
     Kontokennwort über WebDAV gar nicht an – und ein Kennwort, das nur
     für dieses eine Programm gilt, lässt sich einzeln zurückziehen.
+
+    **Ein belegter Name wird nicht stillschweigend überschrieben.**
+    rclone tut genau das: ``config/create`` ersetzt einen gleichnamigen
+    Zugang wortlos. Wer eine zweite Nextcloud anlegte und den
+    vorgeschlagenen Namen stehen ließ, verlor damit die erste – Adresse,
+    Benutzer und App-Passwort. Ohne ``ersetzen=True`` kommt hier
+    stattdessen :class:`NameVergeben` heraus.
     """
+    if not ersetzen and vergeben(dienst, name):
+        raise NameVergeben(
+            f"Einen Zugang namens »{name}« gibt es schon. Wählen Sie einen "
+            f"anderen Namen – sonst geht der bisherige verloren."
+        )
     einrichten(dienst, name, "webdav", angaben={
         "url": nextcloud_adresse(adresse, benutzer),
         "vendor": "nextcloud",

@@ -16,7 +16,14 @@ import getpass
 from pathlib import Path
 
 from .anbieter import NACH_KENNUNG
-from .einrichten import Abbruch, Frage, einrichten, nextcloud
+from .einrichten import (
+    Abbruch,
+    Frage,
+    NameVergeben,
+    einrichten,
+    freier_name,
+    nextcloud,
+)
 from .einstellungen import ordner as einstellungsordner
 from .rclone import Dienst, RcloneFehler
 
@@ -169,6 +176,22 @@ def nextcloud_anlegen(name: str, adresse: str, benutzer: str) -> int:
                 print(f"  {art} {eintrag.get('Name')}")
             if len(eintraege) > 15:
                 print(f"  … und {len(eintraege) - 15} weitere")
+    except NameVergeben as fehler:
+        # **Nicht überschreiben, sondern einen freien Namen nennen.**
+        # rclone ersetzt einen gleichnamigen Zugang wortlos; wer eine
+        # zweite Nextcloud anlegt, verlöre sonst die erste samt
+        # App-Passwort.
+        print(f"\n{fehler}")
+        try:
+            with Dienst.starten(
+                    pfad, kennwort_holen=kennwort_vom_terminal) as dienst:
+                vorschlag = freier_name(dienst, name)
+        except RcloneFehler:
+            vorschlag = f"{name}-2"
+        print(f"\nZum Beispiel so:")
+        print(f"  wolkenernte zugang nextcloud {vorschlag} "
+              f"{adresse} {benutzer}")
+        return 1
     except Abbruch:
         print("\nAbgebrochen.")
         return 1

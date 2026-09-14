@@ -79,7 +79,14 @@ class ZugangAnlegen(QDialog):
         self.setWindowTitle("Nextcloud anmelden")
         self.setMinimumWidth(520)
 
-        self.name = QLineEdit("meinewolke")
+        # **Ein freier Name als Vorschlag, nicht immer derselbe.**
+        # Vorher stand hier fest »meinewolke«. Wer eine zweite Nextcloud
+        # anlegte und den Vorschlag stehen ließ, überschrieb damit die
+        # erste - rclone ersetzt einen gleichnamigen Zugang wortlos, und
+        # Adresse, Benutzer und App-Passwort waren weg.
+        from ..einrichten import freier_name
+
+        self.name = QLineEdit(freier_name(dienst))
         self.adresse = QLineEdit()
         self.adresse.setPlaceholderText("https://wolke.example")
         self.benutzer = QLineEdit()
@@ -130,7 +137,7 @@ class ZugangAnlegen(QDialog):
         aufbau.addWidget(self.knoepfe)
 
     def _pruefen(self) -> None:
-        from ..einrichten import nextcloud
+        from ..einrichten import nextcloud, vergeben
         from ..rclone import RcloneFehler
 
         name = self.name.text().strip()
@@ -146,10 +153,35 @@ class ZugangAnlegen(QDialog):
             self._sagen(f"Es fehlt noch {' und '.join(fehlt)}.", schlecht=True)
             return
 
+        # Einen belegten Namen nicht stillschweigend ersetzen - aber
+        # auch nicht verbieten: Wer sein App-Passwort erneuert hat, will
+        # genau das. Also fragen, mit »Behalten« als Vorgabe.
+        ersetzen = False
+        if vergeben(self.dienst, name):
+            frage = QMessageBox(self)
+            frage.setWindowTitle("WOLKENErnte")
+            frage.setIcon(QMessageBox.Icon.Warning)
+            frage.setText(f"Einen Zugang namens »{name}« gibt es schon.")
+            frage.setInformativeText(
+                "Wenn Sie fortfahren, werden Adresse, Benutzername und "
+                "App-Passwort des bisherigen Zugangs überschrieben.")
+            behalten = frage.addButton("Anderen Namen wählen",
+                                       QMessageBox.ButtonRole.RejectRole)
+            frage.addButton("Überschreiben",
+                            QMessageBox.ButtonRole.DestructiveRole)
+            frage.setDefaultButton(behalten)
+            frage.exec()
+            if frage.clickedButton() is behalten:
+                self.name.setFocus()
+                self.name.selectAll()
+                return
+            ersetzen = True
+
         self.pruefen.setEnabled(False)
         self._sagen("Verbindung wird erprobt …")
         try:
-            nextcloud(self.dienst, name, adresse, benutzer, kennwort)
+            nextcloud(self.dienst, name, adresse, benutzer, kennwort,
+                      ersetzen=ersetzen)
             self.dienst.auflisten(f"{name}:", nur_dateien=False)
         except RcloneFehler as fehler:
             self._sagen(

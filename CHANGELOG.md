@@ -4,6 +4,28 @@
 
 Alle nennenswerten Änderungen an WOLKENErnte. Neueste zuerst.
 
+## Unveröffentlicht
+
+**Eine zweite Nextcloud löscht nicht mehr die erste.** Der Anmeldedialog schlug
+*immer* denselben Namen vor – »meinewolke«. rclone ersetzt einen gleichnamigen
+Zugang aber **wortlos**: Wer eine zweite Wolke anlegte und den Vorschlag stehen
+ließ, verlor damit Adresse, Benutzername und App-Passwort der ersten, ohne eine
+einzige Meldung. Am echten rclone nachgemessen: Nach dem zweiten Anlegen stand
+ein Zugang in der Liste, mit den Daten des zweiten.
+
+Drei Dinge sind jetzt anders:
+
+* Der Dialog schlägt einen **freien** Namen vor – `meinewolke`, dann
+  `meinewolke-2`, `meinewolke-3`.
+* Ein belegter Name wird nicht mehr stillschweigend ersetzt. Im Fenster kommt
+  eine Rückfrage mit »Anderen Namen wählen« als Vorgabe, auf der Kommandozeile
+  eine Meldung samt fertigem Befehl mit freiem Namen.
+* Ausdrücklich überschreiben geht weiterhin – wer sein App-Passwort erneuert
+  hat, will genau das.
+
+Aufgefallen an der Bitte »WOLKENErnte sollte sich die Zugangsdaten merken«. Das
+tat es längst; es überschrieb sie nur.
+
 ## 0.4.7 – 2026-09-14
 
 **Ein verschlüsseltes rclone-Konfigurat funktioniert jetzt** – und gebaut wurde
