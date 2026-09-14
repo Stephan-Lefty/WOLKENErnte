@@ -4,7 +4,23 @@
 
 Alle nennenswerten Änderungen an WOLKENErnte. Neueste zuerst.
 
-## Unveröffentlicht
+## 0.5.0 – 2026-09-14
+
+**Der Zweck des Programms ist am 14.09.2026 zum ersten Mal von Anfang bis Ende
+gelaufen** – an einer echten Nextcloud, mit dem Schritt ohne Rückweg am Ende.
+In `Photos/TEST` lagen elf Bilder; der Probelauf wies alle elf im Archiv nach,
+der Lauf mit `--wirklich` löschte alle elf. Danach nachgeprüft: das Archiv
+unverändert bei 14.853 Dateien, die Datenbank in Ordnung, die Sicherung auf der
+zweiten Platte vollständig.
+
+Was den Lauf ungefährlich machte, in dieser Reihenfolge: erst eine Sicherung
+auf eine zweite Platte, dann ernten – alle 38 Dateien waren bytegleiche
+Doppelgänger, das Archiv wuchs nicht –, dann der Probelauf, und erst danach
+`--wirklich`. Und der Pfad war der Testordner, nicht der Elternordner darüber;
+sonst hätten 38 Dateien zur Löschung angestanden statt elf.
+
+Damit ist aus einem Programm, das man ausprobieren konnte, eines geworden, das
+seinen Zweck erfüllt hat. Deshalb 0.5.0 und nicht 0.4.10.
 
 **Das Ernten aus der Cloud sah am Ende aus wie ein Absturz.** Nach dem Holen
 steht »Herkunft wird festgehalten …«, und dahinter läuft `erfassen` – das zur
