@@ -4,6 +4,25 @@
 
 Alle nennenswerten Änderungen an WOLKENErnte. Neueste zuerst.
 
+## Unveröffentlicht
+
+**Das Ernten aus der Cloud sah am Ende aus wie ein Absturz.** Nach dem Holen
+steht »Herkunft wird festgehalten …«, und dahinter läuft `erfassen` – das zur
+Doppelgängerprüfung **das ganze Archiv** durchliest. An einem Bestand von 31 GB
+sind das acht Minuten. Der Balken stand dabei auf 100 %, die
+Fortschrittsmeldungen gingen in einen Papierkorb (`redirect_stdout`), und das
+Fenster wirkte eingefroren. Nur ein Blick in `/proc` zeigte, dass der Prozess
+mit 62 MB/s las.
+
+Am eigenen Bestand erlebt, nicht ausgedacht.
+
+Jetzt meldet `erfassen` seinen Fortschritt nach außen – »Archiv wird
+durchgesehen 8.400/14.853«, »Prüfsummen der Quelle« –, und der Balken fällt
+zwischen den Abschnitten auf *unbestimmt* zurück, statt bei 100 % stehen zu
+bleiben und etwas Falsches zu behaupten. Auf der Kommandozeile ändert sich
+nichts; dort liefen die Zeilen immer schon durch, und genau deshalb ist es dort
+nie aufgefallen.
+
 ## 0.4.9 – 2026-09-14
 
 **Eine Sicherung auf eine zweite Platte – als Menüpunkt, freiwillig.**

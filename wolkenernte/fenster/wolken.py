@@ -451,6 +451,14 @@ class Arbeit(QObject):
         liegen im Archiv. Es wäre unsinnig, deswegen alles als
         misslungen zu melden; die Datenbank lässt sich nachziehen, das
         Herunterladen nicht.
+
+        **Und der Fortschritt muss nach außen.** Dieser Schritt liest
+        zur Doppelgängerprüfung das ganze Archiv durch; bei 31 GB sind
+        das Minuten. Vorher gingen die Meldungen in einen Papierkorb
+        (`redirect_stdout`), der Balken stand auf 100 %, und das Fenster
+        sah aus wie eingefroren – am echten Bestand erlebt. Die Zeilen
+        von `erfassen` bleiben umgeleitet, weil sie mit `\r` arbeiten
+        und in ein Fenster nicht passen; gemeldet wird über `melden`.
         """
         import contextlib
         import io
@@ -459,7 +467,8 @@ class Arbeit(QObject):
 
         try:
             with contextlib.redirect_stdout(io.StringIO()):
-                erfassen(self.ziel, [self.quelle], self.dienst)
+                erfassen(self.ziel, [self.quelle], self.dienst,
+                         melden=lambda was, n, g: self.schritt.emit(n, g, was))
         except Exception:  # noqa: BLE001
             pass
 
@@ -505,10 +514,21 @@ class Ernter(QDialog):
         self.faden.start()
 
     def _schritt(self, nummer: int, gesamt: int, name: str) -> None:
+        """**Ein Balken ohne Ende ist besser als ein voller, der lügt.**
+
+        Nach dem Holen kommt das Erfassen, und dabei fängt die Zählung
+        von vorn an. Bliebe der Balken bei seinem alten Höchstwert,
+        stünde er auf 100 %, während noch minutenlang gearbeitet wird –
+        genau das sah wie ein eingefrorenes Fenster aus.
+        """
+        if gesamt <= 0:
+            self.balken.setRange(0, 0)          # unbestimmt
+            self.datei.setText(f"{name} …")
+            return
         if self.balken.maximum() != gesamt:
             self.balken.setRange(0, gesamt)
         self.balken.setValue(nummer)
-        self.datei.setText(f"{nummer} von {gesamt}   ·   {name[-58:]}")
+        self.datei.setText(f"{nummer:n} von {gesamt:n}   ·   {name[-58:]}")
 
     def _abbrechen(self) -> None:
         self.arbeit.abbrechen = True

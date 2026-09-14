@@ -277,9 +277,28 @@ class DasHolen(unittest.TestCase):
     def test_zum_schluss_wird_die_herkunft_festgehalten(self) -> None:
         """Auf der Kommandozeile ist »erfassen« ein eigener Schritt.
         Im Fenster gibt es ihn nicht – und bei einer Cloud auch keine
-        zweite Gelegenheit, denn nach dem Aufräumen ist sie leer."""
+        zweite Gelegenheit, denn nach dem Aufräumen ist sie leer.
+
+        **Geprüft wird, dass der Abschnitt vorkommt, nicht dass er der
+        letzte ist.** Der erste Anlauf sah auf ``texte[-1]`` – und fiel
+        um, sobald das Erfassen seinen eigenen Fortschritt meldete
+        (»Archiv wird durchgesehen«, »Prüfsummen der Quelle«). Am
+        Verhalten war nichts falsch: Es wurde nur endlich sichtbar, was
+        vorher minutenlang unsichtbar geschah.
+        """
         _, ergebnis = self._laufen(f"probe:{self.inhalt}")
-        self.assertIn("Herkunft", ergebnis["texte"][-1])
+        self.assertTrue(any("Herkunft" in text for text in ergebnis["texte"]),
+                        ergebnis["texte"])
+
+    def test_das_durchsehen_des_archivs_wird_sichtbar(self) -> None:
+        """**Der Grund, warum es diese Meldungen gibt.** Am echten
+        Bestand stand das Fenster acht Minuten auf »Herkunft wird
+        festgehalten …«, während 31 GB gelesen wurden – und sah aus wie
+        abgestürzt."""
+        _, ergebnis = self._laufen(f"probe:{self.inhalt}")
+        self.assertTrue(
+            any("Archiv wird durchgesehen" in text
+                for text in ergebnis["texte"]), ergebnis["texte"])
 
     def test_die_fundorte_stehen_danach_in_der_datenbank(self) -> None:
         from wolkenernte.bestand import Bestand

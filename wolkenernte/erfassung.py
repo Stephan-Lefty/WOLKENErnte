@@ -121,13 +121,22 @@ def quellenname(angabe: str | Path) -> str:
     return str(angabe) if ist_wolke(str(angabe)) else Path(angabe).name
 
 
-def erfassen(archiv: Path, quellen: list[str | Path], dienst=None) -> int:
+def erfassen(archiv: Path, quellen: list[str | Path], dienst=None, *,
+             melden: Callable[[str, int, int], None] | None = None) -> int:
     """Orte, Titel, Alben und Fundorte in die Datenbank schreiben.
 
     ``dienst`` ist ein laufender rclone-Dienst. Fehlt er und ist eine
     Cloud unter den Quellen, wird einer gestartet – wie in
     :func:`wolkenernte.ernten.ernten`. Wer nur aus Ordnern erfasst,
     soll rclone nicht installiert haben müssen.
+
+    ``melden`` bekommt Abschnitt, Nummer und Gesamtzahl.
+    **Ohne diesen Weg sieht der Aufruf aus wie ein Absturz:** Das
+    Durchsehen des Archivs liest jede Datei, um ihre Prüfsumme zu
+    rechnen – bei 31 GB sind das Minuten. Im Fenster stand der Balken
+    dabei auf 100 %, die Meldungen gingen in einen Papierkorb, und der
+    Anwender sah ein eingefrorenes Fenster. Auf der Kommandozeile fiel
+    es nie auf, weil dort die Zeilen durchlaufen.
     """
     eigener_dienst = None
     if dienst is None and any(ist_wolke(str(q)) for q in quellen):
@@ -140,21 +149,30 @@ def erfassen(archiv: Path, quellen: list[str | Path], dienst=None) -> int:
             print(fehler)
             return 1
     try:
-        return _erfassen(archiv, quellen, dienst)
+        return _erfassen(archiv, quellen, dienst, melden)
     finally:
         if eigener_dienst is not None:
             eigener_dienst.beenden()
 
 
-def _erfassen(archiv: Path, quellen: list[str | Path], dienst) -> int:
+def _erfassen(archiv: Path, quellen: list[str | Path], dienst,
+              melden=None) -> int:
     t0 = time.time()
+
+    def sagen(abschnitt: str, nummer: int, gesamt: int) -> None:
+        if melden:
+            melden(abschnitt, nummer, gesamt)
 
     # Zuerst das Archiv: Dort steht, wo ein Bild heute liegt.
     print(f"=== Archiv: {archiv} ===")
+    sagen("Archiv wird durchgesehen", 0, 0)
     bekannt = archiv_lesen(
         archiv,
-        lambda n, g: (print(f"  {n}/{g}", end="\r", flush=True)
-                      if n % 2000 == 0 else None))
+        lambda n, g: (
+            (print(f"  {n}/{g}", end="\r", flush=True)
+             if n % 2000 == 0 else None),
+            sagen("Archiv wird durchgesehen", n, g) if n % 50 == 0 or n == g
+            else None)[0])
     print(f"  {len(bekannt)} Bilder im Archiv                    ")
     if not quellen:
         # **Ohne Quelle ist das kein Leerlauf.** Die Schleife gleich
@@ -179,12 +197,14 @@ def _erfassen(archiv: Path, quellen: list[str | Path], dienst) -> int:
             print(f"  {art}")
             if hasattr(quelle, "pruefsummen_rechnen"):
                 print("  Prüfsummen werden gerechnet")
+                sagen("Prüfsummen der Quelle", 0, 0)
                 quelle.pruefsummen_rechnen(
                     zusatzgroessen={g for g, _ in bekannt},
                     fortschritt=lambda n, g: (
-                        print(f"  {n}/{g}", end="\r", flush=True)
-                        if n % 2000 == 0 else None
-                    ),
+                        (print(f"  {n}/{g}", end="\r", flush=True)
+                         if n % 2000 == 0 else None),
+                        sagen("Prüfsummen der Quelle", n, g)
+                        if n % 10 == 0 or n == g else None)[0],
                 )
 
             medien, jsons = [], set()

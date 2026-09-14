@@ -129,6 +129,61 @@ class DasArchivWirdGelesen(unittest.TestCase):
 
 
 @unittest.skipUnless(PILLOW, "Pillow nicht vorhanden")
+class DerFortschrittKommtAn(unittest.TestCase):
+    """**Ein Schritt, der Minuten dauert, darf nicht wie ein Absturz
+    aussehen.**
+
+    Am echten Bestand erlebt: Nach dem Holen aus der Cloud stand im
+    Fenster »Herkunft wird festgehalten …«, der Balken auf 100 %, und
+    dann acht Minuten nichts. Es war kein Absturz – `erfassen` liest zur
+    Doppelgängerprüfung das ganze Archiv durch, bei 31 GB dauert das
+    eben. Aber die Meldungen gingen in einen Papierkorb
+    (`redirect_stdout`), und wer nicht in `/proc` nachsieht, hält das
+    Fenster für tot.
+
+    Auf der Kommandozeile fiel es nie auf, weil dort die Zeilen
+    durchlaufen.
+    """
+
+    def setUp(self) -> None:
+        self.tmp = Path(tempfile.mkdtemp())
+        self.archiv = self.tmp / "Archiv"
+        (self.archiv / "2024").mkdir(parents=True)
+        for nummer in range(6):
+            (self.archiv / "2024" / f"IMG_{nummer}.jpg").write_bytes(
+                _jpeg((20 + nummer * 30, 60, 40)))
+        self.quelle = self.tmp / "Quelle"
+        self.quelle.mkdir()
+        (self.quelle / "neu.jpg").write_bytes(_jpeg((7, 7, 7)))
+
+    def tearDown(self) -> None:
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _melden(self):
+        gemeldet: list[tuple[str, int, int]] = []
+        import contextlib
+        with contextlib.redirect_stdout(io.StringIO()):
+            erfassen(self.archiv, [self.quelle],
+                     melden=lambda was, n, g: gemeldet.append((was, n, g)))
+        return gemeldet
+
+    def test_es_wird_ueberhaupt_gemeldet(self) -> None:
+        self.assertTrue(self._melden())
+
+    def test_das_durchsehen_des_archivs_wird_benannt(self) -> None:
+        """Damit dort nicht »Herkunft wird festgehalten« steht, während
+        in Wirklichkeit einunddreißig Gigabyte gelesen werden."""
+        abschnitte = {was for was, _, _ in self._melden()}
+        self.assertIn("Archiv wird durchgesehen", abschnitte)
+
+    def test_ohne_melden_laeuft_es_trotzdem(self) -> None:
+        """Der Rückruf ist Kür – die Kommandozeile übergibt keinen."""
+        import contextlib
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(erfassen(self.archiv, [self.quelle]), 0)
+
+
+@unittest.skipUnless(PILLOW, "Pillow nicht vorhanden")
 class DasArchivAlsEigeneQuelle(unittest.TestCase):
     """`erfassen` ohne Quelle – für von Hand hineingelegte Bilder.
 
