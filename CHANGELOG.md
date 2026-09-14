@@ -4,7 +4,7 @@
 
 Alle nennenswerten Änderungen an WOLKENErnte. Neueste zuerst.
 
-## Unveröffentlicht
+## 0.4.8 – 2026-09-14
 
 **Eine zweite Nextcloud löscht nicht mehr die erste.** Der Anmeldedialog schlug
 *immer* denselben Namen vor – »meinewolke«. rclone ersetzt einen gleichnamigen
