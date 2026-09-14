@@ -135,6 +135,30 @@ Datenbank.
 Verschlüsselung, kein Verzeichnisdienst. Wer WOLKENErnte in zehn Jahren nicht
 mehr hat, öffnet den Ordner mit jedem beliebigen Programm.
 
+## Sicherung – freiwillig
+
+Nach dem Ernten aus einer Wolke und dem Aufräumen dort ist Ihr Archiv oft die
+**einzige Kopie**. *Archiv → Sicherung anlegen oder auffrischen* kopiert es auf
+eine zweite Platte, oder auf der Kommandozeile:
+
+```
+wolkenernte sichern ~/Bilder/Archiv /medien/platte/Archiv-Sicherung
+wolkenernte sichern ~/Bilder/Archiv /medien/platte/Archiv-Sicherung --wirklich
+```
+
+Der erste Aufruf zeigt nur, was geschähe. **Das Programm verlangt nichts davon**
+– es gibt keinen Vorschlag beim Start und keine Erinnerung.
+
+**Warum nicht einfach im Dateimanager kopieren?** Weil dabei ein Fehler
+lauert, der nicht auffällt: Das Aufnahmedatum jedes Bildes steckt in der
+Änderungszeit der Datei. Ein Werkzeug, das Zeitstempel nicht überträgt, liefert
+eine vollständige Kopie, in der jedes Bild das heutige Datum trägt – die ganze
+Ordnung nach Jahren ist dann weg. WOLKENErnte überträgt sie und prüft danach
+jede einzelne nach.
+
+Ein zweiter Lauf überträgt nur Neues und Geändertes. **Gelöscht wird nichts:**
+Wer im Archiv versehentlich etwas entfernt, findet es in der Sicherung wieder.
+
 ## Zwei Oberflächen
 
 Beide zeigen dasselbe: Bilder in Kacheln, Filter nach Jahr, Album, Schlagwort

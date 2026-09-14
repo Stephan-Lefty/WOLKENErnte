@@ -404,7 +404,21 @@ class Hauptfenster(QMainWindow):
         eintrag = menue.addAction("Zugänge auffrischen")
         eintrag.triggered.connect(self._zugaenge_auffrischen)
 
+        self._archiv_menue_bauen()
         self._hilfe_menue_bauen()
+
+    def _archiv_menue_bauen(self) -> None:
+        """Ein Menü für das Archiv selbst – bisher gab es keines.
+
+        **Die Sicherung steht hier und wird nirgends vorgeschlagen.**
+        Kein Hinweis beim Start, keine Erinnerung nach dem Ernten, kein
+        roter Punkt. Wer diesen Punkt nicht anklickt, merkt nicht, dass
+        es ihn gibt – und das ist Absicht: Das Programm verlangt keine
+        Sicherung, es macht eine, wenn jemand darum bittet.
+        """
+        menue = self.menuBar().addMenu("&Archiv")
+        eintrag = menue.addAction("Sicherung anlegen oder auffrischen …")
+        eintrag.triggered.connect(self._sichern)
 
     def _hilfe_menue_bauen(self) -> None:
         """Das Hilfemenü – ganz rechts, wie überall.
@@ -556,6 +570,53 @@ class Hauptfenster(QMainWindow):
             else:
                 eintrag.setEnabled(False)
                 eintrag.setText(f"{beschriftung} – dort nur lesbar")
+
+    def _sichern(self) -> None:
+        """Das Archiv auf eine zweite Platte kopieren – auf Wunsch.
+
+        **Nichts daran ist voreingestellt.** Der Dialog kommt nur, wenn
+        jemand den Menüpunkt anklickt; er kopiert erst, wenn jemand auf
+        »Sichern« drückt; und er sagt vorher, wie viel zu tun wäre, ob
+        der Platz reicht und ob Ziel und Archiv auf derselben Platte
+        liegen. Letzteres wird **nicht verboten** – eine Kopie an der
+        falschen Stelle ist besser als gar keine.
+        """
+        from .sicherung import SicherungLauf, SicherungWaehlen
+
+        dialog = SicherungWaehlen(self.archiv, self)
+        if not dialog.exec() or dialog.gewaehlt is None:
+            return
+
+        lauf = SicherungLauf(self.archiv, dialog.gewaehlt, self)
+        if not lauf.exec() or lauf.ergebnis is None:
+            return
+        bilanz, abweichungen = lauf.ergebnis
+
+        if bilanz.abgebrochen:
+            QMessageBox.information(
+                self, "WOLKENErnte",
+                f"Abgebrochen.\n\n{bilanz}\n\nWas bis dahin kopiert "
+                f"wurde, liegt im Ziel. Ein erneuter Lauf macht dort "
+                f"weiter, wo dieser aufgehört hat.")
+            return
+
+        if not bilanz.geglueckt or abweichungen:
+            text = f"{bilanz}"
+            if abweichungen:
+                text += (f"\n\n**{len(abweichungen)} Abweichungen beim "
+                         f"Nachprüfen:**\n"
+                         + "\n".join(abweichungen[:8]))
+            if bilanz.misslungen:
+                text += "\n\n" + "\n".join(bilanz.misslungen[:8])
+            QMessageBox.warning(self, "WOLKENErnte", text)
+            return
+
+        QMessageBox.information(
+            self, "WOLKENErnte",
+            f"{bilanz}\n\nNachgeprüft: Jede Datei ist in der Sicherung, "
+            f"mit Größe und Zeitstempel.\n\nDie Zeitstempel sind der "
+            f"Punkt, auf den es ankommt – in ihnen steckt das "
+            f"Aufnahmedatum.")
 
     def _takeout_einlesen(self) -> None:
         """Google-Takeout: auswählen, prüfen, holen – und dann fragen.

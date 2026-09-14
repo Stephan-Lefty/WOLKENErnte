@@ -75,6 +75,21 @@ def archiv_merken(archiv: Path) -> None:
     _merken("zuletzt", archiv)
 
 
+def letzte_sicherung() -> Path | None:
+    """Wohin zuletzt gesichert wurde – oder ``None``.
+
+    Eine Sicherungsplatte wird oft abgezogen. Ein Pfad, den es gerade
+    nicht gibt, wird deshalb nicht angeboten: Sonst stünde dort ein
+    Ordner, der beim Klick neu angelegt würde – auf der falschen Platte.
+    """
+    return _gemerkt("sicherung")
+
+
+def sicherung_merken(pfad: Path) -> None:
+    """Den Sicherungsordner vermerken."""
+    _merken("sicherung", pfad)
+
+
 def letzter_takeout_ordner() -> Path | None:
     """Wo zuletzt Takeout-Dateien lagen – oder ``None``."""
     return _gemerkt("takeout-ordner")

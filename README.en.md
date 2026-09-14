@@ -132,6 +132,30 @@ place on disk. Album membership lives in the database.
 directory service. Anyone who no longer has WOLKENErnte in ten years opens the
 folder with any program they like.
 
+## Backup – optional
+
+After harvesting from a cloud and clearing it out there, your archive is often
+the **only copy**. *Archiv → Sicherung anlegen oder auffrischen* copies it to a
+second disk, or from the command line:
+
+```
+wolkenernte sichern ~/Pictures/Archive /media/disk/Archive-Backup
+wolkenernte sichern ~/Pictures/Archive /media/disk/Archive-Backup --wirklich
+```
+
+The first call only shows what would happen. **The program demands none of
+this** – there is no prompt at startup and no reminder.
+
+**Why not just copy in the file manager?** Because a mistake lurks there that
+does not show: the capture date of every image sits in the file's modification
+time. A tool that does not carry timestamps over delivers a complete copy in
+which every image bears today's date – and the whole ordering by year is gone.
+WOLKENErnte carries them over and verifies every single one afterwards.
+
+A second run transfers only what is new or changed. **Nothing is deleted:**
+remove something from the archive by accident and you will find it in the
+backup.
+
 ## Two interfaces
 
 Both show the same thing: images as tiles, filters by year, album, keyword and

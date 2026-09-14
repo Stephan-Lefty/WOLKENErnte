@@ -4,6 +4,48 @@
 
 Alle nennenswerten Änderungen an WOLKENErnte. Neueste zuerst.
 
+## Unveröffentlicht
+
+**Eine Sicherung auf eine zweite Platte – als Menüpunkt, freiwillig.**
+*Archiv → Sicherung anlegen oder auffrischen*, dazu
+`wolkenernte sichern <Archiv> <Ziel>` auf der Kommandozeile. **Nichts daran ist
+voreingestellt:** kein Vorschlag beim Start, keine Erinnerung nach dem Ernten,
+kein roter Punkt im Menü. Wer den Punkt nicht anklickt, merkt nicht, dass es
+ihn gibt.
+
+**Warum es das überhaupt gibt.** Nach dem Ernten aus einer Wolke und dem
+Aufräumen dort ist das Archiv oft die einzige Kopie – die Quelle ist weg, und
+in `.wolkenernte/bestand.db` stehen Orte, Titel und Alben, die es sonst
+nirgends mehr gibt. Zwei Handgriffe im Dateimanager täten es auch, aber einer
+davon geht dabei fast immer schief:
+
+**Die Zeitstempel.** Das Aufnahmedatum jedes Bildes steckt in der
+Änderungszeit der Datei; die Jahresordner sind nur eine Beigabe. Wer mit einem
+Werkzeug kopiert, das Zeitstempel nicht überträgt – dazu gehört das Ziehen mit
+der Maus in manchen Dateimanagern –, hat hinterher alle Bilder mit dem heutigen
+Datum. Die Kopie ist vollständig, und die ganze Ordnung darin ist zerstört.
+Nichts schlägt fehl, nichts warnt. Darum `shutil.copy2`, darum die Prüfung
+danach, und darum ein Test, der bei `copy` statt `copy2` umfällt.
+
+Vor dem Kopieren sagt der Dialog, wie viel zu tun wäre, ob der Platz reicht und
+**ob Ziel und Archiv auf derselben Platte liegen**. Das Letzte wird nicht
+verboten – eine Kopie an der falschen Stelle ist besser als gar keine –, aber
+es wird gesagt.
+
+Drei Ziele werden abgelehnt, weil die Sicherung sonst in sich selbst liefe: das
+Archiv selbst, ein Ordner *im* Archiv und ein Ordner, der das Archiv enthält.
+Aufgelöst wird vorher, damit ein `..` oder ein Symlink nicht daran vorbeikommt.
+
+**Nichts wird gelöscht.** Was im Ziel liegt und in der Quelle nicht mehr,
+bleibt stehen – wer im Archiv versehentlich etwas löscht, findet es in der
+Sicherung wieder. Ein zweiter Lauf überträgt nur Neues und Geändertes; am
+echten Bestand dauerte der erste Lauf neun Minuten, das Auffrischen Sekunden.
+
+**Kein rsync.** Es könnte alles, was hier nötig ist, aber es ist ein
+Fremdprogramm, das unter Windows fehlt – und Kopieren mit erhaltenem
+Zeitstempel kann Python selbst. Für ffmpeg und rclone lohnt die Abhängigkeit,
+hierfür nicht.
+
 ## 0.4.8 – 2026-09-14
 
 **Eine zweite Nextcloud löscht nicht mehr die erste.** Der Anmeldedialog schlug

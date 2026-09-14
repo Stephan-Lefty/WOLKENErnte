@@ -124,6 +124,17 @@ def main(argv: list[str] | None = None) -> int:
                      help="bei GitHub nachfragen, ob es eine neuere Fassung "
                           "gibt – der einzige Netzaufruf des Programms")
 
+    # **Der Probelauf ist die Vorgabe, nicht das Kopieren.** Dieselbe
+    # Vorsicht wie beim Aufräumen in der Wolke: Wer schreibt, überschreibt
+    # im Ziel - und soll vorher gesehen haben, was.
+    p = unter.add_parser(
+        "sichern",
+        help="das Archiv auf eine zweite Platte kopieren (freiwillig)")
+    p.add_argument("archiv", type=Path)
+    p.add_argument("ziel", type=Path, help="Ordner für die Sicherung")
+    p.add_argument("--wirklich", action="store_true",
+                   help="wirklich kopieren statt nur zu zeigen, was wäre")
+
     p = unter.add_parser("zugang", help="Zugänge zu Wolkenspeichern verwalten")
     zugaenge = p.add_subparsers(dest="zugangsbefehl")
     q = zugaenge.add_parser("nextcloud", help="einen Nextcloud-Zugang anlegen")
@@ -224,6 +235,15 @@ def main(argv: list[str] | None = None) -> int:
     if werte.befehl == "neuigkeiten":
         from .neuigkeiten import bericht
         return bericht()
+
+    if werte.befehl == "sichern":
+        from .sicherung import SicherungFehler, bericht
+        try:
+            return bericht(werte.archiv, werte.ziel,
+                           wirklich=werte.wirklich)
+        except SicherungFehler as fehler:
+            print(fehler)
+            return 1
 
     if werte.befehl == "zugang":
         from .zugang import anlegen, nextcloud_anlegen, zeigen
