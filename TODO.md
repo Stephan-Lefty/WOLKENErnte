@@ -14,10 +14,19 @@ Ernten, anmelden und aufräumen stehen (siehe *Erledigt*), und an einer echten
 Nextcloud sind Anmelden, Durchsehen, Holen, Erfassen und der Aufräum-Probelauf
 gelaufen. Was fehlt, ist der letzte Schritt.
 
-- [ ] **Das scharfe Löschen ist noch nie gelaufen.** Anmelden, Ordner aussuchen,
-  holen und der Probelauf sind an einer echten Nextcloud erprobt; `--wirklich`
-  fehlt. Dafür braucht es einen eigenen Probeordner in der Cloud, nicht einen,
-  in dem gebrauchte Dateien liegen.
+- [x] **Das scharfe Löschen.** — *Erledigt am 2026-09-14, an einer echten
+  Nextcloud.* In `GuideOS:Photos/TEST` lagen 11 Bilder; der Probelauf wies alle
+  11 im Archiv nach, der Lauf mit `--wirklich` löschte alle 11 (0,01 GB frei,
+  0,7 Minuten). **Danach nachgeprüft:** Das Archiv unverändert bei 14.853
+  Dateien und 31,2 GB, `integrity_check ok`, die Sicherung auf der zweiten
+  Platte ebenfalls bei 14.853. Die Fundorte bleiben vermerkt – nach dem
+  Aufräumen ist das die einzige Spur, woher ein Bild kam.
+
+  **Der Ablauf, der das abgesichert hat:** erst eine Sicherung auf eine zweite
+  Platte, dann ernten (alle 38 waren bytegleiche Doppelgänger, das Archiv wuchs
+  nicht), dann der Probelauf, dann erst `--wirklich`. Und der Pfad war der
+  Testordner, nicht `Photos` – sonst hätten 38 statt 11 zur Löschung
+  angestanden.
 - [ ] **Ein Bild von Hand aus dem Archiv nehmen.** Wer etwas geerntet hat, das
   er dort nicht haben will – fremde Grafiken zwischen Familienfotos –, kann
   es bisher nur im Dateimanager löschen, und die Datenbank weiß nichts davon.

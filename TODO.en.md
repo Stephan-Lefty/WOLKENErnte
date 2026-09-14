@@ -13,10 +13,18 @@ Harvesting, signing in and cleaning up are in place (see *Done*), and signing
 in, browsing, fetching, recording and the clean-up dry run have run against a
 real Nextcloud. What is missing is the last step.
 
-- [ ] **Deleting for real has never run.** Signing in, picking a folder,
-  harvesting and the dry run are proven against a real Nextcloud; `--wirklich`
-  is not. That needs a dedicated test folder in the cloud, not one holding
-  files in use.
+- [x] **Deleting for real.** — *Done on 2026-09-14, against a real Nextcloud.*
+  `GuideOS:Photos/TEST` held 11 images; the dry run proved all 11 present in
+  the archive, the `--wirklich` run deleted all 11 (0.01 GB freed, 0.7
+  minutes). **Verified afterwards:** the archive unchanged at 14,853 files and
+  31.2 GB, `integrity_check ok`, the backup on the second disk likewise at
+  14,853. The origins stay recorded – after a clean-up that is the only trace
+  of where an image came from.
+
+  **What made it safe:** first a backup to a second disk, then harvesting (all
+  38 were byte-identical duplicates, the archive did not grow), then the dry
+  run, and only then `--wirklich`. And the path was the test folder, not
+  `Photos` – otherwise 38 rather than 11 would have been up for deletion.
 - [ ] **Remove a picture from the archive by hand.** Anyone who harvested
   something they did not want there can only delete it in the file manager,
   and the database learns nothing about it.
