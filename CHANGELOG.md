@@ -4,7 +4,7 @@
 
 Alle nennenswerten Änderungen an WOLKENErnte. Neueste zuerst.
 
-## Unveröffentlicht
+## 0.4.7 – 2026-09-14
 
 **Ein verschlüsseltes rclone-Konfigurat funktioniert jetzt** – und gebaut wurde
 dafür **nichts**. rclone bringt die Verschlüsselung selbst mit:
