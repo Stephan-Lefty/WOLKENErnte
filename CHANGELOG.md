@@ -4,6 +4,22 @@
 
 Alle nennenswerten Änderungen an WOLKENErnte. Neueste zuerst.
 
+## Unveröffentlicht
+
+**Das Löschen im Aufräumdialog ließ das Fenster einfrieren.** Es stand als
+schlichte Schleife im Fensterfaden: 27 Netzaufrufe hintereinander, jeder über
+die Leitung zur Cloud. Solange sie lief, kam Qt nicht zum Zeichnen – die
+Fensterverwaltung schrieb »(Reagiert nicht)« in die Titelzeile, und es gab
+keinen Balken, an dem sich etwas ablesen ließ. Am eigenen Bestand erlebt.
+
+Jetzt läuft es in einem eigenen Faden, mit Balken und Dateinamen. »Anhalten«
+greift **zwischen** zwei Dateien – was bis dahin gelöscht ist, bleibt gelöscht,
+aber es gibt keine halb abgearbeitete Datei. Und wer das Fenster schließt,
+bringt den Faden mit zum Stehen: Ein herrenloser Faden, der weiterlöscht,
+während niemand mehr zusieht, wäre an dieser Stelle das Schlimmste.
+
+Die Prüfung davor hatte ihren Balken schon; nur das Löschen selbst hatte keinen.
+
 ## 0.5.0 – 2026-09-14
 
 **Der Zweck des Programms ist am 14.09.2026 zum ersten Mal von Anfang bis Ende

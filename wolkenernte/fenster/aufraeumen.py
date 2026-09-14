@@ -98,6 +98,50 @@ class Pruefung(QObject):
         self.fertig.emit(bilanz)
 
 
+class Loeschung(QObject):
+    """Das Löschen selbst, außerhalb des Fensterfadens.
+
+    **Der Grund, warum es das gibt.** Es stand als schlichte Schleife
+    im Fensterfaden: siebenundzwanzig Netzaufrufe hintereinander, jeder
+    über die Leitung zur Nextcloud. Solange sie lief, kam Qt nicht zum
+    Zeichnen – die Fensterverwaltung schrieb »(Reagiert nicht)« in die
+    Titelzeile, und es gab keinen Balken, an dem man etwas ablesen
+    konnte. Am eigenen Bestand erlebt.
+
+    Abgebrochen wird **zwischen** zwei Dateien. Eine halb gelöschte
+    Datei gibt es nicht, aber ein halb abgearbeiteter Stapel schon –
+    und was bis dahin weg ist, bleibt weg.
+    """
+
+    schritt = Signal(int, int, str)
+    fertig = Signal(int, object)
+
+    def __init__(self, wolke, urteile: list[Urteil]) -> None:
+        super().__init__()
+        self.wolke = wolke
+        self.urteile = urteile
+        self.abbrechen = False
+
+    def laufen(self) -> None:
+        from ..rclone import RcloneFehler
+        from ..takeout import TakeoutFehler
+
+        geloescht = 0
+        fehler: list[str] = []
+        for nummer, urteil in enumerate(self.urteile, 1):
+            if self.abbrechen:
+                break
+            self.schritt.emit(nummer, len(self.urteile), urteil.pfad)
+            try:
+                self.wolke.loeschen(urteil.pfad)
+            except (RcloneFehler, TakeoutFehler) as schaden:
+                fehler.append(f"{urteil.pfad}: {schaden}")
+            else:
+                urteil.geloescht = True
+                geloescht += 1
+        self.fertig.emit(geloescht, fehler)
+
+
 # ---------------------------------------------------------------------------
 # Zeigen
 
@@ -391,9 +435,6 @@ class AufraeumenDialog(QDialog):
             f"{sum(u.groesse for u in self.modell.ausgewaehlte()) / 1e9:.2f} GB")
 
     def _loeschen(self) -> None:
-        from ..rclone import RcloneFehler
-        from ..takeout import TakeoutFehler
-
         gewaehlt = self.modell.ausgewaehlte() if self.modell else []
         if not gewaehlt:
             return
@@ -411,17 +452,35 @@ class AufraeumenDialog(QDialog):
         if antwort != QMessageBox.StandardButton.Yes:
             return
 
-        fehler: list[str] = []
-        for urteil in gewaehlt:
-            try:
-                self.wolke.loeschen(urteil.pfad)
-            except (RcloneFehler, TakeoutFehler) as schaden:
-                fehler.append(f"{urteil.pfad}: {schaden}")
-            else:
-                urteil.geloescht = True
-                self.geloescht += 1
+        # Ab hier wird gelöscht - und zwar in einem eigenen Faden, damit
+        # das Fenster ansprechbar bleibt und einen Balken zeigen kann.
+        self.loeschen.setEnabled(False)
+        self.alle.setEnabled(False)
+        self.abbrechen.setText("Anhalten")
+        self.balken.setRange(0, len(gewaehlt))
+        self.balken.setValue(0)
+        self.balken.show()
 
-        text = (f"{self.geloescht} Dateien gelöscht.\n\n"
+        self.loeschfaden = QThread(self)
+        self.loeschung = Loeschung(self.wolke, gewaehlt)
+        self.loeschung.moveToThread(self.loeschfaden)
+        self.loeschfaden.started.connect(self.loeschung.laufen)
+        self.loeschung.schritt.connect(self._loeschschritt)
+        self.loeschung.fertig.connect(self._geloescht)
+        self.loeschfaden.start()
+
+    def _loeschschritt(self, nummer: int, gesamt: int, pfad: str) -> None:
+        self.balken.setValue(nummer)
+        self.stand.setText(
+            f"Gelöscht: {nummer} von {gesamt}   ·   {pfad[-52:]}")
+
+    def _geloescht(self, geloescht: int, fehler: list[str]) -> None:
+        self.geloescht = geloescht
+        if getattr(self, "loeschfaden", None) is not None:
+            self.loeschfaden.quit()
+            self.loeschfaden.wait(10000)
+
+        text = (f"{geloescht} Dateien gelöscht.\n\n"
                 f"Im Archiv liegen sie weiter.")
         if fehler:
             text += (f"\n\n{len(fehler)} ließen sich nicht löschen:\n"
@@ -430,7 +489,14 @@ class AufraeumenDialog(QDialog):
         self.accept()
 
     def _abbrechen(self) -> None:
+        """Anhalten – die Prüfung sofort, das Löschen zwischen zwei
+        Dateien. Was schon gelöscht ist, bleibt gelöscht."""
         self.pruefung.abbrechen = True
+        if getattr(self, "loeschung", None) is not None:
+            self.loeschung.abbrechen = True
+            self.abbrechen.setEnabled(False)
+            self.stand.setText("Wird angehalten …")
+            return
         self.reject()
 
     def closeEvent(self, ereignis) -> None:  # noqa: N802
@@ -441,5 +507,14 @@ class AufraeumenDialog(QDialog):
         Gigabyte herunterlädt, wäre trotzdem unschön.
         """
         self.pruefung.abbrechen = True
+        # **Auch der Löschfaden.** Er redet über die Leitung mit der
+        # Cloud; ein herrenloser Faden, der weiterlöscht, während
+        # niemand mehr zusieht, wäre das Schlimmste an dieser Stelle.
+        if getattr(self, "loeschung", None) is not None:
+            self.loeschung.abbrechen = True
+        faden = getattr(self, "loeschfaden", None)
+        if faden is not None and faden.isRunning():
+            faden.quit()
+            faden.wait(10000)
         self._faden_beenden()
         super().closeEvent(ereignis)

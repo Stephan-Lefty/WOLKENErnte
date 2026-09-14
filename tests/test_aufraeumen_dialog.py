@@ -187,6 +187,22 @@ class DerGanzeDialog(unittest.TestCase):
                 self.assertIsNotNone(urteil.ablage)
                 self.assertTrue(urteil.ablage.is_file())
 
+    def _warten_bis(self, bedingung, frist: float = 30.0) -> None:
+        """Die Ereignisschleife laufen lassen, bis etwas zutrifft.
+
+        Ohne das prüfte der Test, bevor der Faden fertig ist – und ein
+        ``QThread``, der beim Abräumen des Dialogs noch läuft, bringt Qt
+        mit SIGABRT zu Fall.
+        """
+        import time
+
+        from PySide6.QtWidgets import QApplication
+
+        ende = time.monotonic() + frist
+        while time.monotonic() < ende and not bedingung():
+            QApplication.processEvents()
+            time.sleep(0.01)
+
     def test_geloescht_wird_nur_das_angekreuzte(self) -> None:
         from unittest import mock
 
@@ -197,6 +213,13 @@ class DerGanzeDialog(unittest.TestCase):
                                return_value=QMessageBox.StandardButton.Yes), \
                 mock.patch.object(QMessageBox, "information"):
             dialog._loeschen()
+            # **Das Löschen läuft seit 0.5.1 in einem eigenen Faden.**
+            # Vorher war es eine Schleife im Fensterfaden: Solange sie
+            # lief, kam Qt nicht zum Zeichnen, und die Fensterverwaltung
+            # schrieb »(Reagiert nicht)« in die Titelzeile. Der Test muss
+            # deshalb warten, statt sofort nachzusehen.
+            self._warten_bis(lambda: dialog.geloescht > 0 or
+                             not dialog.loeschfaden.isRunning())
 
         self.assertEqual(dialog.geloescht, 2)
         self.assertFalse((self.inhalt / "IMG_1.jpg").exists())
