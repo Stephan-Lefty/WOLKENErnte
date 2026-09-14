@@ -4,7 +4,7 @@
 
 Alle nennenswerten Änderungen an WOLKENErnte. Neueste zuerst.
 
-## Unveröffentlicht
+## 0.4.9 – 2026-09-14
 
 **Eine Sicherung auf eine zweite Platte – als Menüpunkt, freiwillig.**
 *Archiv → Sicherung anlegen oder auffrischen*, dazu
