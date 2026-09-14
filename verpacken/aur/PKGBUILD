@@ -12,7 +12,7 @@
 # suchen.
 
 pkgname=wolkenernte
-pkgver=0.4.8
+pkgver=0.4.9
 pkgrel=1
 pkgdesc="Bilder und Videos aus den Wolken holen und dort aufräumen"
 arch=('any')
@@ -46,7 +46,7 @@ options=(!debug)
 # kollidierte, das eine gleichnamige Marke hat.
 _archiv="WOLKENErnte-${pkgver}"
 source=("${pkgname}-${pkgver}.tar.gz::${url}/archive/refs/tags/v${pkgver}.tar.gz")
-sha256sums=('6eec39ffc81b45e39258021d1e358415f1269346539e1ebcac060a181ebf5e6e')
+sha256sums=('f4bc737a0872c47b23fc7b8a354f48ecccde636da61a105d99bc323a7d0a541e')
 
 build() {
     cd "${_archiv}"

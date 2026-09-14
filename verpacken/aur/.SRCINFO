@@ -1,6 +1,6 @@
 pkgbase = wolkenernte
 	pkgdesc = Bilder und Videos aus den Wolken holen und dort aufräumen
-	pkgver = 0.4.8
+	pkgver = 0.4.9
 	pkgrel = 1
 	url = https://github.com/Stephan-Lefty/WOLKENErnte
 	arch = any
@@ -18,7 +18,7 @@ pkgbase = wolkenernte
 	optdepends = python-onnxruntime-cpu: Schlagwörter aus dem Bild
 	optdepends = perl-image-exiftool: Metadaten von Fotos und Videos (noch nicht eingebaut)
 	options = !debug
-	source = wolkenernte-0.4.8.tar.gz::https://github.com/Stephan-Lefty/WOLKENErnte/archive/refs/tags/v0.4.8.tar.gz
-	sha256sums = 6eec39ffc81b45e39258021d1e358415f1269346539e1ebcac060a181ebf5e6e
+	source = wolkenernte-0.4.9.tar.gz::https://github.com/Stephan-Lefty/WOLKENErnte/archive/refs/tags/v0.4.9.tar.gz
+	sha256sums = f4bc737a0872c47b23fc7b8a354f48ecccde636da61a105d99bc323a7d0a541e
 
 pkgname = wolkenernte
