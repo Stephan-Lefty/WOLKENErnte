@@ -45,7 +45,12 @@ def kennwort_vom_terminal() -> str | None:
 
     if _gemerktes_kennwort:
         return _gemerktes_kennwort
-    print("\nDie Zugangsdaten sind verschlüsselt.")
+    # **Durchdrücken vor dem Fragen.** `getpass` schreibt seine
+    # Aufforderung am Puffer von `stdout` vorbei; ohne `flush` erschien
+    # der Hinweis *nach* dem »Kennwort:«, sobald die Ausgabe irgendwo
+    # hineingeleitet wurde. Am Terminal fiel es nicht auf – in einem
+    # Protokoll steht die Erklärung dann hinter der Frage.
+    print("\nDie Zugangsdaten sind verschlüsselt.", flush=True)
     try:
         eingabe = getpass.getpass("  Kennwort: ").strip()
     except (EOFError, KeyboardInterrupt):

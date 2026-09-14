@@ -161,6 +161,32 @@ class DasHauptfenster(unittest.TestCase):
     def test_zeigt_alle_bilder(self) -> None:
         self.assertEqual(self.fenster.modell.rowCount(), 3)
 
+    def test_durchsehen_fragt_nie_nach_dem_kennwort(self) -> None:
+        """**Ein Versprechen, das leicht still verlorengeht.**
+
+        Wer ein verschlüsseltes rclone-Konfigurat hat und nur seine
+        Bilder ansehen will, soll nie einen Kennwortdialog sehen. Das
+        hält aber nur, solange der rclone-Dienst erst startet, wenn
+        eine Wolke gebraucht wird. Zieht jemand `_dienst()` in den
+        Aufbau des Fensters – etwa um die Zugangsliste vorzubereiten –,
+        fragt das Programm plötzlich jeden beim Start.
+
+        Am echten Bestand geprüft: kein Dialog, kein Dienst.
+        """
+        gefragt: list[int] = []
+        self.fenster._kennwort_erfragen = lambda: gefragt.append(1)
+
+        self.fenster.jahrwahl.setCurrentIndex(0)
+        self.fenster.suchfeld.setText("IMG")
+        self.fenster._auswahl_anwenden()
+        self.fenster.zeitraum_an.setChecked(True)
+        stelle = self.fenster.modell.index(0, 0)
+        self.fenster._oeffnen(stelle)
+        self.fenster._zum_raster()
+
+        self.assertEqual(gefragt, [])
+        self.assertIsNone(getattr(self.fenster, "_rclone", None))
+
     def test_jeder_kasten_hat_einen_namen(self) -> None:
         """**Die Aufschriften »Jahr«, »Album« und »Schlagwort« sind
         weg**, weil der erste Eintrag dasselbe schon sagt – »Alle
