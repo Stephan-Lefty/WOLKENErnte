@@ -220,7 +220,7 @@ def bericht(archiv: Path, zugang: str, *, wirklich: bool = False,
     """Das Aufräumen von der Kommandozeile aus."""
     from .ernten import ist_wolke
     from .rclone import Dienst
-    from .zugang import konfiguration
+    from .zugang import konfiguration, kennwort_vom_terminal
 
     if not ist_wolke(zugang):
         print(f"»{zugang}« sieht nicht nach einem Wolkenzugang aus.\n"
@@ -232,7 +232,8 @@ def bericht(archiv: Path, zugang: str, *, wirklich: bool = False,
 
     name, _, unterordner = zugang.partition(":")
     try:
-        dienst = Dienst.starten(konfiguration())
+        dienst = Dienst.starten(
+            konfiguration(), kennwort_holen=kennwort_vom_terminal)
     except RcloneFehler as fehler:
         print(fehler)
         return 1

@@ -153,6 +153,18 @@ ihn verlangen.</p>
 keine Verschlüsselung, kein Verzeichnisdienst. Wer WOLKENErnte in zehn
 Jahren nicht mehr hat, öffnet den Ordner mit jedem beliebigen
 Programm.</p>
+<p><b>Die Zugangsdaten zu Ihren Wolken</b> liegen in
+<code>~/.config/wolkenernte/rclone.conf</code> mit Dateimodus 0600 – nicht in
+der Konfiguration, die Sie vielleicht selbst für rclone pflegen. Darin sind
+Kennwörter <i>verschleiert</i>, nicht verschlüsselt; wer die Datei lesen kann,
+kann sie lesen. Verschlüsseln lässt sie sich mit rclone selbst:</p>
+<p><code>rclone --config ~/.config/wolkenernte/rclone.conf config encryption
+set</code></p>
+<p>Danach fragt WOLKENErnte beim ersten Zugriff auf eine Wolke einmal nach dem
+Kennwort. Wer nur seine Bilder durchsieht, wird nie gefragt. <b>Das schützt die
+ruhende Platte</b> – ein gestohlenes Notebook, eine ausgemusterte Festplatte –,
+nicht aber vor jemandem, der an Ihrem angemeldeten Rechner sitzt: Der kann
+rclone ohnehin selbst aufrufen.</p>
 <p>Quelltext, Änderungsprotokoll und Anleitungen:<br>
 <a href="{PROJEKT}">{PROJEKT}</a></p>
 <p>Lizenz: MIT.</p>

@@ -212,9 +212,29 @@ nichts anrichten.
 
 **Was dort steht, ist verschleiert, nicht verschlüsselt.** rclone nennt das
 `obscure`; `rclone reveal` dreht es in einer Zeile zurück. Wer die Datei lesen
-kann, kann die Kennwörter lesen. Eine verschlüsselte Konfiguration
-(`rclone config password`) unterstützt WOLKENErnte **noch nicht** – siehe
-[TODO.md](TODO.md).
+kann, kann die Kennwörter lesen.
+
+**Sie lässt sich verschlüsseln**, und das macht rclone selbst – WOLKENErnte
+kommt damit zurecht:
+
+```
+rclone --config ~/.config/wolkenernte/rclone.conf config encryption set
+```
+
+Danach fragt WOLKENErnte beim ersten Zugriff auf eine Wolke nach dem Kennwort,
+einmal je Programmlauf. Wer nur seine Bilder durchsieht, wird nie gefragt: Der
+rclone-Dienst startet ohnehin erst, wenn eine Wolke gebraucht wird. Das
+Kennwort wird über die Prozessumgebung übergeben, nicht über die Kommandozeile
+– die kann unter Linux jeder in `/proc` lesen. Herausnehmen lässt es sich mit
+`config encryption remove`.
+
+**Was das schützt – und was nicht.** Nicht gegen jemanden, der an Ihrem
+angemeldeten Rechner sitzt: Der kann rclone ohnehin selbst aufrufen. Es schützt
+die **ruhende Platte** – ein gestohlenes Notebook, eine ausgemusterte
+Festplatte, ein Sicherungsband, ein `~/.config`, das versehentlich in einer
+Cloud landet. Dort ist `obscure` in einer Zeile rückgängig gemacht, eine
+Verschlüsselung nicht. Und anders als die Fotos daneben öffnet ein
+Zugangsschlüssel ein **fremdes Konto**.
 
 Drei Dinge mildern das:
 

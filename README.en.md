@@ -204,8 +204,26 @@ one file along, and the program cannot disturb your own rclone remotes.
 
 **What sits there is obscured, not encrypted.** rclone calls it `obscure`, and
 `rclone reveal` undoes it in one line. Whoever can read the file can read the
-passwords. An encrypted configuration (`rclone config password`) is **not yet**
-supported – see [TODO.en.md](TODO.en.md).
+passwords.
+
+**It can be encrypted**, and rclone does that itself – WOLKENErnte copes:
+
+```
+rclone --config ~/.config/wolkenernte/rclone.conf config encryption set
+```
+
+After that WOLKENErnte asks for the password the first time a cloud is used,
+once per run. Browsing your pictures never asks: the rclone daemon only starts
+when a cloud is actually needed. The password is handed over through the
+process environment, not the command line – on Linux anyone can read that in
+`/proc`. Undo it with `config encryption remove`.
+
+**What this protects, and what it does not.** Not against someone sitting at
+your logged-in machine: they can run rclone themselves anyway. It protects the
+**disk at rest** – a stolen laptop, a discarded hard drive, a backup tape, a
+`~/.config` that accidentally ends up in a cloud. There `obscure` is undone in
+one line, encryption is not. And unlike the photos beside it, a credential
+opens **someone else's account**.
 
 Three things soften that:
 

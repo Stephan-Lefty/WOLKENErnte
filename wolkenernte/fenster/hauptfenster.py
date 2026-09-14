@@ -471,11 +471,38 @@ class Hauptfenster(QMainWindow):
             pfad.touch(mode=0o600)
         pfad.chmod(0o600)
         try:
-            self._rclone = Dienst.starten(pfad)
+            self._rclone = Dienst.starten(
+                pfad, kennwort_holen=self._kennwort_erfragen)
         except RcloneFehler as fehler:
             QMessageBox.warning(self, "WOLKENErnte", str(fehler))
             return None
         return self._rclone
+
+    def _kennwort_erfragen(self) -> str | None:
+        """Nach dem Kennwort des verschlüsselten Konfigurats fragen.
+
+        **Höchstens einmal je Programmlauf**, und nur, wenn wirklich
+        eine Wolke gebraucht wird – der Dienst startet ohnehin erst
+        dann. Wer bloß seine Bilder durchsieht, bekommt diesen Dialog
+        nie zu sehen.
+
+        Gemerkt wird es nur im Arbeitsspeicher. Es irgendwo abzulegen
+        hieße, die Verschlüsselung mit demselben Griff wieder
+        aufzuheben, den sie verhindern soll.
+        """
+        if getattr(self, "_konfigkennwort", None):
+            return self._konfigkennwort
+        from PySide6.QtWidgets import QInputDialog, QLineEdit
+
+        eingabe, gedrueckt = QInputDialog.getText(
+            self, "Zugangsdaten entsperren",
+            "Die Zugangsdaten sind verschlüsselt.\n"
+            "Kennwort der rclone-Konfiguration:",
+            QLineEdit.EchoMode.Password)
+        if not gedrueckt or not eingabe:
+            return None
+        self._konfigkennwort = eingabe
+        return eingabe
 
     def _zugang_anlegen(self) -> None:
         """Anbieter wählen, anmelden, gleich hineinsehen."""

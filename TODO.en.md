@@ -182,19 +182,25 @@ the login credentials securely. rclone answers that, of course." **Only half.**
 rclone does store them, but `obscure` is obfuscation, not encryption – `rclone
 reveal` undoes it in one line. What protects them today is file mode `0600`.
 
-- [ ] **Allow an encrypted rclone configuration.** rclone's own answer is
-  `rclone config password`. Today that does **not** work: `Dienst.starten()`
-  passes `--ask-password=false`, because a daemon has no terminal to ask at.
-  The way would be `RCLONE_CONFIG_PASS` through the process environment – the
-  same reasoning as for `RCLONE_RC_PASS`, since on Linux anyone can read a
-  process's command line in `/proc`. Open is **who asks for the master
-  password** and how often; asking at every start makes the desktop
-  application unusable.
-- [ ] **And answer the question behind it honestly:** as long as the photo
-  archive beside it consists of ordinary files, an encrypted credential
-  protects little – whoever has the machine has the photos. The same reasoning
-  killed the startup password in MailBurg. It is still worth doing, because a
-  credential opens *someone else's* account, not just your own data.
+- [x] **Allow an encrypted rclone configuration.** — *Done on 2026-09-14.*
+  **Nothing** was built for it: rclone ships the encryption itself
+  (`rclone config encryption set`), WOLKENErnte only had to stop standing in
+  the way. The daemon still starts with `--ask-password=false` – a daemon has
+  no terminal – and the password goes through `RCLONE_CONFIG_PASS` in the
+  process environment, not the command line. Asked at most once per run, and
+  only when a cloud is actually needed.
+
+  Two things were the real work: a **wrong** password only surfaced on first
+  access, blowing up with "panic received" – the daemon is now probed once at
+  start and that turns into a readable sentence. And detection reads the first
+  line of the file rather than calling `config encryption check`: a process
+  start for a question that fits in forty bytes.
+- [x] **And answer the question behind it honestly.** — *Done: it is in both
+  READMEs and at the top of `rclone.py`.* From the outside feedback, which is
+  right: "if someone has physical access to your PC they can run rclone
+  directly anyway". It protects the **disk at rest** – stolen laptop, discarded
+  drive, backup tape, a `~/.config` that ends up in a cloud. And a credential
+  opens *someone else's* account, not just your own photos.
 
 ### Later
 

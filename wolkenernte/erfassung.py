@@ -132,9 +132,10 @@ def erfassen(archiv: Path, quellen: list[str | Path], dienst=None) -> int:
     eigener_dienst = None
     if dienst is None and any(ist_wolke(str(q)) for q in quellen):
         from .rclone import Dienst, RcloneFehler
-        from .zugang import konfiguration
+        from .zugang import konfiguration, kennwort_vom_terminal
         try:
-            dienst = eigener_dienst = Dienst.starten(konfiguration())
+            dienst = eigener_dienst = Dienst.starten(
+                konfiguration(), kennwort_holen=kennwort_vom_terminal)
         except RcloneFehler as fehler:
             print(fehler)
             return 1

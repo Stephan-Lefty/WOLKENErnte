@@ -17,6 +17,27 @@ sämtliche Zugangsdaten auslesen. Deshalb:
   Argumente sind unter Linux in ``/proc`` für jeden Benutzer lesbar,
 * ``--rc-no-auth`` unter keinen Umständen.
 
+**Ein verschlüsseltes Konfigurat wird unterstützt, aber nicht von uns
+gebaut.** rclone bringt das selbst mit (``rclone config encryption
+set``); WOLKENErnte muss nur aufhören, im Weg zu stehen. Bis 0.4.6 tat
+es genau das: Der Dienst startet mit ``--ask-password=false`` – ein
+Dienst hat kein Terminal, an dem er fragen könnte –, und der erste
+Aufruf platzte dann mit *»panic received: fatal error: unable to
+decrypt configuration«*. Das Kennwort geht jetzt über
+``RCLONE_CONFIG_PASS`` in die **Prozessumgebung**, aus demselben Grund
+wie beim Kennwort der Schnittstelle: Die Kommandozeile ist in ``/proc``
+mitlesbar.
+
+**Was das schützt und was nicht.** Nicht gegen jemanden, der an Ihrem
+angemeldeten Rechner sitzt – der kann rclone ohnehin selbst aufrufen,
+und ein einmal entsperrter Dienst trägt das Kennwort in seiner
+Umgebung. Es schützt die **ruhende Platte**: ein gestohlenes Notebook,
+eine ausgemusterte Festplatte, ein Sicherungsband, ein
+``~/.config``-Ordner, der versehentlich in einer Cloud landet. Dort ist
+rclones ``obscure`` in einer Zeile rückgängig gemacht, eine
+Verschlüsselung nicht. Und anders als die Fotos daneben öffnet ein
+Zugangsschlüssel ein **fremdes Konto**.
+
 **Mindestens rclone 1.75.0.** Erst dort gibt es ``config/oauthstatus``,
 über das ein Programm die Anmelde-Adresse für den Browser erfährt –
 vorher musste man sie aus dem Protokolltext fischen. Und erst dort ist
@@ -36,6 +57,7 @@ import subprocess
 import time
 import urllib.error
 import urllib.request
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -45,9 +67,34 @@ MINDESTFASSUNG = (1, 75, 0)
 #: Wie lange auf den Start des Dienstes gewartet wird.
 STARTFRIST = 20.0
 
+#: Womit ein verschlüsseltes Konfigurat anfängt.
+#:
+#: rclone schreibt diese Zeile selbst an den Anfang der Datei. Danach
+#: folgt ``RCLONE_ENCRYPT_V0:`` und der Inhalt.
+VERSCHLUESSELT = "# Encrypted rclone configuration File"
+
 
 class RcloneFehler(Exception):
     """rclone fehlt, ist zu alt, oder der Dienst antwortet nicht."""
+
+
+def ist_verschluesselt(konfiguration: Path) -> bool:
+    """Ob die Zugangsdaten verschlüsselt abgelegt sind.
+
+    **An der ersten Zeile erkannt, nicht über rclone.** Es gäbe
+    ``rclone config encryption check``, aber das wäre ein Prozessstart
+    für eine Frage, die in den ersten vierzig Bytes steht – und diese
+    Frage wird bei jedem Start des Dienstes gestellt.
+
+    Eine Datei, die es nicht gibt oder die sich nicht lesen lässt, gilt
+    als unverschlüsselt: Dann gibt es nichts zu entsperren, und rclone
+    legt beim ersten Zugang eine neue an.
+    """
+    try:
+        with konfiguration.open("r", encoding="utf-8", errors="replace") as datei:
+            return datei.readline().strip() == VERSCHLUESSELT
+    except OSError:
+        return False
 
 
 @dataclass(frozen=True)
@@ -140,8 +187,20 @@ class Dienst:
         *,
         programm: Path | None = None,
         frist: float = STARTFRIST,
+        kennwort_holen: Callable[[], str | None] | None = None,
     ) -> Dienst:
-        """Den Dienst hochfahren und warten, bis er antwortet."""
+        """Den Dienst hochfahren und warten, bis er antwortet.
+
+        ``kennwort_holen`` wird **nur** gerufen, wenn das Konfigurat
+        verschlüsselt ist – und dann höchstens einmal. Wer nur seine
+        Bilder durchsieht, wird nie danach gefragt: Der Dienst startet
+        ohnehin erst, wenn eine Wolke gebraucht wird.
+
+        Gibt die Funktion ``None`` zurück (abgebrochen), bricht auch der
+        Start ab. Ohne ``kennwort_holen`` kommt eine Meldung, die sagt,
+        was zu tun ist – besser als rclones *»panic received«* aus der
+        Tiefe des ersten Aufrufs.
+        """
         programm = programm or finden()
         if programm is None:
             raise RcloneFehler(
@@ -179,6 +238,27 @@ class Dienst:
         umgebung["RCLONE_RC_USER"] = benutzer
         umgebung["RCLONE_RC_PASS"] = kennwort
 
+        # Ein verschlüsseltes Konfigurat braucht sein Kennwort, **bevor**
+        # der Dienst startet. Sonst fährt er hoch, wirkt gesund, und
+        # erst der erste Aufruf platzt mit einem »panic received« – eine
+        # Meldung, die nach einem Defekt des Programms aussieht.
+        if konfiguration is not None and ist_verschluesselt(konfiguration):
+            if os.environ.get("RCLONE_CONFIG_PASS"):
+                pass          # Schon in der Umgebung, etwa aus einem Skript
+            elif kennwort_holen is None:
+                raise RcloneFehler(
+                    f"Die Zugangsdaten in {konfiguration} sind "
+                    f"verschlüsselt.\n"
+                    f"Setzen Sie RCLONE_CONFIG_PASS, oder nehmen Sie die "
+                    f"Verschlüsselung\nmit »rclone --config "
+                    f"{konfiguration} config encryption remove« heraus."
+                )
+            else:
+                geheim = kennwort_holen()
+                if not geheim:
+                    raise RcloneFehler("Ohne das Kennwort geht es nicht.")
+                umgebung["RCLONE_CONFIG_PASS"] = geheim
+
         try:
             prozess = subprocess.Popen(
                 befehl, env=umgebung,
@@ -189,7 +269,32 @@ class Dienst:
 
         dienst = cls(prozess, port, benutzer, kennwort)
         dienst._warten(frist)
+        if konfiguration is not None and ist_verschluesselt(konfiguration):
+            dienst._kennwort_pruefen(konfiguration)
         return dienst
+
+    def _kennwort_pruefen(self, konfiguration: Path) -> None:
+        """Einmal anklopfen, solange die Meldung noch etwas wert ist.
+
+        **Ein falsches Kennwort merkt rclone erst beim ersten Zugriff.**
+        Der Dienst fährt hoch, wirkt gesund, und irgendwann später
+        platzt ein beliebiger Aufruf mit *»panic received: fatal error:
+        using RCLONE_CONFIG_PASS env password, unable to decrypt
+        configuration«*. Das liest sich wie ein Defekt des Programms und
+        steht an einer Stelle, an der niemand ans Kennwort denkt.
+
+        Ein Aufruf von ``config/listremotes`` kostet nichts und
+        verwandelt das in einen Satz, der sagt, was los ist.
+        """
+        try:
+            self.rufen("config/listremotes")
+        except RcloneFehler as fehler:
+            if "decrypt" not in str(fehler):
+                raise
+            self.beenden()
+            raise RcloneFehler(
+                f"Das Kennwort für {konfiguration.name} stimmt nicht."
+            ) from fehler
 
     def _warten(self, frist: float) -> None:
         """Warten, bis der Dienst antwortet."""

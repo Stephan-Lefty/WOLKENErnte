@@ -197,20 +197,27 @@ Login Credential sicher ablegen willst. Rclone beantwortet das natürlich.«
 Verschlüsselung – `rclone reveal` dreht es in einer Zeile zurück. Was heute
 schützt, ist der Dateimodus `0600`.
 
-- [ ] **Eine verschlüsselte rclone-Konfiguration zulassen.** rclones eigene
-  Antwort darauf ist `rclone config password`. Heute geht das **nicht**:
-  `Dienst.starten()` übergibt `--ask-password=false`, weil ein Dienst kein
-  Terminal hat, an dem er fragen könnte. Der Weg wäre `RCLONE_CONFIG_PASS`
-  über die Prozessumgebung – dieselbe Überlegung wie bei `RCLONE_RC_PASS`,
-  denn die Kommandozeile kann unter Linux jeder in `/proc` lesen. Offen ist,
-  **wer nach dem Hauptkennwort fragt** und wie oft; bei jedem Start danach zu
-  fragen macht die Fensteranwendung unbenutzbar.
-- [ ] **Und die Frage dahinter ehrlich beantworten:** Solange das Bildarchiv
-  daneben aus gewöhnlichen Dateien besteht, schützt ein verschlüsselter
-  Zugangsschlüssel wenig – wer den Rechner hat, hat die Fotos. Dieselbe
-  Überlegung hat bei MailBurg das Startpasswort gekippt. Es ist trotzdem
-  sinnvoll, weil ein Zugangsschlüssel *fremde* Konten öffnet, nicht nur die
-  eigenen Daten.
+- [x] **Eine verschlüsselte rclone-Konfiguration zulassen.** — *Erledigt am
+  2026-09-14.* Gebaut wurde dafür **nichts**: rclone bringt die Verschlüsselung
+  selbst mit (`rclone config encryption set`), WOLKENErnte musste nur aufhören,
+  im Weg zu stehen. Der Dienst startet weiterhin mit `--ask-password=false` –
+  ein Dienst hat kein Terminal –, das Kennwort geht über `RCLONE_CONFIG_PASS`
+  in die Prozessumgebung, nicht über die Kommandozeile. Gefragt wird höchstens
+  einmal je Programmlauf und nur, wenn eine Wolke gebraucht wird.
+
+  Zwei Dinge waren der eigentliche Aufwand: Ein **falsches** Kennwort merkte
+  rclone erst beim ersten Zugriff und platzte dort mit »panic received« – jetzt
+  wird beim Start einmal angeklopft und daraus ein lesbarer Satz. Und die
+  Erkennung läuft über die erste Zeile der Datei, nicht über
+  `config encryption check`: ein Prozessstart für eine Frage, die in vierzig
+  Bytes steht.
+- [x] **Und die Frage dahinter ehrlich beantworten.** — *Erledigt: steht so in
+  beiden READMEs und im Kopf von `rclone.py`.* Aus der Rückmeldung von außen,
+  die recht hat: »Wenn jemand physischen Zugriff auf deinen PC hat, kann er
+  rclone ja so oder so direkt ausführen.« Es schützt die **ruhende Platte** –
+  gestohlenes Notebook, ausgemusterte Festplatte, Sicherungsband, ein
+  `~/.config`, das in einer Cloud landet. Und ein Zugangsschlüssel öffnet ein
+  *fremdes* Konto, nicht nur die eigenen Fotos.
 
 ### Später
 

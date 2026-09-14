@@ -136,9 +136,10 @@ def ernten(ziel: Path, quellen: list[str | Path]) -> int:
     dienst = None
     if any(isinstance(q, str) and ist_wolke(q) for q in quellen):
         from .rclone import Dienst, RcloneFehler
-        from .zugang import konfiguration
+        from .zugang import konfiguration, kennwort_vom_terminal
         try:
-            dienst = Dienst.starten(konfiguration())
+            dienst = Dienst.starten(
+                konfiguration(), kennwort_holen=kennwort_vom_terminal)
         except RcloneFehler as fehler:
             print(f"{fehler}")
             return 1

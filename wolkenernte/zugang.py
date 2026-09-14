@@ -26,6 +26,34 @@ def konfiguration() -> Path:
     return einstellungsordner() / "rclone.conf"
 
 
+#: Das Kennwort des verschlüsselten Konfigurats, einmal je Programmlauf.
+#:
+#: **Einmal, nicht einmal je Dienststart.** Ein Erntelauf startet den
+#: Dienst mehrfach – erst zum Auflisten, dann zum Holen. Wer dabei
+#: dreimal dasselbe Kennwort eintippen muss, schaltet die
+#: Verschlüsselung wieder ab, und dann ist nichts gewonnen.
+_gemerktes_kennwort: str | None = None
+
+
+def kennwort_vom_terminal() -> str | None:
+    """Nach dem Kennwort fragen – als ``kennwort_holen`` zu übergeben.
+
+    Gibt ``None`` zurück, wenn abgebrochen wurde; dann bricht auch der
+    Start ab, statt in eine unverständliche Meldung zu laufen.
+    """
+    global _gemerktes_kennwort
+
+    if _gemerktes_kennwort:
+        return _gemerktes_kennwort
+    print("\nDie Zugangsdaten sind verschlüsselt.")
+    try:
+        eingabe = getpass.getpass("  Kennwort: ").strip()
+    except (EOFError, KeyboardInterrupt):
+        return None
+    _gemerktes_kennwort = eingabe or None
+    return _gemerktes_kennwort
+
+
 def _antworten(frage: Frage) -> str | None:
     """Eine Rückfrage von rclone im Terminal stellen."""
     print()
@@ -67,7 +95,8 @@ def zeigen() -> int:
         return 0
 
     try:
-        with Dienst.starten(pfad) as dienst:
+        with Dienst.starten(
+                pfad, kennwort_holen=kennwort_vom_terminal) as dienst:
             namen = dienst.remotes()
             if not namen:
                 print("Noch kein Zugang eingerichtet.")
@@ -119,7 +148,8 @@ def nextcloud_anlegen(name: str, adresse: str, benutzer: str) -> int:
     pfad.chmod(0o600)
 
     try:
-        with Dienst.starten(pfad) as dienst:
+        with Dienst.starten(
+                pfad, kennwort_holen=kennwort_vom_terminal) as dienst:
             nextcloud(dienst, name, adresse, benutzer, kennwort)
             print(f"\nAngelegt. Probe – der Inhalt von »{name}:«:\n")
             try:
@@ -157,7 +187,8 @@ def anlegen(art: str, name: str) -> int:
     print("Leere Eingabe übernimmt die Vorgabe in eckigen Klammern.")
 
     try:
-        with Dienst.starten(pfad) as dienst:
+        with Dienst.starten(
+                pfad, kennwort_holen=kennwort_vom_terminal) as dienst:
             einrichten(dienst, name, art, fragen=_antworten)
             print(f"\nAngelegt: {dienst.remotes()}")
     except Abbruch:

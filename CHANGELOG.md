@@ -4,6 +4,44 @@
 
 Alle nennenswerten Änderungen an WOLKENErnte. Neueste zuerst.
 
+## Unveröffentlicht
+
+**Ein verschlüsseltes rclone-Konfigurat funktioniert jetzt** – und gebaut wurde
+dafür **nichts**. rclone bringt die Verschlüsselung selbst mit:
+
+```
+rclone --config ~/.config/wolkenernte/rclone.conf config encryption set
+```
+
+WOLKENErnte musste nur aufhören, im Weg zu stehen. Bis 0.4.6 war das nämlich
+unbenutzbar: Der Dienst startet mit `--ask-password=false` – nötig, weil ein
+Dienst kein Terminal hat, an dem er fragen könnte –, fuhr scheinbar gesund hoch,
+und der erste Aufruf platzte mit *»panic received: fatal error: unable to
+decrypt configuration«*. Das Kennwort geht jetzt über `RCLONE_CONFIG_PASS` in
+die **Prozessumgebung**, aus demselben Grund wie das Kennwort der
+rclone-Schnittstelle: Die Kommandozeile kann unter Linux jeder in `/proc` lesen.
+Ein Test prüft genau das nach.
+
+Gefragt wird **höchstens einmal je Programmlauf**, und nur, wenn wirklich eine
+Wolke gebraucht wird – der Dienst startet ohnehin erst dann. Wer bloß seine
+Bilder durchsieht, sieht diesen Dialog nie. Steht `RCLONE_CONFIG_PASS` schon in
+der Umgebung, wird gar nicht gefragt; das ist der Weg für Skripte.
+
+**Ein falsches Kennwort fällt jetzt beim Start auf.** rclone merkt es erst beim
+ersten Zugriff, und dann platzt irgendein beliebiger Aufruf mit »panic
+received« – eine Meldung, die nach einem Defekt des Programms aussieht und an
+einer Stelle steht, an der niemand ans Kennwort denkt. Jetzt wird einmal
+angeklopft, und heraus kommt: *»Das Kennwort für rclone.conf stimmt nicht.«*
+
+**Was das schützt, steht ausdrücklich dabei.** Aus einer Rückmeldung von außen,
+die recht hat: *»Wenn jemand physischen Zugriff auf deinen PC hat, kann er
+rclone ja so oder so direkt ausführen.«* Genau so ist es. Es schützt die
+**ruhende Platte** – ein gestohlenes Notebook, eine ausgemusterte Festplatte,
+ein Sicherungsband, ein `~/.config`, das versehentlich in einer Cloud landet.
+Dort ist rclones `obscure` in einer Zeile rückgängig gemacht, eine
+Verschlüsselung nicht. Und anders als die Fotos daneben öffnet ein
+Zugangsschlüssel ein **fremdes Konto**.
+
 ## 0.4.6 – 2026-09-12
 
 **Ein Hilfemenü, und darin die Anleitung, die bisher fehlte.**
