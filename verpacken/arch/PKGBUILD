@@ -82,6 +82,12 @@ package() {
     install -Dm644 verpacken/wolkenernte.desktop \
         "${pkgdir}/usr/share/applications/${pkgname}.desktop"
 
+    # Ohne die AppStream-Angaben kennt die Software-Verwaltung das
+    # Programm nicht - es erscheint dort weder unter den installierten
+    # noch laesst es sich von dort entfernen.
+    install -Dm644 verpacken/de.stephanlefty.WOLKENErnte.metainfo.xml \
+        "${pkgdir}/usr/share/metainfo/de.stephanlefty.WOLKENErnte.metainfo.xml"
+
     # Die Symbole an den Ort, an dem Arbeitsumgebungen sie suchen.
     for groesse in 16 24 32 48 64 128 256 512; do
         install -Dm644 "assets/icon-${groesse}.png" \

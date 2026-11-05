@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AppStream-Metadaten. Ohne diese Datei kennen die Software-Verwaltungen
+  (GNOME Software, KDE Discover, Cinnamons Anwendungsverwaltung) das
+  Programm nicht - es taucht dort weder unter den installierten
+  Anwendungen auf noch lässt es sich von dort entfernen.
+
+  Sie liegt neben der .desktop-Datei, weil beide Paketwege - PKGBUILD
+  und deb-bauen.py - von hier holen.
+-->
+<component type="desktop-application">
+  <id>de.stephanlefty.WOLKENErnte</id>
+
+  <name>WOLKENErnte</name>
+  <summary>Bilder und Videos aus den Wolken holen und dort aufräumen</summary>
+
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+
+  <developer id="de.stephanlefty">
+    <name>Stephan Rösner</name>
+  </developer>
+
+  <description>
+    <p>
+      Fotos und Videos aus Cloudspeichern auf den eigenen Rechner holen
+      - und sie dort oben anschließend löschen. Gedacht für alle, deren
+      Speicher voll ist und die ihre Aufnahmen lieber selbst verwahren.
+    </p>
+    <p>
+      Was heruntergeladen wurde, lässt sich nach Zeitraum durchsehen,
+      bevor oben etwas gelöscht wird. Erst wenn alles da ist, wird
+      aufgeräumt.
+    </p>
+  </description>
+
+  <launchable type="desktop-id">wolkenernte.desktop</launchable>
+
+  <!--
+    Das Symbol liegt unter seinem schlichten Namen im Symbolthema
+    (/usr/share/icons/hicolor/<groesse>/apps/wolkenernte.png).
+  -->
+  <icon type="stock">wolkenernte</icon>
+
+  <categories>
+    <category>Graphics</category>
+    <category>Utility</category>
+  </categories>
+
+  <keywords>
+    <keyword>Fotos</keyword>
+    <keyword>Videos</keyword>
+    <keyword>Cloud</keyword>
+    <keyword>Sicherung</keyword>
+    <keyword>Aufräumen</keyword>
+  </keywords>
+
+  <screenshots>
+    <screenshot type="default">
+      <caption>Die geholten Aufnahmen nach Zeitraum</caption>
+      <image>https://raw.githubusercontent.com/Stephan-Lefty/WOLKENErnte/main/docs/bilder/fenster-zeitraum.png</image>
+    </screenshot>
+  </screenshots>
+
+  <url type="homepage">https://github.com/Stephan-Lefty/WOLKENErnte</url>
+  <url type="bugtracker">https://github.com/Stephan-Lefty/WOLKENErnte/issues</url>
+
+  <content_rating type="oars-1.1"/>
+
+  <releases>
+    <release version="0.5.0" date="2026-11-05"/>
+  </releases>
+</component>

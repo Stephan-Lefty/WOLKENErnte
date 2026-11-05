@@ -169,6 +169,14 @@ def baum_bauen(wheel: Path, version: str) -> Path:
     anwendungen.mkdir(parents=True)
     shutil.copyfile(WURZEL / "verpacken/wolkenernte.desktop",
                     anwendungen / "wolkenernte.desktop")
+
+    # Ohne die AppStream-Angaben kennt die Software-Verwaltung das
+    # Programm nicht - es erscheint dort weder unter den installierten
+    # noch lässt es sich von dort entfernen.
+    metainfo = paket / "usr/share/metainfo"
+    metainfo.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(WURZEL / "verpacken/de.stephanlefty.WOLKENErnte.metainfo.xml",
+                    metainfo / "de.stephanlefty.WOLKENErnte.metainfo.xml")
     for groesse in GROESSEN:
         quelle = WURZEL / f"assets/icon-{groesse}.png"
         if not quelle.exists():
