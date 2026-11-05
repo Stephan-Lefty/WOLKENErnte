@@ -20,6 +20,16 @@ während niemand mehr zusieht, wäre an dieser Stelle das Schlimmste.
 
 Die Prüfung davor hatte ihren Balken schon; nur das Löschen selbst hatte keinen.
 
+## 0.5.1 – 2026-11-05
+
+### Geändert
+
+- Das Programm erscheint jetzt in der Software-Verwaltung (GNOME
+  Software, KDE Discover, Cinnamons Anwendungsverwaltung) - mit
+  Beschreibung und zum Entfernen auf Knopfdruck. Dafür fehlten bisher
+  die AppStream-Angaben; ohne sie kennen die Verwaltungen ein Programm
+  schlicht nicht.
+
 ## 0.5.0 – 2026-09-14
 
 **Der Zweck des Programms ist am 14.09.2026 zum ersten Mal von Anfang bis Ende
