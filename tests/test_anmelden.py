@@ -162,6 +162,10 @@ class DasFrageblatt(unittest.TestCase):
         self.assertIn("falsches Kennwort", texte)
 
 
+# Der Import zieht das Fenstermodul nach, und das braucht PySide6 -
+# auch wenn die geprüfte Funktion selbst nur mit Zeichenketten
+# rechnet. Ohne diese Zeile war die CI seit dem 14.09.2026 rot.
+@unittest.skipUnless(PYSIDE, "PySide6 fehlt")
 class FreieNamen(unittest.TestCase):
     def test_der_erste_heisst_wie_der_anbieter(self) -> None:
         from wolkenernte.fenster.anmelden import _namen_finden
